@@ -16,6 +16,8 @@
             <Button Content="Export PNG" Click="OnExportPng" />
             <Button Content="Export Tiled" ToolTip="Tiled .tmj + tileset PNG" Click="OnExportTiled" />
             <Separator />
+            <Button Content="Map size…" Click="OnMapSize" />
+            <Separator />
             <Button Content="Undo" ToolTip="Ctrl+Z" Click="OnUndo" />
             <Button Content="Redo" ToolTip="Ctrl+Y" Click="OnRedo" />
             <Separator />
@@ -25,10 +27,12 @@
         </ToolBar>
 
         <StackPanel DockPanel.Dock="Left" Width="70" Margin="4">
-            <RadioButton x:Name="PaintBtn" Content="Paint" ToolTip="B  (right mouse erases)" IsChecked="True" GroupName="mtool" />
-            <RadioButton x:Name="EraseBtn" Content="Erase" ToolTip="E" GroupName="mtool" />
-            <RadioButton x:Name="FillBtn" Content="Fill" ToolTip="G" GroupName="mtool" />
-            <RadioButton x:Name="PickBtn" Content="Pick" ToolTip="I" GroupName="mtool" />
+            <RadioButton x:Name="PaintBtn" Content="Paint" ToolTip="B: paints the selected tiles (drag in the tileset for several). Right mouse erases." IsChecked="True" GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="EraseBtn" Content="Erase" ToolTip="E" GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="FillBtn" Content="Fill" ToolTip="G: fills with the selected tiles as a pattern" GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="PickBtn" Content="Pick" ToolTip="I: click or drag on the map to copy tiles" GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="AutoBtn" Content="Auto" ToolTip="A: paints the selected terrain, edges connect by themselves. Right mouse erases." GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="ObjectBtn" Content="Object" ToolTip="O: drag = box, click = point. Click an object to select/move it. Shift snaps to tiles. Del removes." GroupName="mtool" Click="OnToolClick" />
         </StackPanel>
 
         <DockPanel DockPanel.Dock="Right" Width="260" Margin="4">
@@ -39,7 +43,8 @@
                 <Button Content="Reload" ToolTip="Re-read the tileset file" Click="OnReloadTileset" />
             </WrapPanel>
             <ScrollViewer DockPanel.Dock="Top" Height="300" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#2B2B2B">
-                <Grid x:Name="TilesetHost" HorizontalAlignment="Left" VerticalAlignment="Top" MouseLeftButtonDown="OnTilesetClick" Cursor="Hand">
+                <Grid x:Name="TilesetHost" HorizontalAlignment="Left" VerticalAlignment="Top" Cursor="Hand"
+                      MouseLeftButtonDown="OnTilesetDown" MouseMove="OnTilesetMove" MouseLeftButtonUp="OnTilesetUp">
                     <Image x:Name="TilesetImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                     <Rectangle x:Name="TilesetGrid" IsHitTestVisible="False" />
                     <Canvas IsHitTestVisible="False">
@@ -47,6 +52,22 @@
                     </Canvas>
                 </Grid>
             </ScrollViewer>
+            <DockPanel DockPanel.Dock="Top" Margin="0,6,0,0">
+                <TextBlock Text="Terrain " VerticalAlignment="Center" />
+                <Button DockPanel.Dock="Right" Content="Template…" ToolTip="Save a 4×4 guide PNG showing which tile goes where" Click="OnTerrainTemplate" />
+                <Button DockPanel.Dock="Right" Content="−" Width="22" ToolTip="Remove terrain" Click="OnRemoveTerrain" />
+                <Button DockPanel.Dock="Right" Content="+" Width="22" ToolTip="Add terrain from the selected 4×4 tiles" Click="OnAddTerrain" />
+                <ComboBox x:Name="TerrainBox" Margin="0,0,4,0" />
+            </DockPanel>
+            <StackPanel x:Name="ObjectPanel" DockPanel.Dock="Bottom" Margin="0,8,0,0" Visibility="Collapsed">
+                <TextBlock Text="Selected object" FontWeight="SemiBold" />
+                <DockPanel Margin="0,4,0,0"><TextBlock Text="Name " Width="40" VerticalAlignment="Center" /><TextBox x:Name="ObjNameBox" LostKeyboardFocus="OnObjectFieldCommit" KeyDown="OnObjectFieldKey" /></DockPanel>
+                <DockPanel Margin="0,4,0,0"><TextBlock Text="Type " Width="40" VerticalAlignment="Center" /><TextBox x:Name="ObjTypeBox" LostKeyboardFocus="OnObjectFieldCommit" KeyDown="OnObjectFieldKey" /></DockPanel>
+                <DockPanel Margin="0,4,0,0">
+                    <Button DockPanel.Dock="Right" Content="Delete" Click="OnDeleteObject" />
+                    <TextBlock x:Name="ObjInfo" Foreground="Gray" VerticalAlignment="Center" />
+                </DockPanel>
+            </StackPanel>
             <TextBlock DockPanel.Dock="Top" Text="Map layers" Margin="0,12,0,4" />
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,4,0,0">
                 <Button Content="+" Width="30" ToolTip="Add layer" Click="OnAddLayer" />
@@ -60,10 +81,15 @@
         <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
                       Background="#2B2B2B" PreviewMouseWheel="OnWheel">
             <Grid x:Name="CanvasHost" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Cross"
-                  MouseDown="OnCanvasDown" MouseMove="OnCanvasMove" MouseUp="OnCanvasUp">
+                  MouseDown="OnCanvasDown" MouseMove="OnCanvasMove" MouseUp="OnCanvasUp" MouseLeave="OnCanvasLeave">
                 <Rectangle Fill="#3A3A3A" />
                 <Image x:Name="MapImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                 <Rectangle x:Name="GridOverlay" IsHitTestVisible="False" />
+                <Canvas IsHitTestVisible="False">
+                    <Image x:Name="StampPreview" Opacity="0.6" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" Visibility="Collapsed" />
+                    <Rectangle x:Name="PickRect" Stroke="Yellow" StrokeThickness="2" StrokeDashArray="3 2" Visibility="Collapsed" />
+                </Canvas>
+                <Canvas x:Name="ObjectsLayer" IsHitTestVisible="False" />
             </Grid>
         </ScrollViewer>
     </DockPanel>

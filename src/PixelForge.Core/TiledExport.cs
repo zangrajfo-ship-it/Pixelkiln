@@ -13,12 +13,21 @@ public static class TiledExport
             type = "map", version = "1.10", tiledversion = "1.10.2",
             orientation = "orthogonal", renderorder = "right-down", infinite = false,
             width = m.Width, height = m.Height, tilewidth = m.TileSize, tileheight = m.TileSize,
-            nextlayerid = m.Layers.Count + 1, nextobjectid = 1,
-            layers = m.Layers.Select((l, i) => new
+            nextlayerid = m.Layers.Count + 2, nextobjectid = m.NextObjectId,
+            layers = m.Layers.Select((l, i) => (object)new
             {
                 id = i + 1, name = l.Name, type = "tilelayer", visible = l.Visible, opacity = 1,
                 x = 0, y = 0, width = m.Width, height = m.Height,
                 data = l.Tiles.Select(t => t < 0 ? 0 : t + 1),
+            }).Append(new
+            {
+                id = m.Layers.Count + 1, name = "Objects", type = "objectgroup", visible = true, opacity = 1,
+                x = 0, y = 0, draworder = "topdown",
+                objects = m.Objects.Select(o => new
+                {
+                    id = o.Id, name = o.Name, type = o.Type, x = o.X, y = o.Y, width = o.W, height = o.H,
+                    rotation = 0, visible = true, point = o.IsPoint,
+                }),
             }),
             tilesets = new[]
             {
