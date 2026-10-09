@@ -28,6 +28,20 @@ public sealed class MapLayer : ILayer
     public int[] Tiles { get; init; } = [];
 }
 
+/// <summary>Point (W = H = 0) or rectangle in map pixels, e.g. spawn points, triggers, collision boxes.</summary>
+public sealed class MapObject
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Type { get; set; } = "";
+    public int X { get; set; }
+    public int Y { get; set; }
+    public int W { get; set; }
+    public int H { get; set; }
+    public bool IsPoint => W == 0 && H == 0;
+    public MapObject Clone() => (MapObject)MemberwiseClone();
+}
+
 /// <summary>Layers[0] is the bottom layer.</summary>
 public sealed class Tilemap
 {
@@ -40,6 +54,11 @@ public sealed class Tilemap
     /// <summary>Where the tileset was loaded from (for "reload"); pixels are stored in the map anyway.</summary>
     public string? TilesetSource { get; set; }
     public List<MapLayer> Layers { get; } = [];
+    public List<MapObject> Objects { get; } = [];
+    /// <summary>Auto-tile terrains: top-left tile index of each 4×4 block (see <see cref="Autotile"/>).</summary>
+    public List<int> Terrains { get; } = [];
+
+    public int NextObjectId => Objects.Count == 0 ? 1 : Objects.Max(o => o.Id) + 1;
 
     public Tilemap(int width, int height, int tileSize, bool empty = false)
     {
@@ -107,18 +126,48 @@ public sealed class Tilemap
     {
         var m = new Tilemap(Width, Height, TileSize, empty: true) { Tileset = Tileset, TilesetSource = TilesetSource };
         foreach (var l in Layers) m.Layers.Add(new MapLayer { Name = l.Name, Visible = l.Visible, Tiles = (int[])l.Tiles.Clone() });
+        m.Objects.AddRange(Objects.Select(o => o.Clone()));
+        m.Terrains.AddRange(Terrains);
+        return m;
+    }
+
+    /// <summary>New map size in tiles; content moves by (ox, oy) tiles and is clipped. Objects move along.</summary>
+    public Tilemap Resized(int w, int h, int ox, int oy)
+    {
+        var m = new Tilemap(w, h, TileSize, empty: true) { Tileset = Tileset, TilesetSource = TilesetSource };
+        foreach (var l in Layers)
+        {
+            var nl = m.AddLayer(m.Layers.Count, l.Name);
+            nl.Visible = l.Visible;
+            for (int y = 0; y < Height; y++)
+                for (int x = 0; x < Width; x++)
+                    Tools.Set(nl.Tiles, w, h, x + ox, y + oy, l.Tiles[y * Width + x]);
+        }
+        foreach (var o in Objects)
+        {
+            var c = o.Clone();
+            c.X += ox * TileSize;
+            c.Y += oy * TileSize;
+            m.Objects.Add(c);
+        }
+        m.Terrains.AddRange(Terrains);
         return m;
     }
 
     // ---------- .pxm file (JSON) ----------
 
     record LayerDto(string Name, bool Visible, int[] Tiles);
-    record MapDto(int Version, int Width, int Height, int TileSize, string? TilesetSource, int TilesetWidth, int TilesetHeight, string? TilesetPixels, LayerDto[] Layers);
+    record ObjectDto(int Id, string Name, string Type, int X, int Y, int W, int H);
+    // v2 added Objects and Terrains; both are optional so v1 files still load
+    record MapDto(int Version, int Width, int Height, int TileSize, string? TilesetSource, int TilesetWidth, int TilesetHeight, string? TilesetPixels,
+        LayerDto[] Layers, ObjectDto[]? Objects = null, int[]? Terrains = null);
 
     public static string Serialize(Tilemap m) => JsonSerializer.Serialize(new MapDto(
-        1, m.Width, m.Height, m.TileSize, m.TilesetSource, m.Tileset?.Width ?? 0, m.Tileset?.Height ?? 0,
+        2, m.Width, m.Height, m.TileSize, m.TilesetSource, m.Tileset?.Width ?? 0, m.Tileset?.Height ?? 0,
         m.Tileset is { } ts ? Convert.ToBase64String(MemoryMarshal.AsBytes(ts.Pixels.AsSpan())) : null,
-        [.. m.Layers.Select(l => new LayerDto(l.Name, l.Visible, l.Tiles))]));
+        [.. m.Layers.Select(l => new LayerDto(l.Name, l.Visible, l.Tiles))],
+        [.. m.Objects.Select(o => new ObjectDto(o.Id, o.Name, o.Type, o.X, o.Y, o.W, o.H))],
+        [.. m.Terrains]));
 
     public static Tilemap Deserialize(string json)
     {
@@ -136,6 +185,9 @@ public sealed class Tilemap
             m.Layers.Add(new MapLayer { Name = l.Name, Visible = l.Visible, Tiles = l.Tiles });
         }
         if (m.Layers.Count == 0) throw new InvalidDataException("Map has no layers.");
+        foreach (var o in d.Objects ?? [])
+            m.Objects.Add(new MapObject { Id = o.Id, Name = o.Name ?? "", Type = o.Type ?? "", X = o.X, Y = o.Y, W = Math.Max(0, o.W), H = Math.Max(0, o.H) });
+        m.Terrains.AddRange(d.Terrains ?? []);
         return m;
     }
 

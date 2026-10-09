@@ -14,14 +14,10 @@ public partial class TilemapEditor : UserControl
 
     Tilemap _map = new(20, 15, 16);
     readonly History<Tilemap> _history = new(m => m.Clone());
-    int _layer, _tile, _zoom = 2;
+    int _layer, _zoom = 2;
     string? _path;
     bool _dirty;
     WriteableBitmap? _bmp;
-
-    bool _stroking;
-    int _lastX, _lastY, _strokeTile;
-    Point? _panFrom;
 
     /// <summary>Set by MainWindow: the Sprite tab's current image.</summary>
     public Func<(uint[] Pixels, int Width, int Height)>? SpriteImage { get; set; }
@@ -43,6 +39,7 @@ public partial class TilemapEditor : UserControl
         _path = path;
         _dirty = false;
         _history.Clear();
+        _selObj = null;
         RefreshAll();
     }
 
@@ -58,7 +55,9 @@ public partial class TilemapEditor : UserControl
         _layer = Math.Clamp(_layer, 0, _map.Layers.Count - 1);
         ApplyZoom();
         RefreshTileset();
+        RefreshTerrains();
         RefreshLayers();
+        RefreshObjects();
         Render();
         UpdateTitle();
     }
@@ -95,6 +94,7 @@ public partial class TilemapEditor : UserControl
         CanvasHost.Height = _map.Height * CellPx;
         GridOverlay.Fill = GridToggle.IsChecked == true && CellPx >= 4 ? Ui.GridBrush(CellPx) : null;
         Status.Text = $"{_map.Width}×{_map.Height} tiles of {_map.TileSize}px   {_zoom}×";
+        RefreshObjects();
     }
 
     void OnWheel(object sender, MouseWheelEventArgs e)
@@ -112,117 +112,6 @@ public partial class TilemapEditor : UserControl
     }
 
     void OnGridToggle(object sender, RoutedEventArgs e) => ApplyZoom();
-
-    // ---------- painting ----------
-
-    (int X, int Y) CellAt(MouseEventArgs e)
-    {
-        var p = e.GetPosition(CanvasHost);
-        return ((int)Math.Floor(p.X / CellPx), (int)Math.Floor(p.Y / CellPx));
-    }
-
-    void OnCanvasDown(object sender, MouseButtonEventArgs e)
-    {
-        Keyboard.Focus(this);
-        if (e.ChangedButton == MouseButton.Middle)
-        {
-            _panFrom = e.GetPosition(Scroller);
-            CanvasHost.CaptureMouse();
-            return;
-        }
-        if (_stroking || e.ChangedButton is not (MouseButton.Left or MouseButton.Right)) return;
-        var (x, y) = CellAt(e);
-        if (!Tools.InBounds(_map.Width, _map.Height, x, y)) return;
-        var tiles = _map.Layers[_layer].Tiles;
-
-        if (PickBtn.IsChecked == true)
-        {
-            int t = _map.Pick(x, y);
-            if (t != Tilemap.Empty) { SelectTile(t); PaintBtn.IsChecked = true; }
-            return;
-        }
-
-        Snapshot();
-        _strokeTile = EraseBtn.IsChecked == true || e.ChangedButton == MouseButton.Right ? Tilemap.Empty : _tile;
-        if (FillBtn.IsChecked == true)
-        {
-            Tools.Fill(tiles, _map.Width, _map.Height, x, y, _strokeTile);
-        }
-        else
-        {
-            Tools.Set(tiles, _map.Width, _map.Height, x, y, _strokeTile);
-            (_lastX, _lastY, _stroking) = (x, y, true);
-            CanvasHost.CaptureMouse();
-        }
-        Render();
-    }
-
-    void OnCanvasMove(object sender, MouseEventArgs e)
-    {
-        var (x, y) = CellAt(e);
-        Status.Text = $"{_map.Width}×{_map.Height} tiles of {_map.TileSize}px   {_zoom}×   {x}, {y}";
-        if (_panFrom is Point from)
-        {
-            var now = e.GetPosition(Scroller);
-            Scroller.ScrollToHorizontalOffset(Scroller.HorizontalOffset - (now.X - from.X));
-            Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset - (now.Y - from.Y));
-            _panFrom = now;
-            return;
-        }
-        if (!_stroking || (x, y) == (_lastX, _lastY)) return;
-        Tools.Line(_map.Layers[_layer].Tiles, _map.Width, _map.Height, _lastX, _lastY, x, y, _strokeTile);
-        (_lastX, _lastY) = (x, y);
-        Render();
-    }
-
-    void OnCanvasUp(object sender, MouseButtonEventArgs e)
-    {
-        _stroking = false;
-        _panFrom = null;
-        CanvasHost.ReleaseMouseCapture();
-    }
-
-    // ---------- tileset ----------
-
-    int TilesetScale => _map.Tileset is { } ts ? Math.Clamp(240 / ts.Width, 1, 8) : 1;
-
-    void RefreshTileset()
-    {
-        if (_map.Tileset is not { } ts)
-        {
-            TilesetImage.Source = null;
-            TilesetHost.Width = TilesetHost.Height = 0;
-            SelectionRect.Visibility = Visibility.Collapsed;
-            return;
-        }
-        int s = TilesetScale;
-        TilesetImage.Source = ImageIO.ToBitmap(ts.Pixels, ts.Width, ts.Height);
-        TilesetHost.Width = ts.Width * s;
-        TilesetHost.Height = ts.Height * s;
-        TilesetGrid.Fill = ts.TileSize * s >= 4 ? Ui.GridBrush(ts.TileSize * s) : null;
-        SelectTile(Math.Clamp(_tile, 0, Math.Max(0, ts.Count - 1)));
-    }
-
-    void SelectTile(int t)
-    {
-        _tile = t;
-        if (_map.Tileset is not { } ts) return;
-        int cell = ts.TileSize * TilesetScale;
-        SelectionRect.Visibility = Visibility.Visible;
-        SelectionRect.Width = SelectionRect.Height = cell;
-        Canvas.SetLeft(SelectionRect, t % ts.Columns * cell);
-        Canvas.SetTop(SelectionRect, t / ts.Columns * cell);
-    }
-
-    void OnTilesetClick(object sender, MouseButtonEventArgs e)
-    {
-        if (_map.Tileset is not { } ts) return;
-        var p = e.GetPosition(TilesetHost);
-        int cell = ts.TileSize * TilesetScale;
-        int cx = (int)(p.X / cell), cy = (int)(p.Y / cell);
-        if (cx < ts.Columns && cy < ts.Rows) SelectTile(cy * ts.Columns + cx);
-        if (EraseBtn.IsChecked == true) PaintBtn.IsChecked = true;
-    }
 
     void SetTileset(uint[] px, int w, int h, string? source)
     {
@@ -322,9 +211,25 @@ public partial class TilemapEditor : UserControl
     void Restore(Tilemap? m)
     {
         if (m is null || _stroking) return;
+        int? selId = _selObj?.Id;
         _map = m;
+        _selObj = _map.Objects.FirstOrDefault(o => o.Id == selId);
         _dirty = true;
         RefreshAll();
+    }
+
+    void OnMapSize(object sender, RoutedEventArgs e)
+    {
+        if (Ui.AskSize(this, "Map size (tiles)", _map.Width, _map.Height, anchor: true) is not (int w, int h, int ax, int ay)) return;
+        try
+        {
+            var resized = _map.Resized(w, h, PixelOps.AnchorOffset(_map.Width, w, ax), PixelOps.AnchorOffset(_map.Height, h, ay));
+            Snapshot();
+            _map = resized;
+            _selObj = null;
+            RefreshAll();
+        }
+        catch (ArgumentOutOfRangeException ex) { Ui.Error(ex); }
     }
 
     // ---------- files ----------
@@ -415,10 +320,13 @@ public partial class TilemapEditor : UserControl
             case Key.N when ctrl: OnNew(null, null); break;
             case Key.O when ctrl: OnOpen(null, null); break;
             case Key.G when ctrl: GridToggle.IsChecked = GridToggle.IsChecked != true; ApplyZoom(); break;
-            case Key.B when !ctrl: PaintBtn.IsChecked = true; break;
-            case Key.E when !ctrl: EraseBtn.IsChecked = true; break;
-            case Key.G when !ctrl: FillBtn.IsChecked = true; break;
-            case Key.I when !ctrl: PickBtn.IsChecked = true; break;
+            case Key.B when !ctrl: SetTool(PaintBtn); break;
+            case Key.E when !ctrl: SetTool(EraseBtn); break;
+            case Key.G when !ctrl: SetTool(FillBtn); break;
+            case Key.I when !ctrl: SetTool(PickBtn); break;
+            case Key.A when !ctrl: SetTool(AutoBtn); break;
+            case Key.O when !ctrl: SetTool(ObjectBtn); break;
+            case Key.Delete when _selObj is not null: OnDeleteObject(null, null); break;
             default: e.Handled = false; break;
         }
     }
