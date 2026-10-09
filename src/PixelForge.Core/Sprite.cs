@@ -1,7 +1,14 @@
 namespace PixelForge.Core;
 
+/// <summary>What the layers panel needs; shared by sprite and map layers.</summary>
+public interface ILayer
+{
+    string Name { get; set; }
+    bool Visible { get; set; }
+}
+
 /// <summary>Pixels are ARGB uint (0xAARRGGBB), row-major. 0 = transparent.</summary>
-public sealed class Layer
+public sealed class Layer : ILayer
 {
     public string Name { get; set; } = "Layer";
     public bool Visible { get; set; } = true;

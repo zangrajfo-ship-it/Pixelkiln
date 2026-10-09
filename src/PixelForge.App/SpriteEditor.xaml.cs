@@ -29,8 +29,15 @@ public partial class SpriteEditor : UserControl
     public SpriteEditor()
     {
         InitializeComponent();
-        Loaded += (_, _) => LoadSprite(_sprite, null);
+        // TabControl re-fires Loaded on every tab switch; init once
+        Loaded += Init;
+        IsVisibleChanged += (_, _) => UpdateTitle();
+
+        void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadSprite(_sprite, null); }
     }
+
+    /// <summary>Current frame, flattened (used as a tileset source).</summary>
+    public (uint[] Pixels, int Width, int Height) CurrentImage => (Compositor.Flatten(_sprite, _frame), _sprite.Width, _sprite.Height);
 
     // ---------- document ----------
 
@@ -89,7 +96,7 @@ public partial class SpriteEditor : UserControl
 
     void UpdateTitle()
     {
-        if (Window.GetWindow(this) is { } win)
+        if (IsVisible && Window.GetWindow(this) is { } win)
             win.Title = $"PixelForge — {(_path is null ? "untitled" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
     }
 
@@ -107,20 +114,8 @@ public partial class SpriteEditor : UserControl
     {
         CanvasHost.Width = _sprite.Width * _zoom;
         CanvasHost.Height = _sprite.Height * _zoom;
-        GridOverlay.Fill = GridToggle.IsChecked == true && _zoom >= 4 ? GridBrush(_zoom) : null;
+        GridOverlay.Fill = GridToggle.IsChecked == true && _zoom >= 4 ? Ui.GridBrush(_zoom) : null;
         Status.Text = $"{_sprite.Width}×{_sprite.Height}   {_zoom}×";
-    }
-
-    static Brush GridBrush(int cell)
-    {
-        // lines on the 0.5 px row/column so the tile does not clip half of them away
-        var lines = new GeometryGroup { Children = { new LineGeometry(new(0, 0.5), new(cell, 0.5)), new LineGeometry(new(0.5, 0), new(0.5, cell)) } };
-        return new DrawingBrush(new GeometryDrawing(null, new Pen(new SolidColorBrush(Color.FromArgb(90, 0, 0, 0)), 1), lines))
-        {
-            TileMode = TileMode.Tile, Stretch = Stretch.None,
-            Viewport = new Rect(0, 0, cell, cell), ViewportUnits = BrushMappingMode.Absolute,
-            Viewbox = new Rect(0, 0, cell, cell), ViewboxUnits = BrushMappingMode.Absolute,
-        };
     }
 
     void OnWheel(object sender, MouseWheelEventArgs e)
@@ -223,7 +218,7 @@ public partial class SpriteEditor : UserControl
         PaletteWrap.Children.Clear();
         foreach (var c in _sprite.Palette)
         {
-            var sw = new Border { Width = 20, Height = 20, Margin = new Thickness(1), Background = BrushOf(c), ToolTip = $"#{c & 0xFFFFFF:X6}" };
+            var sw = new Border { Width = 20, Height = 20, Margin = new Thickness(1), Background = Ui.BrushOf(c), ToolTip = $"#{c & 0xFFFFFF:X6}" };
             sw.MouseLeftButtonDown += (_, _) => { _primary = c; RefreshSwatches(); };
             sw.MouseRightButtonDown += (_, _) => { _secondary = c; RefreshSwatches(); };
             PaletteWrap.Children.Add(sw);
@@ -231,7 +226,7 @@ public partial class SpriteEditor : UserControl
         var add = new Button { Content = "+", Width = 20, Height = 20, Margin = new Thickness(1), ToolTip = "Add color to palette" };
         add.Click += (_, _) =>
         {
-            if (Dialogs.PickColor(_primary) is not uint c) return;
+            if (Ui.PickColor(_primary) is not uint c) return;
             Snapshot();
             _sprite.Palette.Add(c);
             _primary = c;
@@ -243,20 +238,18 @@ public partial class SpriteEditor : UserControl
 
     void RefreshSwatches()
     {
-        PrimarySwatch.Background = BrushOf(_primary);
-        SecondarySwatch.Background = BrushOf(_secondary);
+        PrimarySwatch.Background = Ui.BrushOf(_primary);
+        SecondarySwatch.Background = Ui.BrushOf(_secondary);
     }
-
-    static SolidColorBrush BrushOf(uint c) => new(Color.FromArgb((byte)(c >> 24), (byte)(c >> 16), (byte)(c >> 8), (byte)c));
 
     void OnPrimarySwatch(object sender, MouseButtonEventArgs e)
     {
-        if (Dialogs.PickColor(_primary) is uint c) { _primary = c; RefreshSwatches(); }
+        if (Ui.PickColor(_primary) is uint c) { _primary = c; RefreshSwatches(); }
     }
 
     void OnSecondarySwatch(object sender, MouseButtonEventArgs e)
     {
-        if (Dialogs.PickColor(_secondary) is uint c) { _secondary = c; RefreshSwatches(); }
+        if (Ui.PickColor(_secondary) is uint c) { _secondary = c; RefreshSwatches(); }
     }
 
     // ---------- layers (list shows top layer first) ----------
@@ -266,25 +259,9 @@ public partial class SpriteEditor : UserControl
     void RefreshLayers()
     {
         _refreshingLayers = true;
-        LayersList.Items.Clear();
-        for (int i = _sprite.Layers.Count - 1; i >= 0; i--)
-        {
-            var layer = _sprite.Layers[i];
-            int index = i;
-            var vis = new CheckBox { IsChecked = layer.Visible, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Visible" };
-            vis.Click += (_, _) => { layer.Visible = vis.IsChecked == true; _dirty = true; UpdateTitle(); Render(); };
-            var name = new TextBox { Text = layer.Name, BorderThickness = new Thickness(0), Background = Brushes.Transparent, Margin = new Thickness(4, 0, 0, 0) };
-            name.GotKeyboardFocus += (_, _) => LayersList.SelectedIndex = _sprite.Layers.Count - 1 - index;
-            name.LostKeyboardFocus += (_, _) =>
-            {
-                if (name.Text == layer.Name || string.IsNullOrWhiteSpace(name.Text)) { name.Text = layer.Name; return; }
-                Snapshot();
-                _sprite.Layers[index].Name = name.Text;
-            };
-            DockPanel.SetDock(vis, Dock.Left);
-            LayersList.Items.Add(new DockPanel { Children = { vis, name } });
-        }
-        LayersList.SelectedIndex = _sprite.Layers.Count - 1 - _layer;
+        Ui.FillLayers(LayersList, _sprite.Layers, _layer,
+            visibilityChanged: () => { _dirty = true; UpdateTitle(); Render(); },
+            rename: (layer, name) => { Snapshot(); layer.Name = name; });
         _refreshingLayers = false;
     }
 
@@ -438,13 +415,13 @@ public partial class SpriteEditor : UserControl
             var frames = Enumerable.Range(0, _sprite.Frames.Count).Select(f => Compositor.Flatten(_sprite, f)).ToList();
             GifWriter.Save(dlg.FileName, frames, [.. _sprite.Frames.Select(f => f.DurationMs)], _sprite.Width, _sprite.Height);
         }
-        catch (Exception ex) { Dialogs.Error(ex); }
+        catch (Exception ex) { Ui.Error(ex); }
     }
 
     void OnExportSheet(object sender, RoutedEventArgs e)
     {
-        if (Dialogs.Ask(this, "Export sprite sheet", "Columns (0 = all frames in one row):", "0") is not string text) return;
-        if (!int.TryParse(text, out int cols) || cols < 0) { Dialogs.Error(new FormatException("Columns must be a whole number ≥ 0.")); return; }
+        if (Ui.Ask(this, "Export sprite sheet", "Columns (0 = all frames in one row):", "0") is not string text) return;
+        if (!int.TryParse(text, out int cols) || cols < 0) { Ui.Error(new FormatException("Columns must be a whole number ≥ 0.")); return; }
         var dlg = new SaveFileDialog { Filter = "PNG image (*.png)|*.png", FileName = BaseName + "-sheet.png" };
         if (dlg.ShowDialog() != true) return;
         try
@@ -454,7 +431,7 @@ public partial class SpriteEditor : UserControl
             File.WriteAllText(System.IO.Path.ChangeExtension(dlg.FileName, ".json"),
                 SpriteSheet.Json(_sprite, sheet, System.IO.Path.GetFileName(dlg.FileName), BaseName));
         }
-        catch (Exception ex) { Dialogs.Error(ex); }
+        catch (Exception ex) { Ui.Error(ex); }
     }
 
     // ---------- undo ----------
@@ -477,7 +454,7 @@ public partial class SpriteEditor : UserControl
     void OnNew(object? sender, RoutedEventArgs? e)
     {
         if (!ConfirmDiscard()) return;
-        if (Dialogs.Ask(this, "New sprite", "Size (width x height):", $"{_sprite.Width}x{_sprite.Height}") is not string text) return;
+        if (Ui.Ask(this, "New sprite", "Size (width x height):", $"{_sprite.Width}x{_sprite.Height}") is not string text) return;
         var parts = text.ToLowerInvariant().Split('x', '×', ' ', ',');
         try
         {
@@ -485,7 +462,7 @@ public partial class SpriteEditor : UserControl
             if (nums.Length != 2) throw new FormatException("Enter size as WIDTHxHEIGHT, e.g. 32x32.");
             LoadSprite(new Sprite(nums[0], nums[1]), null);
         }
-        catch (Exception ex) when (ex is FormatException or OverflowException or ArgumentOutOfRangeException) { Dialogs.Error(ex); }
+        catch (Exception ex) when (ex is FormatException or OverflowException or ArgumentOutOfRangeException) { Ui.Error(ex); }
     }
 
     void OnOpen(object? sender, RoutedEventArgs? e)
@@ -507,7 +484,7 @@ public partial class SpriteEditor : UserControl
                 LoadSprite(s, null);   // imported image: Save asks for a .pxf name
             }
         }
-        catch (Exception ex) { Dialogs.Error(ex); }
+        catch (Exception ex) { Ui.Error(ex); }
     }
 
     void OnSave(object? sender, RoutedEventArgs? e) => Save(_path);
@@ -529,7 +506,7 @@ public partial class SpriteEditor : UserControl
             UpdateTitle();
             return true;
         }
-        catch (Exception ex) { Dialogs.Error(ex); return false; }
+        catch (Exception ex) { Ui.Error(ex); return false; }
     }
 
     void OnExportPng(object sender, RoutedEventArgs e)
@@ -537,7 +514,7 @@ public partial class SpriteEditor : UserControl
         var dlg = new SaveFileDialog { Filter = "PNG image (*.png)|*.png", FileName = System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(_path) ?? "sprite", ".png") };
         if (dlg.ShowDialog() != true) return;
         try { ImageIO.SavePng(dlg.FileName, Compositor.Flatten(_sprite, _frame), _sprite.Width, _sprite.Height); }
-        catch (Exception ex) { Dialogs.Error(ex); }
+        catch (Exception ex) { Ui.Error(ex); }
     }
 
     // ---------- keyboard (routed from MainWindow) ----------
