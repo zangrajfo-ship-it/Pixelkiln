@@ -1,0 +1,12 @@
+<Window x:Class="PixelForge.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:PixelForge.App"
+        Title="PixelForge" Width="1280" Height="800" WindowStartupLocation="CenterScreen"
+        PreviewKeyDown="OnPreviewKeyDown" Closing="OnClosing">
+    <TabControl x:Name="Tabs">
+        <TabItem Header="Sprite">
+            <local:SpriteEditor x:Name="SpriteEd" />
+        </TabItem>
+    </TabControl>
+</Window>
