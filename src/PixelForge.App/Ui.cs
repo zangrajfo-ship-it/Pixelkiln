@@ -81,21 +81,21 @@ static class Ui
 
     /// <summary>Tiled grid lines every <paramref name="cell"/> screen pixels.</summary>
     /// <param name="color">Line color incl. alpha; default = black 60 %, at least 3:1 on the light checkerboard (WCAG 1.4.11).</param>
-    public static Brush GridBrush(double cell, Color? color = null)
-    {
-        uint g = App.Settings.GridColor;
-        return GridBrushOf(cell, color ?? Color.FromArgb((byte)(g >> 24), (byte)(g >> 16), (byte)(g >> 8), (byte)g));
-    }
+    public static Brush GridBrush(double cell, Color? color = null) =>
+        GridBrush(cell, cell, color ?? ColorOf(App.Settings.GridColor));
 
-    static Brush GridBrushOf(double cell, Color color)
+    public static Color ColorOf(uint c) => Color.FromArgb((byte)(c >> 24), (byte)(c >> 16), (byte)(c >> 8), (byte)c);
+
+    /// <summary>Grid of w×h cells (screen pixels), shifted by (ox, oy).</summary>
+    public static Brush GridBrush(double w, double h, Color color, double ox = 0, double oy = 0)
     {
         // lines on the 0.5 px row/column so the tile does not clip half of them away
-        var lines = new GeometryGroup { Children = { new LineGeometry(new(0, 0.5), new(cell, 0.5)), new LineGeometry(new(0.5, 0), new(0.5, cell)) } };
+        var lines = new GeometryGroup { Children = { new LineGeometry(new(0, 0.5), new(w, 0.5)), new LineGeometry(new(0.5, 0), new(0.5, h)) } };
         return new DrawingBrush(new GeometryDrawing(null, new Pen(new SolidColorBrush(color), 1), lines))
         {
             TileMode = TileMode.Tile, Stretch = Stretch.None,
-            Viewport = new Rect(0, 0, cell, cell), ViewportUnits = BrushMappingMode.Absolute,
-            Viewbox = new Rect(0, 0, cell, cell), ViewboxUnits = BrushMappingMode.Absolute,
+            Viewport = new Rect(ox, oy, w, h), ViewportUnits = BrushMappingMode.Absolute,
+            Viewbox = new Rect(0, 0, w, h), ViewboxUnits = BrushMappingMode.Absolute,
         };
     }
 

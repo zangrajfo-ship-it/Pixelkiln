@@ -84,7 +84,10 @@ public partial class SpriteEditor : UserControl
     {
         int w = _sprite.Width, h = _sprite.Height;
         if (_bmp is null || _bmp.PixelWidth != w || _bmp.PixelHeight != h)
+        {
             CanvasImage.Source = _bmp = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
+            UpdateTiledBg();
+        }
 
         var current = Compositor.Flatten(_sprite, _frame);
         var shown = current;
@@ -97,6 +100,7 @@ public partial class SpriteEditor : UserControl
         }
         if (_float is not null) PixelOps.Stamp(shown, w, h, _float, _fw, _fh, _fx, _fy);
         _bmp.WritePixels(new Int32Rect(0, 0, w, h), shown, w * 4, 0);
+        _preview?.ShowFrame(current, w, h);
         UpdateOverlay();
 
         if (FramesList.Items.Count > _frame && FramesList.Items[_frame] is FrameworkElement { Tag: Image thumb })
@@ -121,8 +125,7 @@ public partial class SpriteEditor : UserControl
 
     void ApplyZoom()
     {
-        CanvasHost.Width = _sprite.Width * _zoom;
-        CanvasHost.Height = _sprite.Height * _zoom;
+        LayoutCanvas();
         GridOverlay.Fill = GridToggle.IsChecked == true && _zoom >= 4 ? Ui.GridBrush(_zoom) : null;
         Status.Text = $"{_sprite.Width}×{_sprite.Height} px";
         ZoomText.Text = $"{_zoom * 100} %";
@@ -596,7 +599,10 @@ public partial class SpriteEditor : UserControl
             case Key.D0 or Key.NumPad0 when ctrl: ZoomFit(); break;
             case Key.N when ctrl: OnNew(null, null); break;
             case Key.O when ctrl: OnOpen(null, null); break;
+            case Key.G when ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift): TileGridToggle.IsChecked = TileGridToggle.IsChecked != true; ApplyZoom(); break;
             case Key.G when ctrl: GridToggle.IsChecked = GridToggle.IsChecked != true; ApplyZoom(); break;
+            case Key.T when !ctrl: TiledToggle.IsChecked = !Tiled; OnTiledToggle(this, new RoutedEventArgs()); break;
+            case Key.P when !ctrl: TogglePreview(); break;
             case Key.B when !ctrl: SetTool(Tool.Pencil); break;
             case Key.E when !ctrl: SetTool(Tool.Eraser); break;
             case Key.G when !ctrl: SetTool(Tool.Fill); break;

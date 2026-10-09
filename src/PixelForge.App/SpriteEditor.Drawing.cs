@@ -51,7 +51,7 @@ public partial class SpriteEditor
 
     (int X, int Y) PixelAt(MouseEventArgs e)
     {
-        var p = e.GetPosition(CanvasHost);
+        var p = e.GetPosition(CanvasCore);   // the real canvas (in tiled mode it sits inside the 3×3 repeat)
         return ((int)Math.Floor(p.X / _zoom), (int)Math.Floor(p.Y / _zoom));
     }
 
@@ -78,7 +78,12 @@ public partial class SpriteEditor
             CanvasHost.CaptureMouse();
             return;
         }
-        if (!Tools.InBounds(_sprite.Width, _sprite.Height, x, y)) return;
+        if (Tiled)
+        {
+            if (!Tools.InBounds(_sprite.Width * 3, _sprite.Height * 3, x + _sprite.Width, y + _sprite.Height)) return;
+            if (tool is Tool.Fill or Tool.Picker) (x, y) = (Tools.Wrap(x, _sprite.Width), Tools.Wrap(y, _sprite.Height));
+        }
+        else if (!Tools.InBounds(_sprite.Width, _sprite.Height, x, y)) return;
 
         if (tool == Tool.Picker)
         {
@@ -171,6 +176,7 @@ public partial class SpriteEditor
     {
         int w = _sprite.Width, h = _sprite.Height;
         var cel = _sprite.Cel(_layer, _frame);
+        if (Tiled) (x, y) = (Tools.Wrap(x, w), Tools.Wrap(y, h));   // drawing past an edge continues on the other side
         Tools.Set(cel, w, h, x, y, _strokeColor);
         if (MirrorX) Tools.Set(cel, w, h, w - 1 - x, y, _strokeColor);
         if (MirrorY) Tools.Set(cel, w, h, x, h - 1 - y, _strokeColor);
@@ -188,20 +194,23 @@ public partial class SpriteEditor
         var (x0, y0) = _start;
         if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) (x1, y1) = Constrain(tool, x0, y0, x1, y1);
 
-        // draw into a mask first, then paint every mask pixel mirrored
-        var mask = new bool[w * h];
+        // draw into a mask first, then paint every mask pixel mirrored;
+        // in tiled mode the mask covers the 3×3 area so shapes crossing an edge wrap around
+        int o = Tiled ? 1 : 0, mw = w * (1 + 2 * o), mh = h * (1 + 2 * o), ox = w * o, oy = h * o;
+        var mask = new bool[mw * mh];
         bool filled = FilledToggle.IsChecked == true;
+        (x0, y0, x1, y1) = (x0 + ox, y0 + oy, x1 + ox, y1 + oy);
         switch (tool)
         {
             case Tool.Line:
                 foreach (var (lx, ly) in Tools.LinePoints(x0, y0, x1, y1))
-                    foreach (var (bx, by) in Tools.BrushPoints(lx, ly, BrushSize)) Tools.Set(mask, w, h, bx, by, true);
+                    foreach (var (bx, by) in Tools.BrushPoints(lx, ly, BrushSize)) Tools.Set(mask, mw, mh, bx, by, true);
                 break;
-            case Tool.Rect: Tools.Rect(mask, w, h, x0, y0, x1, y1, true, filled); break;
-            case Tool.Ellipse: Tools.Ellipse(mask, w, h, x0, y0, x1, y1, true, filled); break;
+            case Tool.Rect: Tools.Rect(mask, mw, mh, x0, y0, x1, y1, true, filled); break;
+            case Tool.Ellipse: Tools.Ellipse(mask, mw, mh, x0, y0, x1, y1, true, filled); break;
         }
         for (int i = 0; i < mask.Length; i++)
-            if (mask[i]) SetMirrored(i % w, i / w);
+            if (mask[i]) SetMirrored(i % mw - ox, i / mw - oy);
     }
 
     /// <summary>Shift: lines snap to 0/45/90°, boxes become squares.</summary>

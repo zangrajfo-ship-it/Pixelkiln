@@ -5,6 +5,9 @@ public static class Tools
 {
     public static bool InBounds(int w, int h, int x, int y) => x >= 0 && y >= 0 && x < w && y < h;
 
+    /// <summary>Wraps a coordinate into 0..n-1 (tiled mode: drawing past an edge continues on the other side).</summary>
+    public static int Wrap(int v, int n) => (v % n + n) % n;
+
     public static void Set<T>(T[] grid, int w, int h, int x, int y, T value)
     {
         if (InBounds(w, h, x, y)) grid[y * w + x] = value;

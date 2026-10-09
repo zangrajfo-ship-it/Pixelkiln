@@ -39,6 +39,13 @@ public class DrawingTests
     }
 
     [Fact]
+    public void Wrap_for_tiled_mode()
+    {
+        Assert.Equal([31, 0, 1, 0, 31], new[] { -1, 0, 1, 32, 63 }.Select(v => Tools.Wrap(v, 32)));
+        Assert.Equal(16, Tools.Wrap(-48, 32));
+    }
+
+    [Fact]
     public void Rect_outline_and_filled()
     {
         var o = Mask(5, 4, g => Tools.Rect(g, 5, 4, 4, 3, 0, 0, 1, filled: false));

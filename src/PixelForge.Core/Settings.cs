@@ -17,6 +17,12 @@ public sealed class Settings
     public uint CheckerDark { get; set; } = 0xFF999999;
     /// <summary>Checkerboard square size in screen pixels.</summary>
     public int CheckerSize { get; set; } = 8;
+    /// <summary>Second grid on sprites (e.g. 16×16 tiles), independent of the pixel grid.</summary>
+    public int TileGridWidth { get; set; } = 16;
+    public int TileGridHeight { get; set; } = 16;
+    public int TileGridOffsetX { get; set; }
+    public int TileGridOffsetY { get; set; }
+    public uint TileGridColor { get; set; } = 0xCC00B4FF;
     public int DefaultSpriteWidth { get; set; } = 32;
     public int DefaultSpriteHeight { get; set; } = 32;
     public int UndoLimit { get; set; } = 100;
@@ -44,6 +50,11 @@ public sealed class Settings
         CheckerLight = CheckerLight | 0xFF000000,
         CheckerDark = CheckerDark | 0xFF000000,
         CheckerSize = Math.Clamp(CheckerSize, 2, 64),
+        TileGridWidth = Math.Clamp(TileGridWidth, 1, 1024),
+        TileGridHeight = Math.Clamp(TileGridHeight, 1, 1024),
+        TileGridOffsetX = Math.Clamp(TileGridOffsetX, 0, 1023),
+        TileGridOffsetY = Math.Clamp(TileGridOffsetY, 0, 1023),
+        TileGridColor = TileGridColor,
         DefaultSpriteWidth = Math.Clamp(DefaultSpriteWidth, 1, 4096),
         DefaultSpriteHeight = Math.Clamp(DefaultSpriteHeight, 1, 4096),
         UndoLimit = Math.Clamp(UndoLimit, 10, 1000),
