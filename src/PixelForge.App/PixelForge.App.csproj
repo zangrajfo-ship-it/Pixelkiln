@@ -19,4 +19,8 @@
     <Using Include="System.IO" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NAudio.WinMM" Version="2.2.1" />
+  </ItemGroup>
+
 </Project>

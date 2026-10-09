@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Media;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -9,8 +7,6 @@ using PixelForge.Core;
 
 namespace PixelForge.App;
 
-// ponytail: SoundPlayer plays a pre-rendered WAV; edits apply on next Play and the playhead is
-// timer-estimated. Switch to a streaming audio lib (NAudio) for live edits / exact sync.
 public partial class MusicEditor : UserControl
 {
     Song _song = new();
@@ -19,12 +15,12 @@ public partial class MusicEditor : UserControl
     string? _path;
     bool _dirty;
 
-    // drag painting: note to set (or Off when erasing)
-    bool _painting, _erasing;
+    // mouse drag in the piano-roll
+    enum Drag { None, Extend, Volume }
+    Drag _drag;
+    int _dragStart, _dragNote;
 
-    SoundPlayer? _player, _preview;
-    IReadOnlyList<int> _playOrder = [];
-    readonly Stopwatch _clock = new();
+    SongStream? _stream;
     readonly DispatcherTimer _playheadTimer = new() { Interval = TimeSpan.FromMilliseconds(30) };
 
     public MusicEditor()
@@ -32,6 +28,7 @@ public partial class MusicEditor : UserControl
         InitializeComponent();
         _playheadTimer.Tick += (_, _) => UpdatePlayhead();
         for (int i = 0; i < Song.Channels; i++) ((RadioButton)FindName($"Ch{i}")).BorderBrush = StepGrid.ChannelBrushes[i];
+        BuildInstrumentPanel();
         Loaded += Init;
         IsVisibleChanged += (_, _) => UpdateTitle();
 
@@ -68,6 +65,7 @@ public partial class MusicEditor : UserControl
         _pattern = Math.Clamp(_pattern, 0, _song.Patterns.Count - 1);
         BpmBox.Text = _song.Bpm.ToString();
         RefreshPatterns();
+        RefreshInstrument();
         RedrawGrid();
         UpdateTitle();
     }
@@ -97,44 +95,143 @@ public partial class MusicEditor : UserControl
 
     // ---------- note editing ----------
 
+    Pattern Pat => _song.Patterns[_pattern];
+
     void OnGridDown(object sender, MouseButtonEventArgs e)
     {
         Keyboard.Focus(this);
-        if (StepsGrid.Hit(e.GetPosition(StepsGrid)) is not var (step, note)) return;
-        var notes = _song.Patterns[_pattern].Notes[_channel];
-        _erasing = e.ChangedButton == MouseButton.Right || notes[step] == note;
+        var p = e.GetPosition(StepsGrid);
+        if (StepsGrid.InVolumeLane(p))
+        {
+            Snapshot();
+            _drag = Drag.Volume;
+            SetVolume(p);
+            StepsGrid.CaptureMouse();
+            return;
+        }
+        if (StepsGrid.Hit(p) is not var (step, note)) return;
+        int start = Pat.NoteStart(_channel, step);
+
+        // right-click, or click on the note itself: remove it (with its length)
+        if (e.ChangedButton == MouseButton.Right || (start >= 0 && Pat.Notes[_channel][start] == note))
+        {
+            if (start < 0) return;
+            Snapshot();
+            Pat.RemoveNote(_channel, start);
+            StepsGrid.InvalidateVisual();
+            return;
+        }
+        if (e.ChangedButton != MouseButton.Left) return;
         Snapshot();
-        notes[step] = _erasing ? Pattern.Off : note;
-        _painting = true;
+        Pat.SetNote(_channel, step, note, 1);
+        (_drag, _dragStart, _dragNote) = (Drag.Extend, step, note);
         StepsGrid.CaptureMouse();
         StepsGrid.InvalidateVisual();
-        if (!_erasing && _player is null) Preview(note);
+        Preview(note);
     }
 
     void OnGridMove(object sender, MouseEventArgs e)
     {
-        if (!_painting || StepsGrid.Hit(e.GetPosition(StepsGrid)) is not var (step, note)) return;
-        var notes = _song.Patterns[_pattern].Notes[_channel];
-        int value = _erasing ? Pattern.Off : note;
-        if (notes[step] == value) return;
-        notes[step] = value;
-        StepsGrid.InvalidateVisual();
+        var p = e.GetPosition(StepsGrid);
+        switch (_drag)
+        {
+            case Drag.Volume:
+                SetVolume(p);
+                break;
+            case Drag.Extend:
+                int len = Math.Max(1, StepsGrid.StepAt(p.X) - _dragStart + 1);
+                if (len == Pat.Length(_channel, _dragStart)) return;
+                Pat.SetNote(_channel, _dragStart, _dragNote, len);
+                StepsGrid.InvalidateVisual();
+                break;
+        }
     }
 
     void OnGridUp(object sender, MouseButtonEventArgs e)
     {
-        _painting = false;
+        _drag = Drag.None;
         StepsGrid.ReleaseMouseCapture();
+    }
+
+    void SetVolume(Point p)
+    {
+        int step = StepsGrid.StepAt(p.X), vol = StepsGrid.VolumeAt(p.Y);
+        if (Pat.Volumes[_channel][step] == vol) return;
+        Pat.Volumes[_channel][step] = vol;
+        StepsGrid.InvalidateVisual();
     }
 
     void SelectChannel(int ch)
     {
         _channel = ch;
         ((RadioButton)FindName($"Ch{ch}")).IsChecked = true;
+        RefreshInstrument();
         RedrawGrid();
     }
 
     void OnChannel(object sender, RoutedEventArgs e) => SelectChannel(((FrameworkElement)sender).Name[2] - '0');
+
+    // ---------- instrument (per channel) ----------
+
+    readonly List<(Slider Slider, TextBlock Value, Func<Instrument, double> Get, string Unit)> _instSliders = [];
+    ComboBox _dutyBox = null!;
+    StackPanel _dutyRow = null!;
+    bool _refreshingInstrument;
+    static readonly double[] Duties = [0.125, 0.25, 0.5, 0.75];
+
+    void BuildInstrumentPanel()
+    {
+        _dutyBox = new ComboBox { ItemsSource = new[] { "12.5 %", "25 %", "50 %", "75 %" }, Width = 70 };
+        _dutyBox.SelectionChanged += (_, _) =>
+        {
+            if (_refreshingInstrument || _dutyBox.SelectedIndex < 0) return;
+            Snapshot();
+            _song.Instruments[_channel].Duty = Duties[_dutyBox.SelectedIndex];
+        };
+        _dutyRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal, Margin = new Thickness(2, 0, 0, 4),
+            Children = { new TextBlock { Text = "Duty ", Width = 54, VerticalAlignment = VerticalAlignment.Center }, _dutyBox },
+        };
+        InstrumentPanel.Children.Add(_dutyRow);
+
+        AddSlider("Attack", 0, 500, i => i.AttackMs, (i, v) => i.AttackMs = v, "ms");
+        AddSlider("Decay", 0, 1000, i => i.DecayMs, (i, v) => i.DecayMs = v, "ms");
+        AddSlider("Sustain", 0, 100, i => i.Sustain * 100, (i, v) => i.Sustain = v / 100, "%");
+        AddSlider("Release", 0, 1000, i => i.ReleaseMs, (i, v) => i.ReleaseMs = v, "ms");
+        AddSlider("Volume", 0, 100, i => i.Volume * 100, (i, v) => i.Volume = v / 100, "%");
+    }
+
+    void AddSlider(string name, double min, double max, Func<Instrument, double> get, Action<Instrument, double> set, string unit)
+    {
+        var slider = new Slider { Minimum = min, Maximum = max, IsSnapToTickEnabled = true, TickFrequency = 1 };
+        var value = new TextBlock { FontSize = 11, Foreground = System.Windows.Media.Brushes.Gray, HorizontalAlignment = HorizontalAlignment.Right };
+        slider.PreviewMouseLeftButtonDown += (_, _) => Snapshot();   // one undo step per drag
+        slider.ValueChanged += (_, _) =>
+        {
+            value.Text = $"{slider.Value:0} {unit}";
+            if (!_refreshingInstrument) set(_song.Instruments[_channel], slider.Value);
+        };
+        var label = new TextBlock { Text = name, Width = 54 };
+        DockPanel.SetDock(label, Dock.Left);
+        InstrumentPanel.Children.Add(new DockPanel { Margin = new Thickness(2, 2, 0, 0), Children = { label, value } });
+        InstrumentPanel.Children.Add(slider);
+        _instSliders.Add((slider, value, get, unit));
+    }
+
+    void RefreshInstrument()
+    {
+        _refreshingInstrument = true;
+        var ins = _song.Instruments[_channel];
+        foreach (var (slider, value, get, unit) in _instSliders)
+        {
+            slider.Value = get(ins);
+            value.Text = $"{slider.Value:0} {unit}";
+        }
+        _dutyRow.Visibility = _channel is (int)Channel.Pulse1 or (int)Channel.Pulse2 ? Visibility.Visible : Visibility.Collapsed;
+        _dutyBox.SelectedIndex = Array.IndexOf(Duties, Duties.MinBy(d => Math.Abs(d - ins.Duty)));
+        _refreshingInstrument = false;
+    }
 
     // ---------- patterns / order ----------
 
@@ -211,38 +308,35 @@ public partial class MusicEditor : UserControl
         _song.Bpm = bpm;
     }
 
-    // ---------- playback ----------
+    // ---------- playback (live: the stream reads the current song every step) ----------
 
-    void OnPlaySong(object? sender, RoutedEventArgs? e) => Play(_song.Order);
+    void OnPlaySong(object? sender, RoutedEventArgs? e) => Play(null);
     void OnPlayPattern(object sender, RoutedEventArgs e) => Play([_pattern]);
     void OnStop(object? sender, RoutedEventArgs? e) => Stop();
 
-    void Play(IReadOnlyList<int> order)
+    /// <param name="order">Fixed pattern order, or null to follow the song's (editable) order.</param>
+    void Play(IReadOnlyList<int>? order)
     {
-        Stop();
-        _playOrder = [.. order];
-        _player = new SoundPlayer(new MemoryStream(WavWriter.ToBytes(Synth.Render(_song, _playOrder))));
-        _player.Load();
-        _player.PlayLooping();
-        _clock.Restart();
+        _stream = new SongStream(() => _song, order, loop: true);
+        AudioOut.Shared.Song = _stream;
         _playheadTimer.Start();
     }
 
     void Stop()
     {
         _playheadTimer.Stop();
-        _player?.Stop();
-        _player?.Dispose();
-        _player = null;
+        if (_stream is not null && AudioOut.Shared.Song == _stream) AudioOut.Shared.Song = null;
+        _stream = null;
         StepsGrid.Playhead = -1;
         StepsGrid.InvalidateVisual();
     }
 
     void UpdatePlayhead()
     {
-        long stepIndex = (long)(_clock.Elapsed.TotalSeconds / _song.StepSeconds) % (_playOrder.Count * _song.Steps);
-        int playing = _playOrder[(int)(stepIndex / _song.Steps)];
-        int head = playing == _pattern ? (int)(stepIndex % _song.Steps) : -1;
+        if (_stream is null) return;
+        var order = _stream.Order ?? _song.Order;
+        int oi = _stream.CurrentOrderIndex;
+        int head = oi < order.Count && order[oi] == _pattern ? _stream.CurrentStep : -1;
         if (head == StepsGrid.Playhead) return;
         StepsGrid.Playhead = head;
         StepsGrid.InvalidateVisual();
@@ -250,11 +344,11 @@ public partial class MusicEditor : UserControl
 
     void Preview(int note)
     {
+        if (_stream is not null) return;   // the song is playing; don't talk over it
         var s = new Song(steps: 2) { Bpm = _song.Bpm };
+        s.Instruments[_channel] = _song.Instruments[_channel].Clone();
         s.Patterns[0].Notes[_channel][0] = note;
-        _preview?.Dispose();
-        _preview = new SoundPlayer(new MemoryStream(WavWriter.ToBytes(Synth.Render(s))));
-        _preview.Play();
+        AudioOut.Shared.PlayOnce(Synth.Render(s));
     }
 
     // ---------- undo ----------
@@ -264,8 +358,8 @@ public partial class MusicEditor : UserControl
 
     void Restore(Song? s)
     {
-        if (s is null || _painting) return;
-        _song = s;
+        if (s is null || _drag != Drag.None) return;
+        _song = s;   // a playing stream follows automatically (it reads _song)
         _dirty = true;
         RefreshAll();
     }
@@ -334,10 +428,9 @@ public partial class MusicEditor : UserControl
             case Key.S when ctrl: OnSave(null, null); break;
             case Key.N when ctrl: OnNew(null, null); break;
             case Key.O when ctrl: OnOpen(null, null); break;
-            case Key.Space: if (_player is null) OnPlaySong(null, null); else Stop(); break;
+            case Key.Space: if (_stream is null) OnPlaySong(null, null); else Stop(); break;
             case >= Key.D1 and <= Key.D4 when !ctrl: SelectChannel(e.Key - Key.D1); break;
             default: e.Handled = false; break;
         }
     }
-
 }
