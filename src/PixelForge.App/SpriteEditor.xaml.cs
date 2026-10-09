@@ -75,6 +75,7 @@ public partial class SpriteEditor : UserControl
         RefreshLayers();
         RefreshSwatches();
         RefreshFrames();
+        RefreshTags();
         Render();
         UpdateTitle();
     }
@@ -356,6 +357,7 @@ public partial class SpriteEditor : UserControl
         change();
         _frame = Math.Clamp(_frame, 0, _sprite.Frames.Count - 1);
         RefreshFrames();
+        RefreshTags();   // frame edits move tag ranges
         Render();
     }
 
@@ -389,6 +391,8 @@ public partial class SpriteEditor : UserControl
     {
         if (_playTimer.IsEnabled) { StopPlaying(); return; }
         if (_sprite.Frames.Count < 2) { PlayBtn.IsChecked = false; return; }
+        var (from, to) = PlayRange;
+        if (_frame < from || _frame > to) SelectFrame(from);
         _playTimer.Tick -= OnPlayTick;
         _playTimer.Tick += OnPlayTick;
         _playTimer.Interval = TimeSpan.FromMilliseconds(_sprite.Frames[_frame].DurationMs);
@@ -400,7 +404,8 @@ public partial class SpriteEditor : UserControl
 
     void OnPlayTick(object? sender, EventArgs e)
     {
-        SelectFrame((_frame + 1) % _sprite.Frames.Count);
+        var (from, to) = PlayRange;
+        SelectFrame(_frame + 1 > to || _frame < from ? from : _frame + 1);
         _playTimer.Interval = TimeSpan.FromMilliseconds(_sprite.Frames[_frame].DurationMs);
     }
 
@@ -418,12 +423,13 @@ public partial class SpriteEditor : UserControl
     void OnExportGif(object sender, RoutedEventArgs e)
     {
         CommitFloat();
-        var dlg = new SaveFileDialog { Filter = "Animated GIF (*.gif)|*.gif", FileName = BaseName + ".gif" };
+        var dlg = new SaveFileDialog { Filter = "Animated GIF (*.gif)|*.gif", FileName = BaseName + (ActiveTag is { } tag ? "-" + tag.Name : "") + ".gif" };
         if (dlg.ShowDialog() != true) return;
         try
         {
-            var frames = Enumerable.Range(0, _sprite.Frames.Count).Select(f => Compositor.Flatten(_sprite, f)).ToList();
-            GifWriter.Save(dlg.FileName, frames, [.. _sprite.Frames.Select(f => f.DurationMs)], _sprite.Width, _sprite.Height);
+            var (from, to) = PlayRange;   // the chosen tag only, or all frames
+            var range = Enumerable.Range(from, to - from + 1).ToList();
+            GifWriter.Save(dlg.FileName, [.. range.Select(f => Compositor.Flatten(_sprite, f))], [.. range.Select(f => _sprite.Frames[f].DurationMs)], _sprite.Width, _sprite.Height);
         }
         catch (Exception ex) { Ui.Error(ex); }
     }

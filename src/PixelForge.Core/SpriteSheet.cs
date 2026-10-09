@@ -37,6 +37,10 @@ public static class SpriteSheet
             sourceSize = new { w = s.Width, h = s.Height },
             duration = f.DurationMs,
         }),
-        meta = new { app = "PixelForge", image = imageName, format = "RGBA8888", size = new { w = sheet.Width, h = sheet.Height }, scale = "1" },
+        meta = new
+        {
+            app = "PixelForge", image = imageName, format = "RGBA8888", size = new { w = sheet.Width, h = sheet.Height }, scale = "1",
+            frameTags = s.Tags.Select(t => new { name = t.Name, from = t.From, to = t.To, direction = "forward" }),
+        },
     }, new JsonSerializerOptions { WriteIndented = true });
 }

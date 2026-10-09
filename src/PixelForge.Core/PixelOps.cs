@@ -58,6 +58,7 @@ public static class PixelOps
         r.Palette.Clear();
         r.Palette.AddRange(s.Palette);
         foreach (var f in s.Frames) r.Frames.Add(new Frame { DurationMs = f.DurationMs });
+        r.Tags.AddRange(s.Tags.Select(t => t.Clone()));
         foreach (var l in s.Layers)
         {
             var nl = new Layer { Name = l.Name, Visible = l.Visible };

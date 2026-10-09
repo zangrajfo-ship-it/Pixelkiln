@@ -21,6 +21,15 @@ public sealed class Frame
     public int DurationMs { get; set; } = 100;
 }
 
+/// <summary>Named frame range for game animations (walk, idle …). From/To are inclusive frame indices.</summary>
+public sealed class FrameTag
+{
+    public string Name { get; set; } = "tag";
+    public int From { get; set; }
+    public int To { get; set; }
+    public FrameTag Clone() => (FrameTag)MemberwiseClone();
+}
+
 /// <summary>Layers[0] is the bottom layer.</summary>
 public sealed class Sprite
 {
@@ -29,6 +38,7 @@ public sealed class Sprite
     public List<uint> Palette { get; } = [.. DefaultPalette];
     public List<Layer> Layers { get; } = [];
     public List<Frame> Frames { get; } = [];
+    public List<FrameTag> Tags { get; } = [];
 
     public Sprite(int width, int height, bool empty = false)
     {
@@ -70,6 +80,12 @@ public sealed class Sprite
         Frames.Insert(index, new Frame { DurationMs = copyFrom is int c ? Frames[c].DurationMs : 100 });
         foreach (var l in Layers)
             l.Cels.Insert(index, copyFrom is int f ? (uint[])l.Cels[f].Clone() : new uint[Width * Height]);
+        // frames after the insert point move right; inserting inside a tag makes it longer
+        foreach (var t in Tags)
+        {
+            if (t.From >= index) t.From++;
+            if (t.To >= index) t.To++;
+        }
     }
 
     public void RemoveFrame(int index)
@@ -77,6 +93,12 @@ public sealed class Sprite
         if (Frames.Count <= 1) return;
         Frames.RemoveAt(index);
         foreach (var l in Layers) l.Cels.RemoveAt(index);
+        foreach (var t in Tags)
+        {
+            if (t.From > index) t.From--;
+            if (t.To >= index) t.To--;
+        }
+        Tags.RemoveAll(t => t.To < t.From);   // its only frame was removed
     }
 
     public void MoveFrame(int from, int to)
@@ -105,6 +127,7 @@ public sealed class Sprite
             foreach (var c in l.Cels) nl.Cels.Add((uint[])c.Clone());
             s.Layers.Add(nl);
         }
+        s.Tags.AddRange(Tags.Select(t => t.Clone()));
         return s;
     }
 

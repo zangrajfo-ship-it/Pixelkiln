@@ -102,7 +102,15 @@
                 <Separator />
                 <ToggleButton x:Name="PlayBtn" Content="▶ Play" ToolTip="Play animation (Space)" Click="OnPlay" />
             </ToolBar>
-            <ListBox x:Name="FramesList" Height="84" SelectionChanged="OnFrameSelected"
+            <DockPanel DockPanel.Dock="Top" Margin="0,2,0,2">
+                <TextBlock Text="Tags" FontWeight="SemiBold" VerticalAlignment="Center" Margin="6,0,8,0" />
+                <Button ToolTip="New tag from the selected frames (Shift+click frames to select several)" Click="OnAddTag"><TextBlock Style="{StaticResource Icon}" Text="&#xE710;" /></Button>
+                <Button ToolTip="Set the chosen tag to the selected frames" Click="OnSetTagRange"><TextBlock Style="{StaticResource Icon}" Text="&#xE8B3;" /></Button>
+                <Button ToolTip="Rename the chosen tag" Click="OnRenameTag"><TextBlock Style="{StaticResource Icon}" Text="&#xE8AC;" /></Button>
+                <Button ToolTip="Delete the chosen tag" Click="OnDeleteTag"><TextBlock Style="{StaticResource Icon}" Text="&#xE738;" /></Button>
+                <WrapPanel x:Name="TagsPanel" VerticalAlignment="Center" Margin="8,0,0,0" />
+            </DockPanel>
+            <ListBox x:Name="FramesList" Height="84" SelectionChanged="OnFrameSelected" SelectionMode="Extended"
                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
