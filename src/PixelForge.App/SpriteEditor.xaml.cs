@@ -12,8 +12,8 @@ public partial class SpriteEditor : UserControl
 {
     static readonly int[] ZoomLevels = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64];
 
-    Sprite _sprite = new(32, 32);
-    readonly History<Sprite> _history = new(s => s.Clone());
+    Sprite _sprite = new(App.Settings.DefaultSpriteWidth, App.Settings.DefaultSpriteHeight);
+    readonly History<Sprite> _history = new(s => s.Clone(), App.Settings.UndoLimit);
     int _layer, _frame, _zoom = 16;
     uint _primary = 0xFF000000, _secondary = 0;
     bool _editSecondary;   // which color the picker edits
@@ -29,6 +29,8 @@ public partial class SpriteEditor : UserControl
         IsVisibleChanged += (_, _) => UpdateTitle();
 
         void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadSprite(_sprite, null); UpdateToolOptions(); }
+        Checker.Fill = Ui.CheckerBrush();
+        App.SettingsChanged += () => { Checker.Fill = Ui.CheckerBrush(); ApplyZoom(); };
         Picker.ColorChanged += c =>
         {
             if (_editSecondary) _secondary = c; else _primary = c;
@@ -494,22 +496,47 @@ public partial class SpriteEditor : UserControl
     {
         if (!ConfirmDiscard()) return;
         var dlg = new OpenFileDialog { Filter = ProjectFilter + "|Images (*.png;*.gif;*.bmp;*.jpg)|*.png;*.gif;*.bmp;*.jpg|All files|*.*" };
-        if (dlg.ShowDialog() != true) return;
+        if (dlg.ShowDialog() == true) OpenPath(dlg.FileName, confirmed: true);
+    }
+
+    public string[] FileExtensions => [".pxf", ".png", ".gif", ".bmp", ".jpg"];
+    public bool IsDirty => _dirty;
+    public string? CurrentPath => _path;
+
+    public void OpenPath(string path, bool confirmed = false)
+    {
+        if (!confirmed && !ConfirmDiscard()) return;
         try
         {
-            if (dlg.FileName.EndsWith(".pxf", StringComparison.OrdinalIgnoreCase))
+            if (path.EndsWith(".pxf", StringComparison.OrdinalIgnoreCase))
             {
-                LoadSprite(ProjectFile.Load(dlg.FileName), dlg.FileName);
+                LoadSprite(ProjectFile.Load(path), path);
             }
             else
             {
-                var (px, w, h) = ImageIO.LoadImage(dlg.FileName);
+                var (px, w, h) = ImageIO.LoadImage(path);
                 var s = new Sprite(w, h);
                 px.CopyTo(s.Cel(0, 0), 0);
                 LoadSprite(s, null);   // imported image: Save asks for a .pxf name
             }
+            App.AddRecent(path);
         }
         catch (Exception ex) { Ui.Error(ex); }
+    }
+
+    public void WriteAutosave(string file)
+    {
+        var s = _sprite.Clone();
+        if (_float is not null && _floatLayer < s.Layers.Count && _floatFrame < s.Frames.Count)   // include pixels being moved
+            PixelOps.Stamp(s.Cel(_floatLayer, _floatFrame), s.Width, s.Height, _float, _fw, _fh, _fx, _fy);
+        ProjectFile.Save(s, file);
+    }
+
+    public void RestoreAutosave(string file, string? originalPath)
+    {
+        LoadSprite(ProjectFile.Load(file), originalPath);
+        _dirty = true;
+        UpdateTitle();
     }
 
     void OnSave(object? sender, RoutedEventArgs? e) => Save(_path);
@@ -527,6 +554,7 @@ public partial class SpriteEditor : UserControl
         try
         {
             ProjectFile.Save(_sprite, path);
+            App.AddRecent(path);
             _path = path;
             _dirty = false;
             UpdateTitle();

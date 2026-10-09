@@ -117,18 +117,7 @@
                       AutomationProperties.Name="Sprite canvas">
             <Grid x:Name="CanvasHost" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Cross"
                   MouseDown="OnCanvasDown" MouseMove="OnCanvasMove" MouseUp="OnCanvasUp" MouseLeave="OnCanvasLeave">
-                <Rectangle>
-                    <Rectangle.Fill>
-                        <DrawingBrush TileMode="Tile" Viewport="0,0,16,16" ViewportUnits="Absolute">
-                            <DrawingBrush.Drawing>
-                                <DrawingGroup>
-                                    <GeometryDrawing Brush="#CCCCCC" Geometry="M0,0 H16 V16 H0Z" />
-                                    <GeometryDrawing Brush="#999999" Geometry="M0,0 H8 V8 H0Z M8,8 H16 V16 H8Z" />
-                                </DrawingGroup>
-                            </DrawingBrush.Drawing>
-                        </DrawingBrush>
-                    </Rectangle.Fill>
-                </Rectangle>
+                <Rectangle x:Name="Checker" />
                 <Image x:Name="CanvasImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                 <Rectangle x:Name="GridOverlay" IsHitTestVisible="False" />
                 <Canvas x:Name="Overlay" IsHitTestVisible="False">

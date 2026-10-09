@@ -1,0 +1,74 @@
+using System.Text.Json;
+
+namespace PixelForge.Core;
+
+/// <summary>User preferences, stored as JSON in %AppData%\PixelForge\settings.json.</summary>
+public sealed class Settings
+{
+    public const int MaxRecent = 12;
+
+    /// <summary>Dark, Light or System.</summary>
+    public string Theme { get; set; } = "Dark";
+    /// <summary>1 = 100 %.</summary>
+    public double UiScale { get; set; } = 1;
+    /// <summary>ARGB of the pixel grid lines.</summary>
+    public uint GridColor { get; set; } = 0x99000000;
+    public uint CheckerLight { get; set; } = 0xFFCCCCCC;
+    public uint CheckerDark { get; set; } = 0xFF999999;
+    /// <summary>Checkerboard square size in screen pixels.</summary>
+    public int CheckerSize { get; set; } = 8;
+    public int DefaultSpriteWidth { get; set; } = 32;
+    public int DefaultSpriteHeight { get; set; } = 32;
+    public int UndoLimit { get; set; } = 100;
+    /// <summary>0 = off.</summary>
+    public int AutosaveMinutes { get; set; } = 2;
+    public List<string> RecentFiles { get; set; } = [];
+
+    public static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PixelForge");
+    public static string DefaultPath => Path.Combine(Folder, "settings.json");
+
+    /// <summary>Most recent first, no duplicates (case-insensitive), capped.</summary>
+    public void AddRecent(string path)
+    {
+        RecentFiles.RemoveAll(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+        RecentFiles.Insert(0, path);
+        if (RecentFiles.Count > MaxRecent) RecentFiles.RemoveRange(MaxRecent, RecentFiles.Count - MaxRecent);
+    }
+
+    /// <summary>Clamps every value into a usable range (hand-edited or old files).</summary>
+    public Settings Sanitized() => new()
+    {
+        Theme = Theme is "Dark" or "Light" or "System" ? Theme : "Dark",
+        UiScale = Math.Clamp(UiScale, 0.75, 2),
+        GridColor = GridColor,
+        CheckerLight = CheckerLight | 0xFF000000,
+        CheckerDark = CheckerDark | 0xFF000000,
+        CheckerSize = Math.Clamp(CheckerSize, 2, 64),
+        DefaultSpriteWidth = Math.Clamp(DefaultSpriteWidth, 1, 4096),
+        DefaultSpriteHeight = Math.Clamp(DefaultSpriteHeight, 1, 4096),
+        UndoLimit = Math.Clamp(UndoLimit, 10, 1000),
+        AutosaveMinutes = Math.Clamp(AutosaveMinutes, 0, 60),
+        RecentFiles = [.. (RecentFiles ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxRecent)],
+    };
+
+    static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
+
+    public string Serialize() => JsonSerializer.Serialize(this, Json);
+
+    public static Settings Deserialize(string json) =>
+        (JsonSerializer.Deserialize<Settings>(json) ?? new Settings()).Sanitized();
+
+    /// <summary>Missing or broken file = defaults (never blocks start-up).</summary>
+    public static Settings Load(string? path = null)
+    {
+        try { return Deserialize(File.ReadAllText(path ?? DefaultPath)); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException) { return new Settings(); }
+    }
+
+    public void Save(string? path = null)
+    {
+        path ??= DefaultPath;
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, Serialize());
+    }
+}

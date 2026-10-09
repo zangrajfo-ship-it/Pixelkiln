@@ -13,7 +13,7 @@ public partial class TilemapEditor : UserControl
     static readonly int[] ZoomLevels = [1, 2, 3, 4, 6, 8];
 
     Tilemap _map = new(20, 15, 16);
-    readonly History<Tilemap> _history = new(m => m.Clone());
+    readonly History<Tilemap> _history = new(m => m.Clone(), App.Settings.UndoLimit);
     int _layer, _zoom = 2;
     string? _path;
     bool _dirty;
@@ -29,6 +29,7 @@ public partial class TilemapEditor : UserControl
         IsVisibleChanged += (_, _) => UpdateTitle();
 
         void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadMap(_map, null); UpdateToolHint(); }
+        App.SettingsChanged += () => { ApplyZoom(); RefreshTileset(); };
         IsKeyboardFocusedChanged += (_, _) => Scroller.BorderBrush = IsKeyboardFocused ? (Brush)FindResource("FocusRing") : Brushes.Transparent;
     }
 
@@ -263,9 +264,27 @@ public partial class TilemapEditor : UserControl
     {
         if (!ConfirmDiscard()) return;
         var dlg = new OpenFileDialog { Filter = MapFilter };
-        if (dlg.ShowDialog() != true) return;
-        try { LoadMap(Tilemap.Load(dlg.FileName), dlg.FileName); }
+        if (dlg.ShowDialog() == true) OpenPath(dlg.FileName, confirmed: true);
+    }
+
+    public string[] FileExtensions => [".pxm"];
+    public bool IsDirty => _dirty;
+    public string? CurrentPath => _path;
+
+    public void OpenPath(string path, bool confirmed = false)
+    {
+        if (!confirmed && !ConfirmDiscard()) return;
+        try { LoadMap(Tilemap.Load(path), path); App.AddRecent(path); }
         catch (Exception ex) { Ui.Error(ex); }
+    }
+
+    public void WriteAutosave(string file) => Tilemap.Save(_map, file);
+
+    public void RestoreAutosave(string file, string? originalPath)
+    {
+        LoadMap(Tilemap.Load(file), originalPath);
+        _dirty = true;
+        UpdateTitle();
     }
 
     void OnSave(object? sender, RoutedEventArgs? e) => Save(_path);
@@ -282,6 +301,7 @@ public partial class TilemapEditor : UserControl
         try
         {
             Tilemap.Save(_map, path);
+            App.AddRecent(path);
             (_path, _dirty) = (path, false);
             UpdateTitle();
             return true;

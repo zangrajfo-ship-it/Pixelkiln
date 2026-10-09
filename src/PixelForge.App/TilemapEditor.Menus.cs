@@ -15,6 +15,7 @@ public partial class TilemapEditor : IEditor
         Ui.Menu("_File",
             Ui.Item("_New map…", "Ctrl+N", Do(OnNew)),
             Ui.Item("_Open…", "Ctrl+O", Do(OnOpen)),
+            Ui.RecentMenu(this),
             Ui.Item("_Save", "Ctrl+S", Do(OnSave)),
             Ui.Item("Save _as…", "Ctrl+Shift+S", () => Save(null)),
             new Separator(),

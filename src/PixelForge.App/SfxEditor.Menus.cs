@@ -12,6 +12,7 @@ public partial class SfxEditor : IEditor
     [
         Ui.Menu("_File",
             Ui.Item("_Open…", "Ctrl+O", () => OnOpen(null, null)),
+            Ui.RecentMenu(this),
             Ui.Item("_Save", "Ctrl+S", () => OnSave(null, null)),
             Ui.Item("Save _as…", "Ctrl+Shift+S", () => Save(null)),
             new Separator(),

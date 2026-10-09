@@ -14,4 +14,19 @@ interface IEditor
 
     /// <summary>Top-level menus for this tab (File, Edit, View …), built once.</summary>
     IReadOnlyList<MenuItem> Menus { get; }
+
+    /// <summary>Extensions this tab opens; the first one is its own file format.</summary>
+    string[] FileExtensions { get; }
+
+    /// <summary>Opens a file (asks to save unsaved work first unless <paramref name="confirmed"/>).</summary>
+    void OpenPath(string path, bool confirmed = false);
+
+    bool IsDirty { get; }
+    string? CurrentPath { get; }
+
+    /// <summary>Writes the current document for crash recovery (does not change the saved state).</summary>
+    void WriteAutosave(string file);
+
+    /// <summary>Loads a recovered document as unsaved work.</summary>
+    void RestoreAutosave(string file, string? originalPath);
 }

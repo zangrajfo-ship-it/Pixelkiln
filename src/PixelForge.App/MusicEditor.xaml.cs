@@ -10,7 +10,7 @@ namespace PixelForge.App;
 public partial class MusicEditor : UserControl
 {
     Song _song = new();
-    readonly History<Song> _history = new(s => s.Clone());
+    readonly History<Song> _history = new(s => s.Clone(), App.Settings.UndoLimit);
     int _pattern, _channel;
     string? _path;
     bool _dirty;
@@ -449,9 +449,27 @@ public partial class MusicEditor : UserControl
     {
         if (!ConfirmDiscard()) return;
         var dlg = new OpenFileDialog { Filter = SongFilter };
-        if (dlg.ShowDialog() != true) return;
-        try { LoadSong(Song.Load(dlg.FileName), dlg.FileName); }
+        if (dlg.ShowDialog() == true) OpenPath(dlg.FileName, confirmed: true);
+    }
+
+    public string[] FileExtensions => [".pxs"];
+    public bool IsDirty => _dirty;
+    public string? CurrentPath => _path;
+
+    public void OpenPath(string path, bool confirmed = false)
+    {
+        if (!confirmed && !ConfirmDiscard()) return;
+        try { LoadSong(Song.Load(path), path); App.AddRecent(path); }
         catch (Exception ex) { Ui.Error(ex); }
+    }
+
+    public void WriteAutosave(string file) => Song.Save(_song, file);
+
+    public void RestoreAutosave(string file, string? originalPath)
+    {
+        LoadSong(Song.Load(file), originalPath);
+        _dirty = true;
+        UpdateTitle();
     }
 
     void OnSave(object? sender, RoutedEventArgs? e) => Save(_path);
@@ -468,6 +486,7 @@ public partial class MusicEditor : UserControl
         try
         {
             Song.Save(_song, path);
+            App.AddRecent(path);
             (_path, _dirty) = (path, false);
             UpdateTitle();
             return true;
