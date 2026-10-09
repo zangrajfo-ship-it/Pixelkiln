@@ -18,8 +18,9 @@ public partial class MainWindow : Window
         if (Tabs.SelectedContent == SpriteEd) SpriteEd.HandleKey(e);
         else if (Tabs.SelectedContent == MapEd) MapEd.HandleKey(e);
         else if (Tabs.SelectedContent == MusicEd) MusicEd.HandleKey(e);
+        else if (Tabs.SelectedContent == SfxEd) SfxEd.HandleKey(e);
     }
 
     void OnClosing(object? sender, CancelEventArgs e) =>
-        e.Cancel = !SpriteEd.ConfirmDiscard() || !MapEd.ConfirmDiscard() || !MusicEd.ConfirmDiscard();
+        e.Cancel = !SpriteEd.ConfirmDiscard() || !MapEd.ConfirmDiscard() || !MusicEd.ConfirmDiscard() || !SfxEd.ConfirmDiscard();
 }
