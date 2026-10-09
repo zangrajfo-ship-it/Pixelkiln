@@ -10,6 +10,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         MapEd.SpriteImage = () => SpriteEd.CurrentImage;
+        Closed += (_, _) => AudioOut.DisposeShared();
     }
 
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
