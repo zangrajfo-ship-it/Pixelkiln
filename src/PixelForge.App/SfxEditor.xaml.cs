@@ -71,7 +71,7 @@ public partial class SfxEditor : UserControl
     UIElement AddSlider(string name, double min, double max, Func<Sfx, double> get, Action<Sfx, double> set, string format)
     {
         var slider = new Slider { Minimum = min, Maximum = max, Width = 300, VerticalAlignment = VerticalAlignment.Center };
-        var value = new TextBlock { Width = 120, Margin = new Thickness(8, 0, 0, 0), Foreground = Brushes.Gray, VerticalAlignment = VerticalAlignment.Center };
+        var value = new TextBlock { Width = 120, Margin = new Thickness(8, 0, 0, 0), Foreground = (Brush)FindResource("MutedText"), VerticalAlignment = VerticalAlignment.Center };
         slider.ValueChanged += (_, _) =>
         {
             value.Text = slider.Value.ToString(format);

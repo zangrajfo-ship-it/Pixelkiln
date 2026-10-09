@@ -23,6 +23,15 @@ sealed class StepGrid : FrameworkElement
     public int Pattern { get; set; }
     public int Channel { get; set; }
     public int Playhead { get; set; } = -1;
+    /// <summary>Keyboard cursor (step, note); drawn while the grid has keyboard focus.</summary>
+    public (int Step, int Note) KeyCursor { get; set; } = (0, 60);
+
+    static readonly Pen CursorPen = FrozenPen(0xFF3B82F6, 2);
+
+    public Rect CellRect(int step, int note) => new(LabelW + step * CellW, RowY(note), CellW, CellH);
+
+    protected override void OnGotKeyboardFocus(System.Windows.Input.KeyboardFocusChangedEventArgs e) { base.OnGotKeyboardFocus(e); InvalidateVisual(); }
+    protected override void OnLostKeyboardFocus(System.Windows.Input.KeyboardFocusChangedEventArgs e) { base.OnLostKeyboardFocus(e); InvalidateVisual(); }
 
     static int Rows => SongT.MaxNote - SongT.MinNote + 1;
     static double NotesH => Rows * CellH;
@@ -77,6 +86,7 @@ sealed class StepGrid : FrameworkElement
             dc.Pop();
         }
         DrawNotes(dc, pat, Channel, ChannelBrushes[Channel], inset: 1);
+        if (IsKeyboardFocused) dc.DrawRectangle(null, CursorPen, CellRect(KeyCursor.Step, KeyCursor.Note));
 
         // volume bars for the current channel, where notes start
         for (int s = 0; s < Song.Steps; s++)
@@ -108,9 +118,9 @@ sealed class StepGrid : FrameworkElement
         return b;
     }
 
-    static Pen FrozenPen(uint c)
+    static Pen FrozenPen(uint c, double thickness = 1)
     {
-        var p = new Pen(Frozen(c), 1);
+        var p = new Pen(Frozen(c), thickness);
         p.Freeze();
         return p;
     }

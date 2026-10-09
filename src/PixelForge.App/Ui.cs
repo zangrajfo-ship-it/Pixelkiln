@@ -1,5 +1,8 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using PixelForge.Core;
 using WinForms = System.Windows.Forms;
@@ -85,11 +88,12 @@ static class Ui
     public static SolidColorBrush BrushOf(uint c) => new(Color.FromArgb((byte)(c >> 24), (byte)(c >> 16), (byte)(c >> 8), (byte)c));
 
     /// <summary>Tiled grid lines every <paramref name="cell"/> screen pixels.</summary>
-    public static Brush GridBrush(double cell)
+    /// <param name="color">Line color incl. alpha; default = black 60 %, at least 3:1 on the light checkerboard (WCAG 1.4.11).</param>
+    public static Brush GridBrush(double cell, Color? color = null)
     {
         // lines on the 0.5 px row/column so the tile does not clip half of them away
         var lines = new GeometryGroup { Children = { new LineGeometry(new(0, 0.5), new(cell, 0.5)), new LineGeometry(new(0.5, 0), new(0.5, cell)) } };
-        return new DrawingBrush(new GeometryDrawing(null, new Pen(new SolidColorBrush(Color.FromArgb(90, 0, 0, 0)), 1), lines))
+        return new DrawingBrush(new GeometryDrawing(null, new Pen(new SolidColorBrush(color ?? Color.FromArgb(0x99, 0, 0, 0)), 1), lines))
         {
             TileMode = TileMode.Tile, Stretch = Stretch.None,
             Viewport = new Rect(0, 0, cell, cell), ViewportUnits = BrushMappingMode.Absolute,
@@ -109,8 +113,10 @@ static class Ui
             var layer = layers[i];
             int row = layers.Count - 1 - i;
             var vis = new CheckBox { IsChecked = layer.Visible, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Visible" };
+            AutomationProperties.SetName(vis, $"Visible: {layer.Name}");
             vis.Click += (_, _) => { layer.Visible = vis.IsChecked == true; visibilityChanged(); };
             var name = new TextBox { Text = layer.Name, BorderThickness = new Thickness(0), Background = Brushes.Transparent, Margin = new Thickness(4, 0, 0, 0) };
+            AutomationProperties.SetName(name, "Layer name");
             name.GotKeyboardFocus += (_, _) => list.SelectedIndex = row;
             name.LostKeyboardFocus += (_, _) =>
             {
@@ -122,4 +128,53 @@ static class Ui
         }
         list.SelectedIndex = layers.Count - 1 - active;
     }
+
+    /// <summary>
+    /// Gives symbol-only buttons (+, −, ▲, ◀ …) their tooltip as accessible name, so screen
+    /// readers say "Add layer" instead of "plus" (WCAG 4.1.2).
+    /// </summary>
+    public static void NameSymbolButtons(DependencyObject root)
+    {
+        foreach (var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
+        {
+            if (child is ButtonBase { Content: string text, ToolTip: string tip } b
+                && string.IsNullOrEmpty(AutomationProperties.GetName(b))
+                && !text.Any(char.IsLetter))
+                AutomationProperties.SetName(b, tip);
+            NameSymbolButtons(child);
+        }
+    }
+
+    /// <summary>Marks a field as invalid (red border + message), or clears the mark when message is null (WCAG 3.3.1).</summary>
+    public static void MarkInvalid(TextBox box, string? message)
+    {
+        if (message is null)
+        {
+            box.ClearValue(Control.BorderBrushProperty);
+            box.ClearValue(Control.BorderThicknessProperty);
+            if (box.Tag is string original) box.ToolTip = original;
+            AutomationProperties.SetHelpText(box, "");
+            return;
+        }
+        if (box.Tag is null && box.ToolTip is string tip) box.Tag = tip;
+        box.BorderBrush = Brushes.Red;
+        box.BorderThickness = new Thickness(2);
+        box.ToolTip = message;
+        AutomationProperties.SetHelpText(box, message);
+    }
+
+    /// <summary>A color swatch that is a real button: focusable, Enter/Space/click = action (WCAG 2.1.1).</summary>
+    public static Button Swatch(uint color, double size, string name)
+    {
+        var b = new Button
+        {
+            Width = size, Height = size, Margin = new Thickness(1), Background = BrushOf(color),
+            BorderBrush = Brushes.Gray, BorderThickness = new Thickness(1), ToolTip = name,
+            Template = (ControlTemplate)Application.Current.FindResource("SwatchTemplate"),
+        };
+        AutomationProperties.SetName(b, name);
+        return b;
+    }
+
+    public static string ColorName(uint c) => (c >> 24) == 0xFF ? $"#{c & 0xFFFFFF:X6}" : (c >> 24) == 0 ? "transparent" : $"#{c & 0xFFFFFF:X6}, {(c >> 24) * 100 / 255}% opaque";
 }
