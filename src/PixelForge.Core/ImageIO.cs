@@ -17,9 +17,11 @@ public static class ImageIO
         enc.Save(fs);
     }
 
-    public static (uint[] Pixels, int Width, int Height) LoadImage(string path)
+    public static (uint[] Pixels, int Width, int Height) LoadImage(string path) =>
+        FromBitmap(BitmapFrame.Create(new Uri(Path.GetFullPath(path)), BitmapCreateOptions.None, BitmapCacheOption.OnLoad));
+
+    public static (uint[] Pixels, int Width, int Height) FromBitmap(BitmapSource src)
     {
-        var src = BitmapFrame.Create(new Uri(Path.GetFullPath(path)), BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
         var bmp = new FormatConvertedBitmap(src, PixelFormats.Bgra32, null, 0);
         var px = new uint[bmp.PixelWidth * bmp.PixelHeight];
         bmp.CopyPixels(px, bmp.PixelWidth * 4, 0);
