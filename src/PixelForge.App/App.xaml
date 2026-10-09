@@ -2,10 +2,11 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:PixelForge.App"
-             StartupUri="MainWindow.xaml">
+             StartupUri="MainWindow.xaml"
+             ThemeMode="Dark">
     <Application.Resources>
         <!-- secondary text: 7.5:1 on white (WCAG 1.4.3) -->
-        <SolidColorBrush x:Key="MutedText" Color="#555555" />
+        <SolidColorBrush x:Key="MutedText" Color="#B8B8B8" />
         <SolidColorBrush x:Key="FocusRing" Color="#3B82F6" />
         <!-- color swatch button: the fill is the color; focus shows a thick ring -->
         <ControlTemplate x:Key="SwatchTemplate" TargetType="Button">

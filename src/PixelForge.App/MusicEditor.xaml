@@ -6,6 +6,7 @@
         <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="2" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="BorderThickness" Value="0,0,0,4" />
         </Style>
     </UserControl.Resources>
@@ -44,7 +45,7 @@
 
         <DockPanel DockPanel.Dock="Top" Margin="4">
             <TextBlock Text="Patterns" VerticalAlignment="Center" Margin="0,0,6,0" />
-            <Button Content="+" Width="26" ToolTip="New empty pattern" Click="OnAddPattern" />
+            <Button Content="+" ToolTip="New empty pattern" Click="OnAddPattern" />
             <Button Content="Duplicate" ToolTip="Copy current pattern" Click="OnDuplicatePattern" Margin="2,0" />
             <Button Content="−" Width="26" ToolTip="Delete pattern" Click="OnDeletePattern" />
             <TextBox x:Name="OrderBox" AutomationProperties.Name="Pattern play order" Width="220" DockPanel.Dock="Right" ToolTip="Pattern numbers in play order, e.g. 1 1 2 1 (Enter to apply)"

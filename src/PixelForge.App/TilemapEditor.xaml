@@ -6,6 +6,7 @@
         <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="2" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
     </UserControl.Resources>
     <DockPanel>
@@ -58,7 +59,7 @@
                 <TextBlock Text="Terrain " VerticalAlignment="Center" />
                 <Button DockPanel.Dock="Right" Content="Template…" ToolTip="Save a 4×4 guide PNG showing which tile goes where" Click="OnTerrainTemplate" />
                 <Button DockPanel.Dock="Right" Content="−" Width="22" ToolTip="Remove terrain" Click="OnRemoveTerrain" />
-                <Button DockPanel.Dock="Right" Content="+" Width="22" ToolTip="Add terrain from the selected 4×4 tiles" Click="OnAddTerrain" />
+                <Button DockPanel.Dock="Right" Content="+" ToolTip="Add terrain from the selected 4×4 tiles" Click="OnAddTerrain" />
                 <ComboBox x:Name="TerrainBox" AutomationProperties.Name="Terrain" Margin="0,0,4,0" />
             </DockPanel>
             <StackPanel x:Name="ObjectPanel" DockPanel.Dock="Bottom" Margin="0,8,0,0" Visibility="Collapsed">
@@ -72,7 +73,7 @@
             </StackPanel>
             <TextBlock DockPanel.Dock="Top" Text="Map layers" Margin="0,12,0,4" />
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,4,0,0">
-                <Button Content="+" Width="30" ToolTip="Add layer" Click="OnAddLayer" />
+                <Button Content="+" ToolTip="Add layer" Click="OnAddLayer" />
                 <Button Content="−" Width="30" ToolTip="Delete layer" Click="OnDeleteLayer" />
                 <Button Content="▲" Width="30" ToolTip="Move up" Click="OnLayerUp" />
                 <Button Content="▼" Width="30" ToolTip="Move down" Click="OnLayerDown" />

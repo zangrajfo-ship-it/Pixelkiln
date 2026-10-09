@@ -82,7 +82,7 @@ public partial class SpriteEditor
         if (tool == Tool.Picker)
         {
             uint c = Compositor.Flatten(_sprite, _frame)[y * _sprite.Width + x];
-            if (left) _primary = c; else _secondary = c;
+            if (left) (_primary, _editSecondary) = (c, false); else (_secondary, _editSecondary) = (c, true);
             RefreshSwatches();
             return;
         }
