@@ -1,11 +1,13 @@
 <UserControl x:Class="PixelForge.App.SpriteEditor"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:PixelForge.App"
              Focusable="True" FocusVisualStyle="{x:Null}">
     <UserControl.Resources>
         <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
             <Setter Property="Height" Value="32" />
             <Setter Property="Margin" Value="2" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
     </UserControl.Resources>
     <DockPanel>
@@ -25,7 +27,7 @@
             <CheckBox x:Name="GridToggle" Content="Grid" ToolTip="Ctrl+G" IsChecked="True" Click="OnGridToggle" />
             <Separator />
             <TextBlock Text="Size " VerticalAlignment="Center" />
-            <ComboBox x:Name="SizeBox" AutomationProperties.Name="Brush size" Width="44" SelectedIndex="0" ToolTip="Brush size  [ ]">
+            <ComboBox x:Name="SizeBox" AutomationProperties.Name="Brush size" Width="70" SelectedIndex="0" ToolTip="Brush size  [ ]">
                 <ComboBoxItem>1</ComboBoxItem><ComboBoxItem>2</ComboBoxItem><ComboBoxItem>3</ComboBoxItem><ComboBoxItem>4</ComboBoxItem>
                 <ComboBoxItem>5</ComboBoxItem><ComboBoxItem>6</ComboBoxItem><ComboBoxItem>7</ComboBoxItem><ComboBoxItem>8</ComboBoxItem>
             </ComboBox>
@@ -47,13 +49,14 @@
             <RadioButton Tag="Select" Content="Select" ToolTip="M — drag to select, drag inside to move. Ctrl+C/X/V, Del, H/V flip, R rotate, Enter apply, Esc cancel" GroupName="tool" Click="OnToolClick" />
             <Grid Height="56" Margin="2,12,2,0" ToolTip="Left/right mouse colors. Click to change.">
                 <Button x:Name="SecondarySwatch" Width="34" Height="34" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                        Template="{StaticResource SwatchTemplate}" BorderBrush="Gray" BorderThickness="1" Click="OnSecondarySwatch" />
+                        Template="{StaticResource SwatchTemplate}" BorderBrush="Gray" BorderThickness="1" Click="OnSecondarySwatch" ToolTip="Right mouse color. Click to edit it in the color picker." />
                 <Button x:Name="PrimarySwatch" Width="34" Height="34" HorizontalAlignment="Left" VerticalAlignment="Top"
-                        Template="{StaticResource SwatchTemplate}" BorderBrush="White" BorderThickness="1" Click="OnPrimarySwatch" />
+                        Template="{StaticResource SwatchTemplate}" BorderBrush="White" BorderThickness="1" Click="OnPrimarySwatch" ToolTip="Left mouse color. Click to edit it in the color picker." />
             </Grid>
         </StackPanel>
 
-        <DockPanel DockPanel.Dock="Right" Width="210" Margin="4">
+        <DockPanel DockPanel.Dock="Right" Width="232" Margin="4">
+            <local:ColorPicker x:Name="Picker" DockPanel.Dock="Top" Margin="0,0,0,10" />
             <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
                 <Button x:Name="PaletteMenuBtn" DockPanel.Dock="Right" Content="Palette ▾" Click="OnPaletteMenu">
                     <Button.ContextMenu>
@@ -69,7 +72,7 @@
             <WrapPanel x:Name="PaletteWrap" DockPanel.Dock="Top" />
             <TextBlock DockPanel.Dock="Top" Text="Layers" Margin="0,12,0,4" />
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,4,0,0">
-                <Button Content="+" Width="30" ToolTip="Add layer" Click="OnAddLayer" />
+                <Button Content="+" ToolTip="Add layer" Click="OnAddLayer" />
                 <Button Content="−" Width="30" ToolTip="Delete layer" Click="OnDeleteLayer" />
                 <Button Content="▲" Width="30" ToolTip="Move up" Click="OnLayerUp" />
                 <Button Content="▼" Width="30" ToolTip="Move down" Click="OnLayerDown" />

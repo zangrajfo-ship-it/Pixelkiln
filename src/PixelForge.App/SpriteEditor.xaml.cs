@@ -16,6 +16,7 @@ public partial class SpriteEditor : UserControl
     readonly History<Sprite> _history = new(s => s.Clone());
     int _layer, _frame, _zoom = 16;
     uint _primary = 0xFF000000, _secondary = 0;
+    bool _editSecondary;   // which color the picker edits
     string? _path;
     bool _dirty;
     WriteableBitmap? _bmp;
@@ -28,6 +29,11 @@ public partial class SpriteEditor : UserControl
         IsVisibleChanged += (_, _) => UpdateTitle();
 
         void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadSprite(_sprite, null); }
+        Picker.ColorChanged += c =>
+        {
+            if (_editSecondary) _secondary = c; else _primary = c;
+            RefreshSwatches();
+        };
         // visible focus on the canvas (WCAG 2.4.7): shortcuts go to the editor while it has focus
         IsKeyboardFocusedChanged += (_, _) => Scroller.BorderBrush = IsKeyboardFocused ? (Brush)FindResource("FocusRing") : Brushes.Transparent;
     }
@@ -151,26 +157,23 @@ public partial class SpriteEditor : UserControl
             sw.Click += (_, _) =>
             {
                 if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) RemoveColor(index);
-                else { _primary = c; RefreshSwatches(); }
+                else { (_primary, _editSecondary) = (c, false); RefreshSwatches(); }
             };
-            sw.MouseRightButtonUp += (_, e) => { _secondary = c; RefreshSwatches(); e.Handled = true; };
+            sw.MouseRightButtonUp += (_, e) => { (_secondary, _editSecondary) = (c, true); RefreshSwatches(); e.Handled = true; };
             sw.PreviewKeyDown += (_, e) =>
             {
                 if (e.Key == Key.Delete) { RemoveColor(index); e.Handled = true; }
-                else if (e.Key == Key.Enter && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) { _secondary = c; RefreshSwatches(); e.Handled = true; }
+                else if (e.Key == Key.Enter && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) { (_secondary, _editSecondary) = (c, true); RefreshSwatches(); e.Handled = true; }
             };
             PaletteWrap.Children.Add(sw);
         }
-        var add = new Button { Content = "+", Width = 24, Height = 24, Margin = new Thickness(1), ToolTip = "Add color to palette" };
-        System.Windows.Automation.AutomationProperties.SetName(add, "Add color to palette");
+        var add = new Button { Content = "+", Width = 24, Height = 24, Margin = new Thickness(1), ToolTip = "Add the picker's color to the palette", Padding = new Thickness(0) };
+        System.Windows.Automation.AutomationProperties.SetName(add, "Add the picker's color to the palette");
         add.Click += (_, _) =>
         {
-            if (Ui.PickColor(_primary) is not uint c) return;
             Snapshot();
-            _sprite.Palette.Add(c);
-            _primary = c;
+            _sprite.Palette.Add(_editSecondary ? _secondary : _primary);   // the picker's color
             RefreshPalette();
-            RefreshSwatches();
         };
         PaletteWrap.Children.Add(add);
     }
@@ -222,18 +225,28 @@ public partial class SpriteEditor : UserControl
     {
         PrimarySwatch.Background = Ui.BrushOf(_primary);
         SecondarySwatch.Background = Ui.BrushOf(_secondary);
-        System.Windows.Automation.AutomationProperties.SetName(PrimarySwatch, $"Left mouse color {Ui.ColorName(_primary)}. Press to change.");
-        System.Windows.Automation.AutomationProperties.SetName(SecondarySwatch, $"Right mouse color {Ui.ColorName(_secondary)}. Press to change.");
+        // the swatch the picker edits gets the accent ring
+        PrimarySwatch.BorderBrush = _editSecondary ? Brushes.Gray : (Brush)FindResource("FocusRing");
+        SecondarySwatch.BorderBrush = _editSecondary ? (Brush)FindResource("FocusRing") : Brushes.Gray;
+        PrimarySwatch.BorderThickness = new Thickness(_editSecondary ? 1 : 3);
+        SecondarySwatch.BorderThickness = new Thickness(_editSecondary ? 3 : 1);
+        Picker.Color = _editSecondary ? _secondary : _primary;
+        System.Windows.Automation.AutomationProperties.SetName(PrimarySwatch, $"Left mouse color {Ui.ColorName(_primary)}{(_editSecondary ? "" : ", edited by the color picker")}");
+        System.Windows.Automation.AutomationProperties.SetName(SecondarySwatch, $"Right mouse color {Ui.ColorName(_secondary)}{(_editSecondary ? ", edited by the color picker" : "")}");
     }
 
     void OnPrimarySwatch(object sender, RoutedEventArgs e)
     {
-        if (Ui.PickColor(_primary) is uint c) { _primary = c; RefreshSwatches(); }
+        _editSecondary = false;
+        RefreshSwatches();
+        Picker.Focus();
     }
 
     void OnSecondarySwatch(object sender, RoutedEventArgs e)
     {
-        if (Ui.PickColor(_secondary) is uint c) { _secondary = c; RefreshSwatches(); }
+        _editSecondary = true;
+        RefreshSwatches();
+        Picker.Focus();
     }
 
     // ---------- layers (list shows top layer first) ----------

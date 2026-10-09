@@ -5,7 +5,6 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using PixelForge.Core;
-using WinForms = System.Windows.Forms;
 
 namespace PixelForge.App;
 
@@ -73,13 +72,6 @@ static class Ui
         if (win.ShowDialog() != true) return null;
         int a = Array.FindIndex(anchors, r => r.IsChecked == true);
         return (int.Parse(wBox.Text), int.Parse(hBox.Text), a % 3, a / 3);
-    }
-
-    /// <summary>Windows color picker. Returns opaque ARGB or null on cancel.</summary>
-    public static uint? PickColor(uint initial)
-    {
-        using var dlg = new WinForms.ColorDialog { FullOpen = true, Color = System.Drawing.Color.FromArgb((int)(initial | 0xFF000000)) };
-        return dlg.ShowDialog() == WinForms.DialogResult.OK ? (uint)dlg.Color.ToArgb() | 0xFF000000 : null;
     }
 
     public static void Error(Exception ex) =>
