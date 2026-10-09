@@ -40,6 +40,8 @@
                     </ComboBox>
                 </StackPanel>
                 <CheckBox x:Name="FilledToggle" Content="Filled" ToolTip="Filled rectangles and ellipses" />
+                <CheckBox x:Name="PixelPerfectToggle" Content="Pixel-perfect" ToolTip="Removes the extra corner pixels in diagonal strokes (size 1)" IsChecked="True" />
+                <CheckBox x:Name="ContiguousToggle" Content="Contiguous" ToolTip="On: only the touching area. Off: every pixel of that color." IsChecked="True" />
                 <CheckBox x:Name="MirrorXToggle" Content="Mirror X" ToolTip="Mirror drawing left/right" Click="OnMirrorToggle" />
                 <CheckBox x:Name="MirrorYToggle" Content="Mirror Y" ToolTip="Mirror drawing up/down" Click="OnMirrorToggle" />
             </ToolBar>
@@ -57,6 +59,7 @@
             <RadioButton Tag="Rect" Content="Rect  U" ToolTip="Rectangle (U). Shift: square" GroupName="tool" Click="OnToolClick" />
             <RadioButton Tag="Ellipse" Content="Ellipse  O" ToolTip="Ellipse (O). Shift: circle" GroupName="tool" Click="OnToolClick" />
             <RadioButton Tag="Select" Content="Select  M" ToolTip="Select (M): drag to select, drag inside to move. Ctrl+C/X/V, Del, H/V flip, R rotate, Enter apply, Esc cancel" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Wand" Content="Wand  W" ToolTip="Magic wand (W): selects pixels of the same color. Shift+click adds. Then use Select (M) to move them." GroupName="tool" Click="OnToolClick" />
             <Grid Height="56" Margin="2,12,2,0" ToolTip="Left/right mouse colors. Click to change.">
                 <Button x:Name="SecondarySwatch" Width="34" Height="34" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                         Template="{StaticResource SwatchTemplate}" BorderBrush="Gray" BorderThickness="1" Click="OnSecondarySwatch" ToolTip="Right mouse color. Click to edit it in the color picker." />
@@ -87,6 +90,12 @@
                 <Button ToolTip="Move layer up" Click="OnLayerUp"><TextBlock Style="{StaticResource Icon}" Text="&#xE70E;" /></Button>
                 <Button ToolTip="Move layer down" Click="OnLayerDown"><TextBlock Style="{StaticResource Icon}" Text="&#xE70D;" /></Button>
             </StackPanel>
+            <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+                <Label Content="_Opacity" Target="{Binding ElementName=OpacitySlider}" Padding="0,0,8,0" VerticalAlignment="Center" />
+                <TextBlock x:Name="OpacityValue" DockPanel.Dock="Right" Width="40" TextAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource MutedText}" />
+                <Slider x:Name="OpacitySlider" Minimum="0" Maximum="100" SmallChange="1" LargeChange="10" IsSnapToTickEnabled="True" TickFrequency="1"
+                        AutomationProperties.Name="Layer opacity in percent" PreviewMouseLeftButtonDown="OnOpacityDragStart" ValueChanged="OnOpacityChanged" />
+            </DockPanel>
             <ListBox x:Name="LayersList" SelectionChanged="OnLayerSelected" HorizontalContentAlignment="Stretch" />
         </DockPanel>
 
@@ -141,6 +150,8 @@
                     <Line x:Name="MirrorYLine" Stroke="#C0FF00FF" StrokeThickness="1" StrokeDashArray="4 3" Visibility="Collapsed" />
                     <Rectangle x:Name="SelRectBack" Stroke="Black" StrokeThickness="1" Visibility="Collapsed" />
                     <Rectangle x:Name="SelRect" Stroke="White" StrokeThickness="1" StrokeDashArray="4 4" Visibility="Collapsed" />
+                    <Path x:Name="SelPathBack" Stroke="Black" StrokeThickness="1" Visibility="Collapsed" />
+                    <Path x:Name="SelPath" Stroke="White" StrokeThickness="1" StrokeDashArray="4 4" Visibility="Collapsed" />
                 </Canvas>
                 </Grid>
             </Grid>

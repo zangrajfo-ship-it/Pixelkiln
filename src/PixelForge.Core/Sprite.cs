@@ -12,6 +12,8 @@ public sealed class Layer : ILayer
 {
     public string Name { get; set; } = "Layer";
     public bool Visible { get; set; } = true;
+    /// <summary>0..1, applied when layers are flattened.</summary>
+    public double Opacity { get; set; } = 1;
     /// <summary>One cel per frame, same order as <see cref="Sprite.Frames"/>.</summary>
     public List<uint[]> Cels { get; } = [];
 }
@@ -123,7 +125,7 @@ public sealed class Sprite
         foreach (var f in Frames) s.Frames.Add(new Frame { DurationMs = f.DurationMs });
         foreach (var l in Layers)
         {
-            var nl = new Layer { Name = l.Name, Visible = l.Visible };
+            var nl = new Layer { Name = l.Name, Visible = l.Visible, Opacity = l.Opacity };
             foreach (var c in l.Cels) nl.Cels.Add((uint[])c.Clone());
             s.Layers.Add(nl);
         }

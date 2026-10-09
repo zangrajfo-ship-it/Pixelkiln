@@ -7,7 +7,7 @@ public static class Compositor
     {
         var dst = new uint[s.Width * s.Height];
         foreach (var l in s.Layers)
-            if (l.Visible) Blend(dst, l.Cels[frame]);
+            if (l.Visible && l.Opacity > 0) Blend(dst, l.Cels[frame], l.Opacity);
         return dst;
     }
 

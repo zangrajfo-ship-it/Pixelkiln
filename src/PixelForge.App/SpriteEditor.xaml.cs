@@ -53,7 +53,7 @@ public partial class SpriteEditor : UserControl
         _history.Clear();
         _layer = Math.Min(_layer, s.Layers.Count - 1);
         _frame = 0;
-        (_float, _sel) = (null, null);
+        (_float, _sel, _selMask) = (null, null, null);
         RefreshAll();
     }
 
@@ -73,6 +73,7 @@ public partial class SpriteEditor : UserControl
         ApplyZoom();
         RefreshPalette();
         RefreshLayers();
+        RefreshOpacity();
         RefreshSwatches();
         RefreshFrames();
         RefreshTags();
@@ -270,6 +271,7 @@ public partial class SpriteEditor : UserControl
             visibilityChanged: () => { _dirty = true; UpdateTitle(); Render(); },
             rename: (layer, name) => { Snapshot(); layer.Name = name; });
         _refreshingLayers = false;
+        RefreshOpacity();
     }
 
     void OnLayerSelected(object sender, SelectionChangedEventArgs e)
@@ -277,6 +279,7 @@ public partial class SpriteEditor : UserControl
         if (_refreshingLayers || LayersList.SelectedIndex < 0) return;
         CommitFloat();
         _layer = _sprite.Layers.Count - 1 - LayersList.SelectedIndex;
+        RefreshOpacity();
     }
 
     void OnAddLayer(object sender, RoutedEventArgs e)
@@ -463,7 +466,7 @@ public partial class SpriteEditor : UserControl
     {
         if (s is null || _stroking) return;
         _sprite = s;
-        (_float, _sel) = (null, null);
+        (_float, _sel, _selMask) = (null, null, null);
         _dirty = true;
         RefreshAll();
     }
@@ -497,7 +500,7 @@ public partial class SpriteEditor : UserControl
     {
         Snapshot();
         _sprite = PixelOps.Resized(_sprite, w, h, ox, oy);
-        _sel = null;
+        (_sel, _selMask) = (null, null);
         RefreshAll();
     }
 
@@ -611,6 +614,7 @@ public partial class SpriteEditor : UserControl
             case Key.U when !ctrl: SetTool(Tool.Rect); break;
             case Key.O when !ctrl: SetTool(Tool.Ellipse); break;
             case Key.M when !ctrl: SetTool(Tool.Select); break;
+            case Key.W when !ctrl: SetTool(Tool.Wand); break;
             case Key.OemOpenBrackets: BrushSize--; break;
             case Key.OemCloseBrackets: BrushSize++; break;
             case Key.A when ctrl: SelectAll(); break;
