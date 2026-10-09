@@ -34,6 +34,15 @@ public static class Tools
         foreach (var (x, y) in LinePoints(x0, y0, x1, y1)) Set(grid, w, h, x, y, value);
     }
 
+    /// <summary>
+    /// Pixel-perfect pencil: true when b is the corner of an "L" between a and c (a and c touch diagonally
+    /// and b touches both straight). Removing such corners turns stair-steps into clean 1-pixel diagonals.
+    /// </summary>
+    public static bool IsLCorner((int X, int Y) a, (int X, int Y) b, (int X, int Y) c) =>
+        Math.Abs(a.X - c.X) == 1 && Math.Abs(a.Y - c.Y) == 1
+        && Math.Abs(a.X - b.X) + Math.Abs(a.Y - b.Y) == 1
+        && Math.Abs(c.X - b.X) + Math.Abs(c.Y - b.Y) == 1;
+
     /// <summary>Square brush footprint of the given size around (x, y); odd sizes are centered, even ones lean up-left.</summary>
     public static IEnumerable<(int X, int Y)> BrushPoints(int x, int y, int size)
     {

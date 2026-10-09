@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using PixelForge.Core;
 
@@ -9,7 +10,7 @@ namespace PixelForge.App;
 /// <summary>Mouse drawing: tools, shapes, mirror, selection and clipboard.</summary>
 public partial class SpriteEditor
 {
-    enum Tool { Pencil, Eraser, Fill, Picker, Line, Rect, Ellipse, Select }
+    enum Tool { Pencil, Eraser, Fill, Picker, Line, Rect, Ellipse, Select, Wand }
 
     Tool CurrentTool => Enum.Parse<Tool>((string)ToolsPanel.Children.OfType<RadioButton>().First(r => r.IsChecked == true).Tag);
 
@@ -34,15 +35,41 @@ public partial class SpriteEditor
     int _lastX, _lastY;
     (int X, int Y) _start;
     uint _strokeColor;
-    uint[]? _shapeBase;          // cel before the shape preview
+    uint[]? _shapeBase;          // cel before the shape preview / before a pixel-perfect stroke
+    readonly List<(int X, int Y)> _strokePts = [];
     Point? _panFrom;
 
     // ---------- selection state ----------
     Int32Rect? _sel;
+    bool[]? _selMask;            // free-form selection (magic wand); _sel is then its bounding box
     uint[]? _float;              // lifted pixels, drawn above the cel until committed
     int _fw, _fh, _fx, _fy, _floatLayer, _floatFrame;
     bool _movingFloat, _marquee;
     (int X, int Y) _grab;
+
+    /// <summary>Magic wand on the active layer; Shift adds to the current selection.</summary>
+    void WandSelect(int x, int y, bool add)
+    {
+        CommitFloat();
+        int w = _sprite.Width, h = _sprite.Height;
+        var mask = Selection.MagicWand(_sprite.Cel(_layer, _frame), w, h, x, y, ContiguousToggle.IsChecked == true);
+        if (add && _sel is { } old)
+        {
+            var prev = _selMask ?? RectMask(old);
+            for (int i = 0; i < mask.Length; i++) mask[i] |= prev[i];
+        }
+        if (Selection.Bounds(mask, w, h) is not var (bx, by, bw, bh)) return;
+        (_sel, _selMask) = (new Int32Rect(bx, by, bw, bh), mask);
+        UpdateOverlay();
+    }
+
+    bool[] RectMask(Int32Rect r)
+    {
+        var m = new bool[_sprite.Width * _sprite.Height];
+        for (int y = r.Y; y < r.Y + r.Height; y++)
+            for (int x = r.X; x < r.X + r.Width; x++) m[y * _sprite.Width + x] = true;
+        return m;
+    }
 
     // ---------- clipboard ----------
     uint[]? _clip;
@@ -85,6 +112,12 @@ public partial class SpriteEditor
         }
         else if (!Tools.InBounds(_sprite.Width, _sprite.Height, x, y)) return;
 
+        if (tool == Tool.Wand)
+        {
+            WandSelect(x, y, add: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            return;
+        }
+
         if (tool == Tool.Picker)
         {
             uint c = Compositor.Flatten(_sprite, _frame)[y * _sprite.Width + x];
@@ -103,6 +136,9 @@ public partial class SpriteEditor
                 Render();
                 return;
             case Tool.Pencil or Tool.Eraser:
+                _shapeBase = (uint[])cel.Clone();   // pixel-perfect restores corners from here
+                _strokePts.Clear();
+                _strokePts.Add((x, y));
                 Plot(x, y);
                 break;
             default:   // shapes
@@ -141,7 +177,7 @@ public partial class SpriteEditor
                 SelectMove(x, y);
                 return;
             case Tool.Pencil or Tool.Eraser:
-                foreach (var (lx, ly) in Tools.LinePoints(px, py, x, y)) Plot(lx, ly);
+                foreach (var p in Tools.LinePoints(px, py, x, y).Skip(1)) StrokeTo(p.X, p.Y);
                 break;
             default:
                 Array.Copy(_shapeBase!, _sprite.Cel(_layer, _frame), _shapeBase!.Length);
@@ -181,6 +217,35 @@ public partial class SpriteEditor
         if (MirrorX) Tools.Set(cel, w, h, w - 1 - x, y, _strokeColor);
         if (MirrorY) Tools.Set(cel, w, h, x, h - 1 - y, _strokeColor);
         if (MirrorX && MirrorY) Tools.Set(cel, w, h, w - 1 - x, h - 1 - y, _strokeColor);
+    }
+
+    bool PixelPerfect => PixelPerfectToggle.IsChecked == true && BrushSize == 1 && _strokeTool == Tool.Pencil;
+
+    /// <summary>Adds a stroke point; pixel-perfect mode removes the corner of every "L" so diagonals stay 1 px.</summary>
+    void StrokeTo(int x, int y)
+    {
+        _strokePts.Add((x, y));
+        Plot(x, y);
+        if (!PixelPerfect || _strokePts.Count < 3 || !Tools.IsLCorner(_strokePts[^3], _strokePts[^2], _strokePts[^1])) return;
+        var (cx, cy) = _strokePts[^2];
+        RestoreMirrored(cx, cy);
+        _strokePts.RemoveAt(_strokePts.Count - 2);
+    }
+
+    /// <summary>Puts back the pixel from before the stroke (and its mirror images).</summary>
+    void RestoreMirrored(int x, int y)
+    {
+        int w = _sprite.Width, h = _sprite.Height;
+        var cel = _sprite.Cel(_layer, _frame);
+        void Put(int px, int py)
+        {
+            if (Tiled) (px, py) = (Tools.Wrap(px, w), Tools.Wrap(py, h));
+            if (Tools.InBounds(w, h, px, py)) cel[py * w + px] = _shapeBase![py * w + px];
+        }
+        Put(x, y);
+        if (MirrorX) Put(w - 1 - x, y);
+        if (MirrorY) Put(x, h - 1 - y);
+        if (MirrorX && MirrorY) Put(w - 1 - x, h - 1 - y);
     }
 
     void Plot(int x, int y)
@@ -233,7 +298,7 @@ public partial class SpriteEditor
 
     void SelectDown(int x, int y)
     {
-        if (_sel is { } s && Contains(s, x, y))
+        if (_sel is { } s && Contains(s, x, y) && (_selMask is null || _float is not null || _selMask[y * _sprite.Width + x]))
         {
             if (_float is null) Lift();
             _movingFloat = true;
@@ -242,6 +307,7 @@ public partial class SpriteEditor
         else
         {
             CommitFloat();
+            _selMask = null;
             _marquee = true;
             _start = (Math.Clamp(x, 0, _sprite.Width - 1), Math.Clamp(y, 0, _sprite.Height - 1));
             _sel = new Int32Rect(_start.X, _start.Y, 1, 1);
@@ -273,9 +339,17 @@ public partial class SpriteEditor
         if (_sel is not { } s) return;
         Snapshot();
         var cel = _sprite.Cel(_layer, _frame);
-        _float = PixelOps.Crop(cel, _sprite.Width, s.X, s.Y, s.Width, s.Height);
         (_fw, _fh, _fx, _fy, _floatLayer, _floatFrame) = (s.Width, s.Height, s.X, s.Y, _layer, _frame);
-        PixelOps.Clear(cel, _sprite.Width, s.X, s.Y, s.Width, s.Height);
+        if (_selMask is { } m)   // magic wand: only the selected pixels move
+        {
+            _float = Selection.CropMasked(cel, m, _sprite.Width, s.X, s.Y, s.Width, s.Height);
+            Selection.ClearMasked(cel, m);
+        }
+        else
+        {
+            _float = PixelOps.Crop(cel, _sprite.Width, s.X, s.Y, s.Width, s.Height);
+            PixelOps.Clear(cel, _sprite.Width, s.X, s.Y, s.Width, s.Height);
+        }
     }
 
     /// <summary>Stamps the floating pixels into the cel they came from. Called before any other edit.</summary>
@@ -285,6 +359,7 @@ public partial class SpriteEditor
         if (_floatLayer < _sprite.Layers.Count && _floatFrame < _sprite.Frames.Count)
             PixelOps.Stamp(_sprite.Cel(_floatLayer, _floatFrame), _sprite.Width, _sprite.Height, _float, _fw, _fh, _fx, _fy);
         _float = null;
+        _selMask = null;   // the pixels moved; keep the box only
         _sel = ClipToCanvas(_sel);
         Render();
     }
@@ -320,20 +395,21 @@ public partial class SpriteEditor
         if (_float is not null) { _float = null; Render(); return; }   // lift already took the undo snapshot
         if (_sel is not { } s) return;
         Snapshot();
-        PixelOps.Clear(_sprite.Cel(_layer, _frame), _sprite.Width, s.X, s.Y, s.Width, s.Height);
+        if (_selMask is { } m) Selection.ClearMasked(_sprite.Cel(_layer, _frame), m);
+        else PixelOps.Clear(_sprite.Cel(_layer, _frame), _sprite.Width, s.X, s.Y, s.Width, s.Height);
         Render();
     }
 
     void CancelFloat()
     {
-        if (_float is null) { _sel = null; UpdateOverlay(); return; }
+        if (_float is null) { (_sel, _selMask) = (null, null); UpdateOverlay(); return; }
         Restore(_history.Undo(_sprite));   // back to before the lift / paste
     }
 
     void SelectAll()
     {
         CommitFloat();
-        _sel = new Int32Rect(0, 0, _sprite.Width, _sprite.Height);
+        (_sel, _selMask) = (new Int32Rect(0, 0, _sprite.Width, _sprite.Height), null);
         SetTool(Tool.Select);
         UpdateOverlay();
     }
@@ -345,7 +421,9 @@ public partial class SpriteEditor
         uint[] px;
         int w, h;
         if (_float is not null) (px, w, h) = (_float, _fw, _fh);
-        else if (_sel is { } s) (px, w, h) = (PixelOps.Crop(_sprite.Cel(_layer, _frame), _sprite.Width, s.X, s.Y, s.Width, s.Height), s.Width, s.Height);
+        else if (_sel is { } s) (px, w, h) = (_selMask is { } m
+                ? Selection.CropMasked(_sprite.Cel(_layer, _frame), m, _sprite.Width, s.X, s.Y, s.Width, s.Height)
+                : PixelOps.Crop(_sprite.Cel(_layer, _frame), _sprite.Width, s.X, s.Y, s.Width, s.Height), s.Width, s.Height);
         else (px, w, h) = ((uint[])_sprite.Cel(_layer, _frame).Clone(), _sprite.Width, _sprite.Height);
         (_clip, _clipW, _clipH) = ((uint[])px.Clone(), w, h);
 
@@ -378,6 +456,7 @@ public partial class SpriteEditor
         CommitFloat();
         Snapshot();
         _float = px;
+        _selMask = null;
         (_fw, _fh, _floatLayer, _floatFrame) = (w, h, _layer, _frame);
         (_fx, _fy) = _sel is { } s ? (s.X, s.Y) : (0, 0);
         _sel = new Int32Rect(_fx, _fy, _fw, _fh);
@@ -403,7 +482,21 @@ public partial class SpriteEditor
 
     void UpdateOverlay()
     {
-        if (_sel is { } s)
+        bool maskOutline = _selMask is not null && _float is null;
+        SelPath.Visibility = SelPathBack.Visibility = maskOutline ? Visibility.Visible : Visibility.Collapsed;
+        if (maskOutline)
+        {
+            var g = new StreamGeometry();
+            using (var ctx = g.Open())
+                foreach (var (x1, y1, x2, y2) in Selection.Outline(_selMask!, _sprite.Width, _sprite.Height))
+                {
+                    ctx.BeginFigure(new Point(x1 * _zoom, y1 * _zoom), false, false);
+                    ctx.LineTo(new Point(x2 * _zoom, y2 * _zoom), true, false);
+                }
+            g.Freeze();
+            SelPath.Data = SelPathBack.Data = g;
+        }
+        if (_sel is { } s && !maskOutline)
         {
             foreach (var r in new[] { SelRectBack, SelRect })
             {

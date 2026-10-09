@@ -24,6 +24,26 @@ public static class SpriteSheet
         return new Sheet(px, w, h, cols);
     }
 
+    /// <summary>
+    /// Cuts a sprite sheet image into frames of fw x fh, left to right, top to bottom.
+    /// Empty (fully transparent) cells at the end are dropped.
+    /// </summary>
+    public static Sprite Import(uint[] px, int w, int h, int fw, int fh)
+    {
+        if (fw < 1 || fh < 1 || fw > w || fh > h) throw new ArgumentOutOfRangeException(nameof(fw), $"Frame size must fit inside the {w}x{h} image.");
+        int cols = w / fw, rows = h / fh;
+        var cells = new List<uint[]>();
+        for (int r = 0; r < rows; r++)
+            for (int c = 0; c < cols; c++)
+                cells.Add(PixelOps.Crop(px, w, c * fw, r * fh, fw, fh));
+        while (cells.Count > 1 && cells[^1].All(p => p >> 24 == 0)) cells.RemoveAt(cells.Count - 1);
+
+        var s = new Sprite(fw, fh);
+        for (int i = 1; i < cells.Count; i++) s.AddFrame(i);
+        for (int i = 0; i < cells.Count; i++) cells[i].CopyTo(s.Cel(0, i), 0);
+        return s;
+    }
+
     /// <summary>Aseprite "array" style JSON (read by Phaser, Godot importers, etc.).</summary>
     public static string Json(Sprite s, Sheet sheet, string imageName, string name) => JsonSerializer.Serialize(new
     {

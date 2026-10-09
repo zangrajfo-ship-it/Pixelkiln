@@ -20,6 +20,8 @@ public partial class SpriteEditor : IEditor
             Ui.Item("_Save", "Ctrl+S", Do(OnSave)),
             Ui.Item("Save _as…", "Ctrl+Shift+S", () => Save(null)),
             new Separator(),
+            Ui.Item("_Import sprite sheet…", null, ImportSheet),
+            new Separator(),
             Ui.Item("Export _PNG…", null, Do(OnExportPng)),
             Ui.Item("Export animated _GIF…", null, Do(OnExportGif)),
             Ui.Item("Export sprite _sheet…", null, Do(OnExportSheet)),
@@ -39,6 +41,13 @@ public partial class SpriteEditor : IEditor
             Ui.Item("Flip _vertically", "V", () => TransformFloat(Core.PixelOps.FlipV)),
             Ui.Item("R_otate 90°", "R", () => TransformFloat(Core.PixelOps.Rotate90, swapsSize: true)),
             new Separator(),
+            Ui.Item("Replace left color with right _color", null, ReplaceColor),
+            Ui.Menu("_Scale sprite",
+                Ui.Item("_200 %", null, () => Scale(2)),
+                Ui.Item("_300 %", null, () => Scale(3)),
+                Ui.Item("_400 %", null, () => Scale(4)),
+                Ui.Item("_50 %", null, () => Scale(0.5)),
+                Ui.Item("25 %", null, () => Scale(0.25))),
             Ui.Item("Canvas si_ze…", null, Do(OnCanvasSize)),
             Ui.Item("Crop to _selection", null, Do(OnCrop)),
             new Separator(),
@@ -112,6 +121,7 @@ public partial class SpriteEditor : IEditor
         [Tool.Rect] = "Drag to draw. Shift: square.",
         [Tool.Ellipse] = "Drag to draw. Shift: circle.",
         [Tool.Select] = "Drag to select, drag inside to move. H/V flip, R rotate, Enter apply, Esc cancel.",
+        [Tool.Wand] = "Click to select pixels of one color; Shift+click adds. Move them with Select (M).",
     };
 
     /// <summary>Shows only the options the current tool uses (like LibreSprite's context bar).</summary>
@@ -122,6 +132,8 @@ public partial class SpriteEditor : IEditor
         static Visibility V(bool show) => show ? Visibility.Visible : Visibility.Collapsed;
         SizeOption.Visibility = V(t is Tool.Pencil or Tool.Eraser or Tool.Line);
         FilledToggle.Visibility = V(t is Tool.Rect or Tool.Ellipse);
+        PixelPerfectToggle.Visibility = V(t is Tool.Pencil);
+        ContiguousToggle.Visibility = V(t is Tool.Wand);
         MirrorXToggle.Visibility = MirrorYToggle.Visibility = V(t is Tool.Pencil or Tool.Eraser or Tool.Line or Tool.Rect or Tool.Ellipse);
     }
 }

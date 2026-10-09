@@ -6,7 +6,7 @@ namespace PixelForge.Core;
 /// <summary>.pxf sprite project = JSON, cels as base64 of raw ARGB bytes.</summary>
 public static class ProjectFile
 {
-    record LayerDto(string Name, bool Visible, string[] Cels);
+    record LayerDto(string Name, bool Visible, string[] Cels, double Opacity = 1);
     record TagDto(string Name, int From, int To);
     // v2 added Tags (optional, so v1 files still load)
     record SpriteDto(int Version, int Width, int Height, uint[] Palette, int[] FrameDurations, LayerDto[] Layers, TagDto[]? Tags = null);
@@ -20,7 +20,7 @@ public static class ProjectFile
     public static string Serialize(Sprite s) => JsonSerializer.Serialize(new SpriteDto(
         2, s.Width, s.Height, [.. s.Palette], [.. s.Frames.Select(f => f.DurationMs)],
         [.. s.Layers.Select(l => new LayerDto(l.Name, l.Visible,
-            [.. l.Cels.Select(c => Convert.ToBase64String(MemoryMarshal.AsBytes(c.AsSpan())))]))],
+            [.. l.Cels.Select(c => Convert.ToBase64String(MemoryMarshal.AsBytes(c.AsSpan())))], l.Opacity))],
         [.. s.Tags.Select(t => new TagDto(t.Name, t.From, t.To))]), Json);
 
     public static Sprite Deserialize(string json)
@@ -33,7 +33,7 @@ public static class ProjectFile
         foreach (var ld in d.Layers)
         {
             if (ld.Cels.Length != s.Frames.Count) throw new InvalidDataException($"Layer '{ld.Name}' has wrong frame count.");
-            var l = new Layer { Name = ld.Name, Visible = ld.Visible };
+            var l = new Layer { Name = ld.Name, Visible = ld.Visible, Opacity = Math.Clamp(ld.Opacity, 0, 1) };
             foreach (var b64 in ld.Cels)
             {
                 var px = MemoryMarshal.Cast<byte, uint>(Convert.FromBase64String(b64)).ToArray();

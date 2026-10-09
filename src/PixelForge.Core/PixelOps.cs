@@ -61,7 +61,7 @@ public static class PixelOps
         r.Tags.AddRange(s.Tags.Select(t => t.Clone()));
         foreach (var l in s.Layers)
         {
-            var nl = new Layer { Name = l.Name, Visible = l.Visible };
+            var nl = new Layer { Name = l.Name, Visible = l.Visible, Opacity = l.Opacity };
             foreach (var cel in l.Cels)
             {
                 var c = new uint[w * h];
@@ -73,6 +73,30 @@ public static class PixelOps
             r.Layers.Add(nl);
         }
         return r;
+    }
+
+    /// <summary>Nearest-neighbour resize of every cel (2x for chunky pixels, 50 % to shrink).</summary>
+    public static Sprite Scaled(Sprite s, int w, int h)
+    {
+        var r = Resized(s, w, h, 0, 0);   // same layers, frames, tags, palette
+        for (int li = 0; li < s.Layers.Count; li++)
+            for (int f = 0; f < s.Frames.Count; f++)
+            {
+                uint[] src = s.Cel(li, f), dst = r.Cel(li, f);
+                for (int y = 0; y < h; y++)
+                    for (int x = 0; x < w; x++)
+                        dst[y * w + x] = src[y * s.Height / h * s.Width + x * s.Width / w];
+            }
+        return r;
+    }
+
+    /// <summary>Replaces every pixel of one exact color; returns how many changed.</summary>
+    public static int ReplaceColor(uint[] px, uint from, uint to)
+    {
+        int n = 0;
+        for (int i = 0; i < px.Length; i++)
+            if (px[i] == from) { px[i] = to; n++; }
+        return n;
     }
 
     /// <summary>Offset that places old content according to an anchor (0 = start, 1 = center, 2 = end) on each axis.</summary>

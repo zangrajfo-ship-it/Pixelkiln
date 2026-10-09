@@ -21,7 +21,9 @@ static class HelpWindow
             ("Del", "Delete selection"), ("H / V / R", "Flip selection horizontally / vertically, rotate 90°"),
             ("Enter / Esc", "Apply / cancel moved pixels"),
             ("Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / fit to window"), ("Mouse wheel, middle drag", "Zoom, pan"),
-            ("Ctrl+G", "Pixel grid"), ("Space", "Play animation"), ("← →", "Previous / next frame"),
+            ("Ctrl+G / Ctrl+Shift+G", "Pixel grid / tile grid"), ("T", "Tiled mode (seamless tiles)"), ("P", "Preview window"),
+            ("Shift+click (wand)", "Add to selection"),
+            ("Space", "Play animation (the chosen tag only)"), ("← →", "Previous / next frame"),
             ("Palette: Enter / Shift+Enter / Del", "Use as left / right color, remove"),
         ]),
         ("Tilemap", [
