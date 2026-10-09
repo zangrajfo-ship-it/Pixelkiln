@@ -7,7 +7,9 @@ namespace PixelForge.Core;
 public static class ProjectFile
 {
     record LayerDto(string Name, bool Visible, string[] Cels);
-    record SpriteDto(int Version, int Width, int Height, uint[] Palette, int[] FrameDurations, LayerDto[] Layers);
+    record TagDto(string Name, int From, int To);
+    // v2 added Tags (optional, so v1 files still load)
+    record SpriteDto(int Version, int Width, int Height, uint[] Palette, int[] FrameDurations, LayerDto[] Layers, TagDto[]? Tags = null);
 
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
@@ -16,9 +18,10 @@ public static class ProjectFile
     public static Sprite Load(string path) => Deserialize(File.ReadAllText(path));
 
     public static string Serialize(Sprite s) => JsonSerializer.Serialize(new SpriteDto(
-        1, s.Width, s.Height, [.. s.Palette], [.. s.Frames.Select(f => f.DurationMs)],
+        2, s.Width, s.Height, [.. s.Palette], [.. s.Frames.Select(f => f.DurationMs)],
         [.. s.Layers.Select(l => new LayerDto(l.Name, l.Visible,
-            [.. l.Cels.Select(c => Convert.ToBase64String(MemoryMarshal.AsBytes(c.AsSpan())))]))]), Json);
+            [.. l.Cels.Select(c => Convert.ToBase64String(MemoryMarshal.AsBytes(c.AsSpan())))]))],
+        [.. s.Tags.Select(t => new TagDto(t.Name, t.From, t.To))]), Json);
 
     public static Sprite Deserialize(string json)
     {
@@ -40,6 +43,9 @@ public static class ProjectFile
             s.Layers.Add(l);
         }
         if (s.Layers.Count == 0 || s.Frames.Count == 0) throw new InvalidDataException("Project has no layers or frames.");
+        foreach (var t in d.Tags ?? [])
+            if (t.From >= 0 && t.From <= t.To && t.To < s.Frames.Count)   // skip broken ranges instead of failing
+                s.Tags.Add(new FrameTag { Name = t.Name ?? "tag", From = t.From, To = t.To });
         return s;
     }
 }
