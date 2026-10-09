@@ -10,31 +10,36 @@
         </Style>
     </UserControl.Resources>
     <DockPanel>
-        <ToolBar DockPanel.Dock="Top">
-            <Button Content="New" ToolTip="Ctrl+N" Click="OnNew" />
-            <Button Content="Open" ToolTip="Ctrl+O" Click="OnOpen" />
-            <Button Content="Save" ToolTip="Ctrl+S" Click="OnSave" />
-            <Button Content="Save as" Click="OnSaveAs" />
-            <Button Content="Export PNG" Click="OnExportPng" />
-            <Button Content="Export Tiled" ToolTip="Tiled .tmj + tileset PNG" Click="OnExportTiled" />
-            <Separator />
-            <Button Content="Map size…" Click="OnMapSize" />
-            <Separator />
-            <Button Content="Undo" ToolTip="Ctrl+Z" Click="OnUndo" />
-            <Button Content="Redo" ToolTip="Ctrl+Y" Click="OnRedo" />
-            <Separator />
-            <CheckBox x:Name="GridToggle" Content="Grid" ToolTip="Ctrl+G" IsChecked="True" Click="OnGridToggle" />
-            <Separator />
-            <TextBlock x:Name="Status" VerticalAlignment="Center" Margin="8,0" />
-        </ToolBar>
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <Button ToolTip="New map (Ctrl+N)" Click="OnNew"><TextBlock Style="{StaticResource Icon}" Text="&#xE7C3;" /></Button>
+                <Button ToolTip="Open (Ctrl+O)" Click="OnOpen"><TextBlock Style="{StaticResource Icon}" Text="&#xE8E5;" /></Button>
+                <Button ToolTip="Save (Ctrl+S)" Click="OnSave"><TextBlock Style="{StaticResource Icon}" Text="&#xE74E;" /></Button>
+                <Separator />
+                <Button ToolTip="Undo (Ctrl+Z)" Click="OnUndo"><TextBlock Style="{StaticResource Icon}" Text="&#xE7A7;" /></Button>
+                <Button ToolTip="Redo (Ctrl+Y)" Click="OnRedo"><TextBlock Style="{StaticResource Icon}" Text="&#xE7A6;" /></Button>
+                <Separator />
+                <Button ToolTip="Zoom out (Ctrl+-)" Click="OnZoomOut"><TextBlock Style="{StaticResource Icon}" Text="&#xE71F;" /></Button>
+                <TextBlock x:Name="ZoomText" Width="52" TextAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="Zoom level" />
+                <Button ToolTip="Zoom in (Ctrl+=)" Click="OnZoomIn"><TextBlock Style="{StaticResource Icon}" Text="&#xE8A3;" /></Button>
+                <Button ToolTip="Fit to window (Ctrl+0)" Click="OnZoomFit"><TextBlock Style="{StaticResource Icon}" Text="&#xE9A6;" /></Button>
+                <Separator />
+                <CheckBox x:Name="GridToggle" Content="Grid" ToolTip="Grid (Ctrl+G)" IsChecked="True" Click="OnGridToggle" />
+                <Separator />
+                <TextBlock x:Name="ToolHint" VerticalAlignment="Center" Margin="8,0" Foreground="{DynamicResource MutedText}" />
+            </ToolBar>
+        </ToolBarTray>
+        <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="#3A3A3A">
+            <TextBlock x:Name="Status" />
+        </Border>
 
-        <StackPanel DockPanel.Dock="Left" Width="70" Margin="4">
-            <RadioButton x:Name="PaintBtn" Content="Paint" ToolTip="B: paints the selected tiles (drag in the tileset for several). Right mouse erases." IsChecked="True" GroupName="mtool" Click="OnToolClick" />
-            <RadioButton x:Name="EraseBtn" Content="Erase" ToolTip="E" GroupName="mtool" Click="OnToolClick" />
-            <RadioButton x:Name="FillBtn" Content="Fill" ToolTip="G: fills with the selected tiles as a pattern" GroupName="mtool" Click="OnToolClick" />
-            <RadioButton x:Name="PickBtn" Content="Pick" ToolTip="I: click or drag on the map to copy tiles" GroupName="mtool" Click="OnToolClick" />
-            <RadioButton x:Name="AutoBtn" Content="Auto" ToolTip="A: paints the selected terrain, edges connect by themselves. Right mouse erases." GroupName="mtool" Click="OnToolClick" />
-            <RadioButton x:Name="ObjectBtn" Content="Object" ToolTip="O: drag = box, click = point. Click an object to select/move it. Shift snaps to tiles. Del removes." GroupName="mtool" Click="OnToolClick" />
+        <StackPanel DockPanel.Dock="Left" Width="96" Margin="4">
+            <RadioButton x:Name="PaintBtn" Content="Paint  B" ToolTip="Paint (B): paints the selected tiles (drag in the tileset for several). Right mouse erases." IsChecked="True" GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="EraseBtn" Content="Erase  E" ToolTip="Erase (E)" GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="FillBtn" Content="Fill  G" ToolTip="Fill (G): fills with the selected tiles as a pattern" GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="PickBtn" Content="Pick  I" ToolTip="Pick (I): click or drag on the map to copy tiles" GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="AutoBtn" Content="Auto  A" ToolTip="Auto-tile (A): paints the selected terrain, edges connect by themselves. Right mouse erases." GroupName="mtool" Click="OnToolClick" />
+            <RadioButton x:Name="ObjectBtn" Content="Object  O" ToolTip="Objects (O): drag = box, click = point. Click an object to select/move it. Shift snaps to tiles. Del removes." GroupName="mtool" Click="OnToolClick" />
         </StackPanel>
 
         <DockPanel DockPanel.Dock="Right" Width="260" Margin="4">
@@ -56,16 +61,16 @@
                 </Grid>
             </ScrollViewer>
             <DockPanel DockPanel.Dock="Top" Margin="0,6,0,0">
-                <TextBlock Text="Terrain " VerticalAlignment="Center" />
+                <Label Content="_Terrain" Target="{Binding ElementName=TerrainBox}" VerticalAlignment="Center" Padding="0,0,6,0" />
                 <Button DockPanel.Dock="Right" Content="Template…" ToolTip="Save a 4×4 guide PNG showing which tile goes where" Click="OnTerrainTemplate" />
-                <Button DockPanel.Dock="Right" Content="−" Width="22" ToolTip="Remove terrain" Click="OnRemoveTerrain" />
-                <Button DockPanel.Dock="Right" Content="+" ToolTip="Add terrain from the selected 4×4 tiles" Click="OnAddTerrain" />
+                <Button ToolTip="Remove terrain" Click="OnRemoveTerrain" DockPanel.Dock="Right"><TextBlock Style="{StaticResource Icon}" Text="&#xE738;" /></Button>
+                <Button ToolTip="Add terrain from the selected 4×4 tiles" Click="OnAddTerrain" DockPanel.Dock="Right"><TextBlock Style="{StaticResource Icon}" Text="&#xE710;" /></Button>
                 <ComboBox x:Name="TerrainBox" AutomationProperties.Name="Terrain" Margin="0,0,4,0" />
             </DockPanel>
             <StackPanel x:Name="ObjectPanel" DockPanel.Dock="Bottom" Margin="0,8,0,0" Visibility="Collapsed">
                 <TextBlock Text="Selected object" FontWeight="SemiBold" />
-                <DockPanel Margin="0,4,0,0"><TextBlock Text="Name " Width="40" VerticalAlignment="Center" /><TextBox x:Name="ObjNameBox" AutomationProperties.Name="Object name" LostKeyboardFocus="OnObjectFieldCommit" KeyDown="OnObjectFieldKey" /></DockPanel>
-                <DockPanel Margin="0,4,0,0"><TextBlock Text="Type " Width="40" VerticalAlignment="Center" /><TextBox x:Name="ObjTypeBox" AutomationProperties.Name="Object type" LostKeyboardFocus="OnObjectFieldCommit" KeyDown="OnObjectFieldKey" /></DockPanel>
+                <DockPanel Margin="0,4,0,0"><Label Content="_Name" Target="{Binding ElementName=ObjNameBox}" Width="44" VerticalAlignment="Center" Padding="0" /><TextBox x:Name="ObjNameBox" AutomationProperties.Name="Object name" LostKeyboardFocus="OnObjectFieldCommit" KeyDown="OnObjectFieldKey" /></DockPanel>
+                <DockPanel Margin="0,4,0,0"><Label Content="T_ype" Target="{Binding ElementName=ObjTypeBox}" Width="44" VerticalAlignment="Center" Padding="0" /><TextBox x:Name="ObjTypeBox" AutomationProperties.Name="Object type" LostKeyboardFocus="OnObjectFieldCommit" KeyDown="OnObjectFieldKey" /></DockPanel>
                 <DockPanel Margin="0,4,0,0">
                     <Button DockPanel.Dock="Right" Content="Delete" Click="OnDeleteObject" />
                     <TextBlock x:Name="ObjInfo" Foreground="{DynamicResource MutedText}" VerticalAlignment="Center" />
@@ -73,10 +78,10 @@
             </StackPanel>
             <TextBlock DockPanel.Dock="Top" Text="Map layers" Margin="0,12,0,4" />
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,4,0,0">
-                <Button Content="+" ToolTip="Add layer" Click="OnAddLayer" />
-                <Button Content="−" Width="30" ToolTip="Delete layer" Click="OnDeleteLayer" />
-                <Button Content="▲" Width="30" ToolTip="Move up" Click="OnLayerUp" />
-                <Button Content="▼" Width="30" ToolTip="Move down" Click="OnLayerDown" />
+                <Button ToolTip="Add layer" Click="OnAddLayer"><TextBlock Style="{StaticResource Icon}" Text="&#xE710;" /></Button>
+                <Button ToolTip="Delete layer" Click="OnDeleteLayer"><TextBlock Style="{StaticResource Icon}" Text="&#xE738;" /></Button>
+                <Button ToolTip="Move layer up" Click="OnLayerUp"><TextBlock Style="{StaticResource Icon}" Text="&#xE70E;" /></Button>
+                <Button ToolTip="Move layer down" Click="OnLayerDown"><TextBlock Style="{StaticResource Icon}" Text="&#xE70D;" /></Button>
             </StackPanel>
             <ListBox x:Name="LayersList" SelectionChanged="OnLayerSelected" HorizontalContentAlignment="Stretch" />
         </DockPanel>

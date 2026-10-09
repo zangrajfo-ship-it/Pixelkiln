@@ -28,7 +28,7 @@ public partial class TilemapEditor : UserControl
         Loaded += Init;
         IsVisibleChanged += (_, _) => UpdateTitle();
 
-        void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadMap(_map, null); }
+        void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadMap(_map, null); UpdateToolHint(); }
         IsKeyboardFocusedChanged += (_, _) => Scroller.BorderBrush = IsKeyboardFocused ? (Brush)FindResource("FocusRing") : Brushes.Transparent;
     }
 
@@ -94,7 +94,8 @@ public partial class TilemapEditor : UserControl
         CanvasHost.Width = _map.Width * CellPx;
         CanvasHost.Height = _map.Height * CellPx;
         GridOverlay.Fill = GridToggle.IsChecked == true && CellPx >= 4 ? Ui.GridBrush(CellPx, Color.FromArgb(0x60, 0xFF, 0xFF, 0xFF)) : null;   // light lines on the dark map
-        Status.Text = $"{_map.Width}×{_map.Height} tiles of {_map.TileSize}px   {_zoom}×";
+        Status.Text = $"{_map.Width}×{_map.Height} tiles of {_map.TileSize} px";
+        ZoomText.Text = $"{_zoom * 100} %";
         RefreshObjects();
     }
 
@@ -102,14 +103,18 @@ public partial class TilemapEditor : UserControl
     {
         e.Handled = true;
         int i = Array.IndexOf(ZoomLevels, _zoom) + Math.Sign(e.Delta);
-        if (i < 0 || i >= ZoomLevels.Length) return;
-        var p = e.GetPosition(CanvasHost);
+        if (i >= 0 && i < ZoomLevels.Length) ZoomTo(ZoomLevels[i], e.GetPosition(CanvasHost));
+    }
+
+    /// <summary>Changes zoom and keeps the canvas point <paramref name="anchor"/> in place on screen.</summary>
+    void ZoomTo(int zoom, Point anchor)
+    {
         int old = _zoom;
-        _zoom = ZoomLevels[i];
+        _zoom = zoom;
         ApplyZoom();
         Scroller.UpdateLayout();
-        Scroller.ScrollToHorizontalOffset(Scroller.HorizontalOffset + p.X / old * (_zoom - old));
-        Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset + p.Y / old * (_zoom - old));
+        Scroller.ScrollToHorizontalOffset(Scroller.HorizontalOffset + anchor.X / old * (_zoom - old));
+        Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset + anchor.Y / old * (_zoom - old));
     }
 
     void OnGridToggle(object sender, RoutedEventArgs e) => ApplyZoom();
@@ -317,7 +322,11 @@ public partial class TilemapEditor : UserControl
         {
             case Key.Z when ctrl: OnUndo(null, null); break;
             case Key.Y when ctrl: OnRedo(null, null); break;
+            case Key.S when ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift): Save(null); break;
             case Key.S when ctrl: OnSave(null, null); break;
+            case Key.OemPlus or Key.Add when ctrl: ZoomStep(+1); break;
+            case Key.OemMinus or Key.Subtract when ctrl: ZoomStep(-1); break;
+            case Key.D0 or Key.NumPad0 when ctrl: ZoomFit(); break;
             case Key.N when ctrl: OnNew(null, null); break;
             case Key.O when ctrl: OnOpen(null, null); break;
             case Key.G when ctrl: GridToggle.IsChecked = GridToggle.IsChecked != true; ApplyZoom(); break;

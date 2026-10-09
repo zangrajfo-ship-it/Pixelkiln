@@ -11,42 +11,49 @@
         </Style>
     </UserControl.Resources>
     <DockPanel>
-        <ToolBar DockPanel.Dock="Top">
-            <Button Content="New" ToolTip="Ctrl+N" Click="OnNew" />
-            <Button Content="Open" ToolTip="Ctrl+O (.pxf or image)" Click="OnOpen" />
-            <Button Content="Save" ToolTip="Ctrl+S" Click="OnSave" />
-            <Button Content="Save as" Click="OnSaveAs" />
-            <Button Content="Export PNG" Click="OnExportPng" />
-            <Separator />
-            <Button Content="Canvas size…" Click="OnCanvasSize" />
-            <Button Content="Crop" ToolTip="Crop canvas to the selection" Click="OnCrop" />
-            <Separator />
-            <Button Content="Undo" ToolTip="Ctrl+Z" Click="OnUndo" />
-            <Button Content="Redo" ToolTip="Ctrl+Y" Click="OnRedo" />
-            <Separator />
-            <CheckBox x:Name="GridToggle" Content="Grid" ToolTip="Ctrl+G" IsChecked="True" Click="OnGridToggle" />
-            <Separator />
-            <TextBlock Text="Size " VerticalAlignment="Center" />
-            <ComboBox x:Name="SizeBox" AutomationProperties.Name="Brush size" Width="70" SelectedIndex="0" ToolTip="Brush size  [ ]">
-                <ComboBoxItem>1</ComboBoxItem><ComboBoxItem>2</ComboBoxItem><ComboBoxItem>3</ComboBoxItem><ComboBoxItem>4</ComboBoxItem>
-                <ComboBoxItem>5</ComboBoxItem><ComboBoxItem>6</ComboBoxItem><ComboBoxItem>7</ComboBoxItem><ComboBoxItem>8</ComboBoxItem>
-            </ComboBox>
-            <CheckBox x:Name="FilledToggle" Content="Filled" ToolTip="Filled rectangles and ellipses" />
-            <CheckBox x:Name="MirrorXToggle" Content="Mirror X" ToolTip="Mirror drawing left/right" Click="OnMirrorToggle" />
-            <CheckBox x:Name="MirrorYToggle" Content="Mirror Y" ToolTip="Mirror drawing up/down" Click="OnMirrorToggle" />
-            <Separator />
-            <TextBlock x:Name="Status" VerticalAlignment="Center" Margin="8,0" />
-        </ToolBar>
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <Button ToolTip="New sprite (Ctrl+N)" Click="OnNew"><TextBlock Style="{StaticResource Icon}" Text="&#xE7C3;" /></Button>
+                <Button ToolTip="Open (Ctrl+O)" Click="OnOpen"><TextBlock Style="{StaticResource Icon}" Text="&#xE8E5;" /></Button>
+                <Button ToolTip="Save (Ctrl+S)" Click="OnSave"><TextBlock Style="{StaticResource Icon}" Text="&#xE74E;" /></Button>
+                <Separator />
+                <Button ToolTip="Undo (Ctrl+Z)" Click="OnUndo"><TextBlock Style="{StaticResource Icon}" Text="&#xE7A7;" /></Button>
+                <Button ToolTip="Redo (Ctrl+Y)" Click="OnRedo"><TextBlock Style="{StaticResource Icon}" Text="&#xE7A6;" /></Button>
+                <Separator />
+                <Button ToolTip="Zoom out (Ctrl+-)" Click="OnZoomOut"><TextBlock Style="{StaticResource Icon}" Text="&#xE71F;" /></Button>
+                <TextBlock x:Name="ZoomText" Width="52" TextAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="Zoom level" />
+                <Button ToolTip="Zoom in (Ctrl+=)" Click="OnZoomIn"><TextBlock Style="{StaticResource Icon}" Text="&#xE8A3;" /></Button>
+                <Button ToolTip="Fit to window (Ctrl+0)" Click="OnZoomFit"><TextBlock Style="{StaticResource Icon}" Text="&#xE9A6;" /></Button>
+                <Separator />
+                <CheckBox x:Name="GridToggle" Content="Grid" ToolTip="Pixel grid (Ctrl+G)" IsChecked="True" Click="OnGridToggle" />
+            </ToolBar>
+            <ToolBar x:Name="ToolOptionsBar" AutomationProperties.Name="Tool options">
+                <TextBlock x:Name="ToolHint" VerticalAlignment="Center" Margin="4,0,12,0" Foreground="{DynamicResource MutedText}" />
+                <StackPanel x:Name="SizeOption" Orientation="Horizontal">
+                    <Label Content="_Size" Target="{Binding ElementName=SizeBox}" VerticalAlignment="Center" Padding="0,0,6,0" />
+                    <ComboBox x:Name="SizeBox" AutomationProperties.Name="Brush size" Width="70" SelectedIndex="0" ToolTip="Brush size  ([ and ])">
+                        <ComboBoxItem>1</ComboBoxItem><ComboBoxItem>2</ComboBoxItem><ComboBoxItem>3</ComboBoxItem><ComboBoxItem>4</ComboBoxItem>
+                        <ComboBoxItem>5</ComboBoxItem><ComboBoxItem>6</ComboBoxItem><ComboBoxItem>7</ComboBoxItem><ComboBoxItem>8</ComboBoxItem>
+                    </ComboBox>
+                </StackPanel>
+                <CheckBox x:Name="FilledToggle" Content="Filled" ToolTip="Filled rectangles and ellipses" />
+                <CheckBox x:Name="MirrorXToggle" Content="Mirror X" ToolTip="Mirror drawing left/right" Click="OnMirrorToggle" />
+                <CheckBox x:Name="MirrorYToggle" Content="Mirror Y" ToolTip="Mirror drawing up/down" Click="OnMirrorToggle" />
+            </ToolBar>
+        </ToolBarTray>
+        <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="#3A3A3A">
+            <TextBlock x:Name="Status" />
+        </Border>
 
-        <StackPanel x:Name="ToolsPanel" DockPanel.Dock="Left" Width="70" Margin="4">
-            <RadioButton Tag="Pencil" Content="Pencil" ToolTip="B" IsChecked="True" GroupName="tool" Click="OnToolClick" />
-            <RadioButton Tag="Eraser" Content="Eraser" ToolTip="E" GroupName="tool" Click="OnToolClick" />
-            <RadioButton Tag="Fill" Content="Fill" ToolTip="G" GroupName="tool" Click="OnToolClick" />
-            <RadioButton Tag="Picker" Content="Picker" ToolTip="I" GroupName="tool" Click="OnToolClick" />
-            <RadioButton Tag="Line" Content="Line" ToolTip="L  (Shift: 45°)" GroupName="tool" Click="OnToolClick" />
-            <RadioButton Tag="Rect" Content="Rect" ToolTip="U  (Shift: square)" GroupName="tool" Click="OnToolClick" />
-            <RadioButton Tag="Ellipse" Content="Ellipse" ToolTip="O  (Shift: circle)" GroupName="tool" Click="OnToolClick" />
-            <RadioButton Tag="Select" Content="Select" ToolTip="M — drag to select, drag inside to move. Ctrl+C/X/V, Del, H/V flip, R rotate, Enter apply, Esc cancel" GroupName="tool" Click="OnToolClick" />
+        <StackPanel x:Name="ToolsPanel" DockPanel.Dock="Left" Width="96" Margin="4">
+            <RadioButton Tag="Pencil" Content="Pencil  B" ToolTip="Pencil (B)" IsChecked="True" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Eraser" Content="Eraser  E" ToolTip="Eraser (E)" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Fill" Content="Fill  G" ToolTip="Fill (G)" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Picker" Content="Picker  I" ToolTip="Color picker (I)" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Line" Content="Line  L" ToolTip="Line (L). Shift: 45°" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Rect" Content="Rect  U" ToolTip="Rectangle (U). Shift: square" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Ellipse" Content="Ellipse  O" ToolTip="Ellipse (O). Shift: circle" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Select" Content="Select  M" ToolTip="Select (M): drag to select, drag inside to move. Ctrl+C/X/V, Del, H/V flip, R rotate, Enter apply, Esc cancel" GroupName="tool" Click="OnToolClick" />
             <Grid Height="56" Margin="2,12,2,0" ToolTip="Left/right mouse colors. Click to change.">
                 <Button x:Name="SecondarySwatch" Width="34" Height="34" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                         Template="{StaticResource SwatchTemplate}" BorderBrush="Gray" BorderThickness="1" Click="OnSecondarySwatch" ToolTip="Right mouse color. Click to edit it in the color picker." />
@@ -72,10 +79,10 @@
             <WrapPanel x:Name="PaletteWrap" DockPanel.Dock="Top" />
             <TextBlock DockPanel.Dock="Top" Text="Layers" Margin="0,12,0,4" />
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,4,0,0">
-                <Button Content="+" ToolTip="Add layer" Click="OnAddLayer" />
-                <Button Content="−" Width="30" ToolTip="Delete layer" Click="OnDeleteLayer" />
-                <Button Content="▲" Width="30" ToolTip="Move up" Click="OnLayerUp" />
-                <Button Content="▼" Width="30" ToolTip="Move down" Click="OnLayerDown" />
+                <Button ToolTip="Add layer" Click="OnAddLayer"><TextBlock Style="{StaticResource Icon}" Text="&#xE710;" /></Button>
+                <Button ToolTip="Delete layer" Click="OnDeleteLayer"><TextBlock Style="{StaticResource Icon}" Text="&#xE738;" /></Button>
+                <Button ToolTip="Move layer up" Click="OnLayerUp"><TextBlock Style="{StaticResource Icon}" Text="&#xE70E;" /></Button>
+                <Button ToolTip="Move layer down" Click="OnLayerDown"><TextBlock Style="{StaticResource Icon}" Text="&#xE70D;" /></Button>
             </StackPanel>
             <ListBox x:Name="LayersList" SelectionChanged="OnLayerSelected" HorizontalContentAlignment="Stretch" />
         </DockPanel>
@@ -83,20 +90,17 @@
         <DockPanel DockPanel.Dock="Bottom" Margin="4">
             <ToolBar DockPanel.Dock="Top">
                 <TextBlock Text="Frames" VerticalAlignment="Center" Margin="0,0,6,0" />
-                <Button Content="+" ToolTip="New empty frame" Click="OnAddFrame" />
-                <Button Content="Duplicate" ToolTip="Copy current frame" Click="OnDuplicateFrame" />
-                <Button Content="−" ToolTip="Delete frame" Click="OnDeleteFrame" />
-                <Button Content="◀" ToolTip="Move frame left" Click="OnFrameLeft" />
-                <Button Content="▶" ToolTip="Move frame right" Click="OnFrameRight" />
-                <TextBlock Text="  ms" VerticalAlignment="Center" />
-                <TextBox x:Name="DurationBox" AutomationProperties.Name="Frame duration in milliseconds" Width="50" ToolTip="Frame duration (Enter to apply)" KeyDown="OnDurationKey" LostKeyboardFocus="OnDurationCommit" />
+                <Button ToolTip="New empty frame" Click="OnAddFrame"><TextBlock Style="{StaticResource Icon}" Text="&#xE710;" /></Button>
+                <Button ToolTip="Duplicate frame" Click="OnDuplicateFrame"><TextBlock Style="{StaticResource Icon}" Text="&#xE8C8;" /></Button>
+                <Button ToolTip="Delete frame" Click="OnDeleteFrame"><TextBlock Style="{StaticResource Icon}" Text="&#xE738;" /></Button>
+                <Button ToolTip="Move frame left" Click="OnFrameLeft"><TextBlock Style="{StaticResource Icon}" Text="&#xE76B;" /></Button>
+                <Button ToolTip="Move frame right" Click="OnFrameRight"><TextBlock Style="{StaticResource Icon}" Text="&#xE76C;" /></Button>
+                <Label Content="_Duration (ms)" Target="{Binding ElementName=DurationBox}" VerticalAlignment="Center" Padding="8,0,6,0" />
+                <TextBox x:Name="DurationBox" AutomationProperties.Name="Frame duration in milliseconds" Width="64" VerticalAlignment="Center" ToolTip="Frame duration in ms (Enter to apply)" KeyDown="OnDurationKey" LostKeyboardFocus="OnDurationCommit" />
                 <Separator />
                 <CheckBox x:Name="OnionToggle" Content="Onion skin" ToolTip="Show previous and next frame faintly" Click="OnOnionToggle" />
                 <Separator />
-                <ToggleButton x:Name="PlayBtn" Content="▶ Play" ToolTip="Space" Click="OnPlay" />
-                <Separator />
-                <Button Content="Export GIF" Click="OnExportGif" />
-                <Button Content="Export sheet" ToolTip="Sprite sheet PNG + JSON" Click="OnExportSheet" />
+                <ToggleButton x:Name="PlayBtn" Content="▶ Play" ToolTip="Play animation (Space)" Click="OnPlay" />
             </ToolBar>
             <ListBox x:Name="FramesList" Height="84" SelectionChanged="OnFrameSelected"
                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled">

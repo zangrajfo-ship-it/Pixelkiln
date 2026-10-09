@@ -219,6 +219,7 @@ public partial class SfxEditor : UserControl
         switch (e.Key)
         {
             case Key.Space: Play(); break;
+            case Key.S when ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift): Save(null); break;
             case Key.S when ctrl: OnSave(null, null); break;
             case Key.O when ctrl: OnOpen(null, null); break;
             default: e.Handled = false; break;
