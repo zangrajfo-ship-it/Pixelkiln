@@ -49,6 +49,34 @@
             <ListBox x:Name="LayersList" SelectionChanged="OnLayerSelected" HorizontalContentAlignment="Stretch" />
         </DockPanel>
 
+        <DockPanel DockPanel.Dock="Bottom" Margin="4">
+            <ToolBar DockPanel.Dock="Top">
+                <TextBlock Text="Frames" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <Button Content="+" ToolTip="New empty frame" Click="OnAddFrame" />
+                <Button Content="Duplicate" ToolTip="Copy current frame" Click="OnDuplicateFrame" />
+                <Button Content="−" ToolTip="Delete frame" Click="OnDeleteFrame" />
+                <Button Content="◀" ToolTip="Move frame left" Click="OnFrameLeft" />
+                <Button Content="▶" ToolTip="Move frame right" Click="OnFrameRight" />
+                <TextBlock Text="  ms" VerticalAlignment="Center" />
+                <TextBox x:Name="DurationBox" Width="50" ToolTip="Frame duration (Enter to apply)" KeyDown="OnDurationKey" LostKeyboardFocus="OnDurationCommit" />
+                <Separator />
+                <CheckBox x:Name="OnionToggle" Content="Onion skin" ToolTip="Show previous and next frame faintly" Click="OnOnionToggle" />
+                <Separator />
+                <ToggleButton x:Name="PlayBtn" Content="▶ Play" ToolTip="Space" Click="OnPlay" />
+                <Separator />
+                <Button Content="Export GIF" Click="OnExportGif" />
+                <Button Content="Export sheet" ToolTip="Sprite sheet PNG + JSON" Click="OnExportSheet" />
+            </ToolBar>
+            <ListBox x:Name="FramesList" Height="84" SelectionChanged="OnFrameSelected"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+        </DockPanel>
+
         <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
                       Background="#2B2B2B" PreviewMouseWheel="OnWheel">
             <Grid x:Name="CanvasHost" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Cross"

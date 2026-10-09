@@ -61,6 +61,7 @@ public partial class SpriteEditor : UserControl
         RefreshPalette();
         RefreshLayers();
         RefreshSwatches();
+        RefreshFrames();
         Render();
         UpdateTitle();
     }
@@ -70,7 +71,20 @@ public partial class SpriteEditor : UserControl
         int w = _sprite.Width, h = _sprite.Height;
         if (_bmp is null || _bmp.PixelWidth != w || _bmp.PixelHeight != h)
             CanvasImage.Source = _bmp = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
-        _bmp.WritePixels(new Int32Rect(0, 0, w, h), Compositor.Flatten(_sprite, _frame), w * 4, 0);
+
+        var current = Compositor.Flatten(_sprite, _frame);
+        var shown = current;
+        if (OnionToggle.IsChecked == true && !_playTimer.IsEnabled && _sprite.Frames.Count > 1)
+        {
+            shown = new uint[w * h];
+            if (_frame > 0) Compositor.Blend(shown, Compositor.Flatten(_sprite, _frame - 1), 0.3);
+            if (_frame < _sprite.Frames.Count - 1) Compositor.Blend(shown, Compositor.Flatten(_sprite, _frame + 1), 0.15);
+            Compositor.Blend(shown, current);
+        }
+        _bmp.WritePixels(new Int32Rect(0, 0, w, h), shown, w * 4, 0);
+
+        if (FramesList.Items.Count > _frame && FramesList.Items[_frame] is FrameworkElement { Tag: Image thumb })
+            thumb.Source = ImageIO.ToBitmap(current, w, h);
     }
 
     void UpdateTitle()
@@ -137,6 +151,7 @@ public partial class SpriteEditor : UserControl
     void OnCanvasDown(object sender, MouseButtonEventArgs e)
     {
         Keyboard.Focus(this);
+        StopPlaying();
         if (e.ChangedButton == MouseButton.Middle)
         {
             _panFrom = e.GetPosition(Scroller);
@@ -310,6 +325,138 @@ public partial class SpriteEditor : UserControl
         Render();
     }
 
+    // ---------- frames / animation ----------
+
+    bool _refreshingFrames;
+    readonly System.Windows.Threading.DispatcherTimer _playTimer = new();
+
+    void RefreshFrames()
+    {
+        _refreshingFrames = true;
+        FramesList.Items.Clear();
+        for (int f = 0; f < _sprite.Frames.Count; f++)
+        {
+            var thumb = new Image { Width = 48, Height = 48, Stretch = Stretch.Uniform, Source = ImageIO.ToBitmap(Compositor.Flatten(_sprite, f), _sprite.Width, _sprite.Height) };
+            RenderOptions.SetBitmapScalingMode(thumb, BitmapScalingMode.NearestNeighbor);
+            FramesList.Items.Add(new StackPanel
+            {
+                Tag = thumb,
+                Children = { new Border { Background = Brushes.LightGray, Child = thumb }, new TextBlock { Text = $"{f + 1}", HorizontalAlignment = HorizontalAlignment.Center } },
+            });
+        }
+        FramesList.SelectedIndex = _frame;
+        DurationBox.Text = _sprite.Frames[_frame].DurationMs.ToString();
+        _refreshingFrames = false;
+    }
+
+    void SelectFrame(int f)
+    {
+        _frame = f;
+        _refreshingFrames = true;
+        FramesList.SelectedIndex = f;
+        _refreshingFrames = false;
+        DurationBox.Text = _sprite.Frames[f].DurationMs.ToString();
+        Render();
+    }
+
+    void OnFrameSelected(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_refreshingFrames && FramesList.SelectedIndex >= 0) SelectFrame(FramesList.SelectedIndex);
+    }
+
+    void EditFrames(Action change)
+    {
+        StopPlaying();
+        Snapshot();
+        change();
+        _frame = Math.Clamp(_frame, 0, _sprite.Frames.Count - 1);
+        RefreshFrames();
+        Render();
+    }
+
+    void OnAddFrame(object sender, RoutedEventArgs e) => EditFrames(() => _sprite.AddFrame(++_frame));
+    void OnDuplicateFrame(object sender, RoutedEventArgs e) => EditFrames(() => _sprite.AddFrame(_frame + 1, copyFrom: _frame++));
+    void OnDeleteFrame(object sender, RoutedEventArgs e) { if (_sprite.Frames.Count > 1) EditFrames(() => _sprite.RemoveFrame(_frame)); }
+    void OnFrameLeft(object sender, RoutedEventArgs e) { if (_frame > 0) EditFrames(() => _sprite.MoveFrame(_frame, --_frame)); }
+    void OnFrameRight(object sender, RoutedEventArgs e) { if (_frame < _sprite.Frames.Count - 1) EditFrames(() => _sprite.MoveFrame(_frame, ++_frame)); }
+
+    void OnDurationKey(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) OnDurationCommit(sender, e);
+    }
+
+    void OnDurationCommit(object sender, RoutedEventArgs e)
+    {
+        if (!int.TryParse(DurationBox.Text, out int ms) || ms < 10 || ms > 60000)
+        {
+            DurationBox.Text = _sprite.Frames[_frame].DurationMs.ToString();
+            return;
+        }
+        if (ms == _sprite.Frames[_frame].DurationMs) return;
+        Snapshot();
+        _sprite.Frames[_frame].DurationMs = ms;
+    }
+
+    void OnOnionToggle(object sender, RoutedEventArgs e) => Render();
+
+    void OnPlay(object? sender, RoutedEventArgs? e)
+    {
+        if (_playTimer.IsEnabled) { StopPlaying(); return; }
+        if (_sprite.Frames.Count < 2) { PlayBtn.IsChecked = false; return; }
+        _playTimer.Tick -= OnPlayTick;
+        _playTimer.Tick += OnPlayTick;
+        _playTimer.Interval = TimeSpan.FromMilliseconds(_sprite.Frames[_frame].DurationMs);
+        _playTimer.Start();
+        PlayBtn.IsChecked = true;
+        PlayBtn.Content = "■ Stop";
+        Render();
+    }
+
+    void OnPlayTick(object? sender, EventArgs e)
+    {
+        SelectFrame((_frame + 1) % _sprite.Frames.Count);
+        _playTimer.Interval = TimeSpan.FromMilliseconds(_sprite.Frames[_frame].DurationMs);
+    }
+
+    void StopPlaying()
+    {
+        if (!_playTimer.IsEnabled) return;
+        _playTimer.Stop();
+        PlayBtn.IsChecked = false;
+        PlayBtn.Content = "▶ Play";
+        Render();
+    }
+
+    string BaseName => System.IO.Path.GetFileNameWithoutExtension(_path) ?? "sprite";
+
+    void OnExportGif(object sender, RoutedEventArgs e)
+    {
+        var dlg = new SaveFileDialog { Filter = "Animated GIF (*.gif)|*.gif", FileName = BaseName + ".gif" };
+        if (dlg.ShowDialog() != true) return;
+        try
+        {
+            var frames = Enumerable.Range(0, _sprite.Frames.Count).Select(f => Compositor.Flatten(_sprite, f)).ToList();
+            GifWriter.Save(dlg.FileName, frames, [.. _sprite.Frames.Select(f => f.DurationMs)], _sprite.Width, _sprite.Height);
+        }
+        catch (Exception ex) { Dialogs.Error(ex); }
+    }
+
+    void OnExportSheet(object sender, RoutedEventArgs e)
+    {
+        if (Dialogs.Ask(this, "Export sprite sheet", "Columns (0 = all frames in one row):", "0") is not string text) return;
+        if (!int.TryParse(text, out int cols) || cols < 0) { Dialogs.Error(new FormatException("Columns must be a whole number ≥ 0.")); return; }
+        var dlg = new SaveFileDialog { Filter = "PNG image (*.png)|*.png", FileName = BaseName + "-sheet.png" };
+        if (dlg.ShowDialog() != true) return;
+        try
+        {
+            var sheet = SpriteSheet.Build(_sprite, cols);
+            ImageIO.SavePng(dlg.FileName, sheet.Pixels, sheet.Width, sheet.Height);
+            File.WriteAllText(System.IO.Path.ChangeExtension(dlg.FileName, ".json"),
+                SpriteSheet.Json(_sprite, sheet, System.IO.Path.GetFileName(dlg.FileName), BaseName));
+        }
+        catch (Exception ex) { Dialogs.Error(ex); }
+    }
+
     // ---------- undo ----------
 
     void OnUndo(object? sender, RoutedEventArgs? e) => Restore(_history.Undo(_sprite));
@@ -412,6 +559,9 @@ public partial class SpriteEditor : UserControl
             case Key.E when !ctrl: EraserBtn.IsChecked = true; break;
             case Key.G when !ctrl: FillBtn.IsChecked = true; break;
             case Key.I when !ctrl: PickerBtn.IsChecked = true; break;
+            case Key.Space: OnPlay(null, null); break;
+            case Key.Left: StopPlaying(); SelectFrame((_frame + _sprite.Frames.Count - 1) % _sprite.Frames.Count); break;
+            case Key.Right: StopPlaying(); SelectFrame((_frame + 1) % _sprite.Frames.Count); break;
             default: e.Handled = false; break;
         }
     }
