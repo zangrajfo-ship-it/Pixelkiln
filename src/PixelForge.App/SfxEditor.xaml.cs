@@ -170,14 +170,33 @@ public partial class SfxEditor : UserControl
     {
         if (!ConfirmDiscard()) return;
         var dlg = new OpenFileDialog { Filter = SfxFilter };
-        if (dlg.ShowDialog() != true) return;
+        if (dlg.ShowDialog() == true) OpenPath(dlg.FileName, confirmed: true);
+    }
+
+    public string[] FileExtensions => [".sfx"];
+    public bool IsDirty => _dirty;
+    public string? CurrentPath => _path;
+
+    public void OpenPath(string path, bool confirmed = false)
+    {
+        if (!confirmed && !ConfirmDiscard()) return;
         try
         {
-            _sfx = Sfx.Load(dlg.FileName);
-            (_path, _dirty) = (dlg.FileName, false);
+            _sfx = Sfx.Load(path);
+            (_path, _dirty) = (path, false);
             Refresh();
+            App.AddRecent(path);
         }
         catch (Exception ex) { Ui.Error(ex); }
+    }
+
+    public void WriteAutosave(string file) => Sfx.Save(_sfx, file);
+
+    public void RestoreAutosave(string file, string? originalPath)
+    {
+        _sfx = Sfx.Load(file);
+        (_path, _dirty) = (originalPath, true);
+        Refresh();
     }
 
     void OnSave(object? sender, RoutedEventArgs? e) => Save(_path);
@@ -194,6 +213,7 @@ public partial class SfxEditor : UserControl
         try
         {
             Sfx.Save(_sfx, path);
+            App.AddRecent(path);
             (_path, _dirty) = (path, false);
             UpdateTitle();
             return true;

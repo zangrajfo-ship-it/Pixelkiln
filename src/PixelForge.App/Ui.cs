@@ -83,14 +83,41 @@ static class Ui
     /// <param name="color">Line color incl. alpha; default = black 60 %, at least 3:1 on the light checkerboard (WCAG 1.4.11).</param>
     public static Brush GridBrush(double cell, Color? color = null)
     {
+        uint g = App.Settings.GridColor;
+        return GridBrushOf(cell, color ?? Color.FromArgb((byte)(g >> 24), (byte)(g >> 16), (byte)(g >> 8), (byte)g));
+    }
+
+    static Brush GridBrushOf(double cell, Color color)
+    {
         // lines on the 0.5 px row/column so the tile does not clip half of them away
         var lines = new GeometryGroup { Children = { new LineGeometry(new(0, 0.5), new(cell, 0.5)), new LineGeometry(new(0.5, 0), new(0.5, cell)) } };
-        return new DrawingBrush(new GeometryDrawing(null, new Pen(new SolidColorBrush(color ?? Color.FromArgb(0x99, 0, 0, 0)), 1), lines))
+        return new DrawingBrush(new GeometryDrawing(null, new Pen(new SolidColorBrush(color), 1), lines))
         {
             TileMode = TileMode.Tile, Stretch = Stretch.None,
             Viewport = new Rect(0, 0, cell, cell), ViewportUnits = BrushMappingMode.Absolute,
             Viewbox = new Rect(0, 0, cell, cell), ViewboxUnits = BrushMappingMode.Absolute,
         };
+    }
+
+    /// <summary>Transparency checkerboard from the preferences.</summary>
+    public static Brush CheckerBrush()
+    {
+        var s = App.Settings;
+        double n = s.CheckerSize, d = n * 2;
+        var b = new DrawingBrush
+        {
+            TileMode = TileMode.Tile, Viewport = new Rect(0, 0, d, d), ViewportUnits = BrushMappingMode.Absolute,
+            Drawing = new DrawingGroup
+            {
+                Children =
+                {
+                    new GeometryDrawing(BrushOf(s.CheckerLight), null, new RectangleGeometry(new Rect(0, 0, d, d))),
+                    new GeometryDrawing(BrushOf(s.CheckerDark), null, new GeometryGroup { Children = { new RectangleGeometry(new Rect(0, 0, n, n)), new RectangleGeometry(new Rect(n, n, n, n)) } }),
+                },
+            },
+        };
+        b.Freeze();
+        return b;
     }
 
     /// <summary>
@@ -152,6 +179,29 @@ static class Ui
         var m = new MenuItem { Header = header, InputGestureText = gesture ?? "", IsCheckable = true };
         m.SetBinding(MenuItem.IsCheckedProperty, new System.Windows.Data.Binding(nameof(CheckBox.IsChecked)) { Source = box, Mode = System.Windows.Data.BindingMode.TwoWay });
         m.Click += (_, _) => box.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        return m;
+    }
+
+    /// <summary>File → Open recent: refilled from settings each time it opens; only files this tab can open.</summary>
+    public static MenuItem RecentMenu(IEditor editor)
+    {
+        var m = new MenuItem { Header = "Open _recent" };
+        m.Items.Add(new MenuItem { Header = "(none)", IsEnabled = false });   // so the submenu arrow shows
+        m.SubmenuOpened += (_, _) =>
+        {
+            m.Items.Clear();
+            var files = App.Settings.RecentFiles
+                .Where(p => editor.FileExtensions.Contains(Path.GetExtension(p).ToLowerInvariant()) && File.Exists(p))
+                .ToList();
+            for (int i = 0; i < files.Count; i++)
+            {
+                string path = files[i];
+                // number = access key; underscores in names are doubled so they stay visible
+                m.Items.Add(Item($"_{(i + 1) % 10} {Path.GetFileName(path).Replace("_", "__")}", null, () => editor.OpenPath(path)));
+                ((MenuItem)m.Items[^1]).ToolTip = path;
+            }
+            if (files.Count == 0) m.Items.Add(new MenuItem { Header = "(none)", IsEnabled = false });
+        };
         return m;
     }
 
