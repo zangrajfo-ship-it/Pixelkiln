@@ -1,0 +1,66 @@
+<UserControl x:Class="PixelForge.App.MusicEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:PixelForge.App">
+    <UserControl.Resources>
+        <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="BorderThickness" Value="0,0,0,4" />
+        </Style>
+    </UserControl.Resources>
+    <DockPanel>
+        <ToolBar DockPanel.Dock="Top">
+            <Button Content="New" ToolTip="Ctrl+N" Click="OnNew" />
+            <Button Content="Open" ToolTip="Ctrl+O" Click="OnOpen" />
+            <Button Content="Save" ToolTip="Ctrl+S" Click="OnSave" />
+            <Button Content="Save as" Click="OnSaveAs" />
+            <Button Content="Export WAV" Click="OnExportWav" />
+            <Separator />
+            <Button Content="Undo" ToolTip="Ctrl+Z" Click="OnUndo" />
+            <Button Content="Redo" ToolTip="Ctrl+Y" Click="OnRedo" />
+            <Separator />
+            <Button x:Name="PlaySongBtn" Content="▶ Song" ToolTip="Space — loop the whole song" Click="OnPlaySong" />
+            <Button x:Name="PlayPatternBtn" Content="▶ Pattern" ToolTip="Loop the current pattern" Click="OnPlayPattern" />
+            <Button Content="■ Stop" Click="OnStop" />
+            <Separator />
+            <TextBlock Text="BPM " VerticalAlignment="Center" />
+            <TextBox x:Name="BpmBox" Width="40" ToolTip="20–400, Enter to apply" KeyDown="OnBpmKey" LostKeyboardFocus="OnBpmCommit" />
+            <Separator />
+            <TextBlock x:Name="Status" VerticalAlignment="Center" Margin="8,0" />
+        </ToolBar>
+
+        <StackPanel DockPanel.Dock="Left" Width="90" Margin="4">
+            <TextBlock Text="Channel" Margin="2,0,0,4" />
+            <RadioButton x:Name="Ch0" Content="Pulse 1" ToolTip="1" GroupName="ch" IsChecked="True" Click="OnChannel" />
+            <RadioButton x:Name="Ch1" Content="Pulse 2" ToolTip="2" GroupName="ch" Click="OnChannel" />
+            <RadioButton x:Name="Ch2" Content="Triangle" ToolTip="3 (bass)" GroupName="ch" Click="OnChannel" />
+            <RadioButton x:Name="Ch3" Content="Noise" ToolTip="4 (drums)" GroupName="ch" Click="OnChannel" />
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="11" Margin="2,12,2,0"
+                       Text="Click: add note. Click a note: remove. Drag to paint. Right-click: remove." />
+        </StackPanel>
+
+        <DockPanel DockPanel.Dock="Top" Margin="4">
+            <TextBlock Text="Patterns" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <Button Content="+" Width="26" ToolTip="New empty pattern" Click="OnAddPattern" />
+            <Button Content="Duplicate" ToolTip="Copy current pattern" Click="OnDuplicatePattern" Margin="2,0" />
+            <Button Content="−" Width="26" ToolTip="Delete pattern" Click="OnDeletePattern" />
+            <TextBox x:Name="OrderBox" Width="220" DockPanel.Dock="Right" ToolTip="Pattern numbers in play order, e.g. 1 1 2 1 (Enter to apply)"
+                     KeyDown="OnOrderKey" LostKeyboardFocus="OnOrderCommit" />
+            <TextBlock Text="Order" VerticalAlignment="Center" Margin="12,0,6,0" DockPanel.Dock="Right" />
+            <ListBox x:Name="PatternsList" Margin="6,0" SelectionChanged="OnPatternSelected" BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+        </DockPanel>
+
+        <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#2B2B2B">
+            <local:StepGrid x:Name="StepsGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Cursor="Hand"
+                            MouseDown="OnGridDown" MouseMove="OnGridMove" MouseUp="OnGridUp" />
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

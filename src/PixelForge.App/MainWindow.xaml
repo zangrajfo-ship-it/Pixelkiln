@@ -11,5 +11,8 @@
         <TabItem Header="Tilemap">
             <local:TilemapEditor x:Name="MapEd" />
         </TabItem>
+        <TabItem Header="Music">
+            <local:MusicEditor x:Name="MusicEd" />
+        </TabItem>
     </TabControl>
 </Window>
