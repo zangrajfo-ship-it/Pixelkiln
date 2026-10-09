@@ -26,6 +26,9 @@
                 <Button ToolTip="Fit to window (Ctrl+0)" Click="OnZoomFit"><TextBlock Style="{StaticResource Icon}" Text="&#xE9A6;" /></Button>
                 <Separator />
                 <CheckBox x:Name="GridToggle" Content="Grid" ToolTip="Pixel grid (Ctrl+G)" IsChecked="True" Click="OnGridToggle" />
+                <CheckBox x:Name="TileGridToggle" Content="Tile grid" ToolTip="Grid of tiles, size in View → Tile grid size (Ctrl+Shift+G)" Click="OnGridToggle" />
+                <CheckBox x:Name="TiledToggle" Content="Tiled" ToolTip="Tiled mode: shows the sprite repeated and wraps drawing at the edges, for seamless tiles (T)" Click="OnTiledToggle" />
+                <Button ToolTip="Preview window (P)" Click="OnPreview"><TextBlock Style="{StaticResource Icon}" Text="&#xE890;" /></Button>
             </ToolBar>
             <ToolBar x:Name="ToolOptionsBar" AutomationProperties.Name="Tool options">
                 <TextBlock x:Name="ToolHint" VerticalAlignment="Center" Margin="4,0,12,0" Foreground="{DynamicResource MutedText}" />
@@ -125,15 +128,21 @@
                       AutomationProperties.Name="Sprite canvas">
             <Grid x:Name="CanvasHost" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Cross"
                   MouseDown="OnCanvasDown" MouseMove="OnCanvasMove" MouseUp="OnCanvasUp" MouseLeave="OnCanvasLeave">
+                <!-- tiled mode: the sprite repeated 3×3 around the real canvas -->
+                <Rectangle x:Name="TiledChecker" Visibility="Collapsed" />
+                <Rectangle x:Name="TiledBg" Opacity="0.55" Visibility="Collapsed" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                <Grid x:Name="CanvasCore">
                 <Rectangle x:Name="Checker" />
                 <Image x:Name="CanvasImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                 <Rectangle x:Name="GridOverlay" IsHitTestVisible="False" />
+                <Rectangle x:Name="TileGridOverlay" IsHitTestVisible="False" />
                 <Canvas x:Name="Overlay" IsHitTestVisible="False">
                     <Line x:Name="MirrorXLine" Stroke="#C0FF00FF" StrokeThickness="1" StrokeDashArray="4 3" Visibility="Collapsed" />
                     <Line x:Name="MirrorYLine" Stroke="#C0FF00FF" StrokeThickness="1" StrokeDashArray="4 3" Visibility="Collapsed" />
                     <Rectangle x:Name="SelRectBack" Stroke="Black" StrokeThickness="1" Visibility="Collapsed" />
                     <Rectangle x:Name="SelRect" Stroke="White" StrokeThickness="1" StrokeDashArray="4 4" Visibility="Collapsed" />
                 </Canvas>
+                </Grid>
             </Grid>
         </ScrollViewer>
     </DockPanel>

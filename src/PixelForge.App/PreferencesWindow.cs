@@ -68,7 +68,9 @@ static class PreferencesWindow
         };
         ok.Click += (_, _) =>
         {
-            var n = new Settings { RecentFiles = s.RecentFiles, Theme = (string)theme.SelectedItem, UiScale = scales[scale.SelectedIndex] };
+            var n = Settings.Deserialize(s.Serialize());   // copy, so settings not on this form are kept
+            n.Theme = (string)theme.SelectedItem;
+            n.UiScale = scales[scale.SelectedIndex];
             bool valid = true;
             n.GridColor = Hex(gridColor, n.GridColor);
             n.CheckerLight = Hex(checkLight, n.CheckerLight);

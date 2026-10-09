@@ -7,7 +7,7 @@ public class SettingsTests
     [Fact]
     public void Round_trip_and_sanitize()
     {
-        var s = new Settings { Theme = "Light", UiScale = 1.5, GridColor = 0x80FF0000, UndoLimit = 5, AutosaveMinutes = 0, CheckerSize = 999 };
+        var s = new Settings { Theme = "Light", UiScale = 1.5, GridColor = 0x80FF0000, UndoLimit = 5, AutosaveMinutes = 0, CheckerSize = 999, TileGridWidth = 8, TileGridOffsetY = 3 };
         var t = Settings.Deserialize(s.Serialize());
         Assert.Equal("Light", t.Theme);
         Assert.Equal(1.5, t.UiScale);
@@ -15,6 +15,7 @@ public class SettingsTests
         Assert.Equal(10, t.UndoLimit);          // clamped up
         Assert.Equal(64, t.CheckerSize);        // clamped down
         Assert.Equal(0, t.AutosaveMinutes);
+        Assert.Equal((8, 16, 0, 3), (t.TileGridWidth, t.TileGridHeight, t.TileGridOffsetX, t.TileGridOffsetY));
         Assert.Equal("Dark", Settings.Deserialize("""{"Theme":"Neon"}""").Theme);
     }
 
