@@ -17,6 +17,7 @@ public partial class SpriteEditor
     {
         if (t != Tool.Select) CommitFloat();
         ToolsPanel.Children.OfType<RadioButton>().First(r => (string)r.Tag == t.ToString()).IsChecked = true;
+        UpdateToolOptions();
     }
 
     void OnToolClick(object sender, RoutedEventArgs e) => SetTool(CurrentTool);
@@ -113,7 +114,9 @@ public partial class SpriteEditor
     void OnCanvasMove(object sender, MouseEventArgs e)
     {
         var (x, y) = PixelAt(e);
-        Status.Text = $"{_sprite.Width}×{_sprite.Height}   {_zoom}×   {x}, {y}" + (_sel is { } s ? $"   sel {s.Width}×{s.Height}" : "");
+        string under = Tools.InBounds(_sprite.Width, _sprite.Height, x, y)
+            ? $"   x {x}, y {y}   {Ui.ColorName(Compositor.Flatten(_sprite, _frame)[y * _sprite.Width + x])}" : "";
+        Status.Text = $"{_sprite.Width}×{_sprite.Height} px{under}" + (_sel is { } s ? $"   selection {s.Width}×{s.Height}" : "");
 
         if (_panFrom is Point from)
         {

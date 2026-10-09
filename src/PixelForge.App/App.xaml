@@ -8,6 +8,14 @@
         <!-- secondary text: 7.5:1 on white (WCAG 1.4.3) -->
         <SolidColorBrush x:Key="MutedText" Color="#B8B8B8" />
         <SolidColorBrush x:Key="FocusRing" Color="#3B82F6" />
+        <!-- icon glyphs: Windows 11 Fluent icons, Windows 10 MDL2 as fallback -->
+        <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+        <Style x:Key="Icon" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+        </Style>
         <!-- color swatch button: the fill is the color; focus shows a thick ring -->
         <ControlTemplate x:Key="SwatchTemplate" TargetType="Button">
             <Border x:Name="Ring" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" />

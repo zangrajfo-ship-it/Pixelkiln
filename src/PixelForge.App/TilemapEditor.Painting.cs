@@ -35,6 +35,7 @@ public partial class TilemapEditor
     {
         StampPreview.Visibility = Visibility.Collapsed;
         if (CurrentTool != ObjectBtn && _selObj is not null) SelectObject(null);
+        UpdateToolHint();
     }
 
     static int FloorDiv(int a, int b) => (int)Math.Floor((double)a / b);
@@ -125,7 +126,7 @@ public partial class TilemapEditor
     void OnCanvasMove(object sender, MouseEventArgs e)
     {
         var (x, y) = CellAt(e);
-        Status.Text = $"{_map.Width}×{_map.Height} tiles of {_map.TileSize}px   {_zoom}×   {x}, {y}";
+        Status.Text = $"{_map.Width}×{_map.Height} tiles of {_map.TileSize} px" + (Tools.InBounds(_map.Width, _map.Height, x, y) ? $"   cell {x}, {y}   tile {_map.Pick(x, y) + 1}" : "");
         if (_panFrom is Point from)
         {
             var now = e.GetPosition(Scroller);

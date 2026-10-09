@@ -129,12 +129,37 @@ static class Ui
     {
         foreach (var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
         {
-            if (child is ButtonBase { Content: string text, ToolTip: string tip } b
+            // symbol text (+, ▲ …) or an icon glyph: the tooltip (without the shortcut part) is the name
+            if (child is ButtonBase { ToolTip: string tip } b
                 && string.IsNullOrEmpty(AutomationProperties.GetName(b))
-                && !text.Any(char.IsLetter))
-                AutomationProperties.SetName(b, tip);
+                && !(b.Content is string text && text.Any(char.IsLetter)))
+                AutomationProperties.SetName(b, tip.Split(" (")[0]);
             NameSymbolButtons(child);
         }
+    }
+
+    /// <summary>Menu command; <paramref name="gesture"/> is only shown (the editor handles the key).</summary>
+    public static MenuItem Item(string header, string? gesture, Action action, bool enabled = true)
+    {
+        var m = new MenuItem { Header = header, InputGestureText = gesture ?? "", IsEnabled = enabled };
+        m.Click += (_, _) => action();
+        return m;
+    }
+
+    /// <summary>Checkable menu item that stays in sync with a toolbar CheckBox and runs its Click handler.</summary>
+    public static MenuItem Toggle(string header, string? gesture, CheckBox box)
+    {
+        var m = new MenuItem { Header = header, InputGestureText = gesture ?? "", IsCheckable = true };
+        m.SetBinding(MenuItem.IsCheckedProperty, new System.Windows.Data.Binding(nameof(CheckBox.IsChecked)) { Source = box, Mode = System.Windows.Data.BindingMode.TwoWay });
+        m.Click += (_, _) => box.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        return m;
+    }
+
+    public static MenuItem Menu(string header, params object[] items)
+    {
+        var m = new MenuItem { Header = header };
+        foreach (var i in items) m.Items.Add(i);
+        return m;
     }
 
     /// <summary>Marks a field as invalid (red border + message), or clears the mark when message is null (WCAG 3.3.1).</summary>

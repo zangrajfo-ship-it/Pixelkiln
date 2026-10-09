@@ -2,20 +2,23 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:PixelForge.App"
-        Title="PixelForge" Width="1280" Height="800" WindowStartupLocation="CenterScreen"
+        Title="PixelForge" Width="1280" Height="820" WindowStartupLocation="CenterScreen"
         PreviewKeyDown="OnPreviewKeyDown" Closing="OnClosing">
-    <TabControl x:Name="Tabs">
-        <TabItem Header="Sprite">
-            <local:SpriteEditor x:Name="SpriteEd" />
-        </TabItem>
-        <TabItem Header="Tilemap">
-            <local:TilemapEditor x:Name="MapEd" />
-        </TabItem>
-        <TabItem Header="Music">
-            <local:MusicEditor x:Name="MusicEd" />
-        </TabItem>
-        <TabItem Header="SFX">
-            <local:SfxEditor x:Name="SfxEd" />
-        </TabItem>
-    </TabControl>
+    <DockPanel>
+        <Menu x:Name="MainMenu" DockPanel.Dock="Top" />
+        <TabControl x:Name="Tabs" SelectionChanged="OnTabChanged">
+            <TabItem Header="Sprite">
+                <local:SpriteEditor x:Name="SpriteEd" />
+            </TabItem>
+            <TabItem Header="Tilemap">
+                <local:TilemapEditor x:Name="MapEd" />
+            </TabItem>
+            <TabItem Header="Music">
+                <local:MusicEditor x:Name="MusicEd" />
+            </TabItem>
+            <TabItem Header="SFX">
+                <local:SfxEditor x:Name="SfxEd" />
+            </TabItem>
+        </TabControl>
+    </DockPanel>
 </Window>

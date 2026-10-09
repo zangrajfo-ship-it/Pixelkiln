@@ -8,13 +8,37 @@ namespace PixelForge.App;
 
 public partial class MainWindow : Window
 {
+    IEnumerable<IEditor> Editors => [SpriteEd, MapEd, MusicEd, SfxEd];
+    IEditor? Current => (Tabs?.SelectedItem as TabItem)?.Content as IEditor;   // SelectedContent lags behind SelectionChanged
+
     public MainWindow()
     {
         InitializeComponent();
         MapEd.SpriteImage = () => SpriteEd.CurrentImage;
         Ui.NameSymbolButtons(this);
         Closed += (_, _) => AudioOut.DisposeShared();
+        Loaded += (_, _) => BuildMenu();   // the TabControl has no selection before it is loaded
     }
+
+    // ---------- menu: the current tab's File/Edit/View + Help ----------
+
+    void OnTabChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.OriginalSource == Tabs) BuildMenu();
+    }
+
+    void BuildMenu()
+    {
+        if (MainMenu is null || Current is not { } ed) return;
+        MainMenu.Items.Clear();
+        foreach (var m in ed.Menus) MainMenu.Items.Add(m);
+        MainMenu.Items.Add(Ui.Menu("_Help",
+            Ui.Item("_Keyboard shortcuts", "F1", () => HelpWindow.Show(this)),
+            Ui.Item("_About PixelForge", null, () => MessageBox.Show(this,
+                "PixelForge — sprites, tilemaps, music and sound effects for your games.", "About PixelForge"))));
+    }
+
+    // ---------- keyboard ----------
 
     /// <summary>
     /// Editor shortcuts run only when they don't take a key away from the focused control:
@@ -23,11 +47,9 @@ public partial class MainWindow : Window
     /// </summary>
     void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.F1) { HelpWindow.Show(this); e.Handled = true; return; }
         if (ControlOwnsKey(e.OriginalSource, e.Key)) return;
-        if (Tabs.SelectedContent == SpriteEd) SpriteEd.HandleKey(e);
-        else if (Tabs.SelectedContent == MapEd) MapEd.HandleKey(e);
-        else if (Tabs.SelectedContent == MusicEd) MusicEd.HandleKey(e);
-        else if (Tabs.SelectedContent == SfxEd) SfxEd.HandleKey(e);
+        Current?.HandleKey(e);
     }
 
     static bool ControlOwnsKey(object source, Key key)
@@ -40,6 +62,5 @@ public partial class MainWindow : Window
         return navigation && source is ButtonBase or ListBox or ListBoxItem or Slider or ScrollBar or TabItem or TabControl or MenuItem;
     }
 
-    void OnClosing(object? sender, CancelEventArgs e) =>
-        e.Cancel = !SpriteEd.ConfirmDiscard() || !MapEd.ConfirmDiscard() || !MusicEd.ConfirmDiscard() || !SfxEd.ConfirmDiscard();
+    void OnClosing(object? sender, CancelEventArgs e) => e.Cancel = !Editors.All(ed => ed.ConfirmDiscard());
 }

@@ -243,7 +243,8 @@ public partial class MusicEditor : UserControl
 
     void BuildInstrumentPanel()
     {
-        _dutyBox = new ComboBox { ItemsSource = new[] { "12.5 %", "25 %", "50 %", "75 %" }, Width = 70 };
+        _dutyBox = new ComboBox { ItemsSource = new[] { "12.5 %", "25 %", "50 %", "75 %" }, Width = 96 };
+        System.Windows.Automation.AutomationProperties.SetName(_dutyBox, "Pulse duty cycle");
         _dutyBox.SelectionChanged += (_, _) =>
         {
             if (_refreshingInstrument || _dutyBox.SelectedIndex < 0) return;
@@ -493,6 +494,7 @@ public partial class MusicEditor : UserControl
         {
             case Key.Z when ctrl: OnUndo(null, null); break;
             case Key.Y when ctrl: OnRedo(null, null); break;
+            case Key.S when ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift): Save(null); break;
             case Key.S when ctrl: OnSave(null, null); break;
             case Key.N when ctrl: OnNew(null, null); break;
             case Key.O when ctrl: OnOpen(null, null); break;
