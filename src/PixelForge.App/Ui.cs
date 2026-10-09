@@ -33,6 +33,45 @@ static class Ui
         return win.ShowDialog() == true ? box.Text : null;
     }
 
+    /// <summary>Width/height dialog, optionally with a 3×3 anchor grid. Anchor 0/1/2 = left·top / center / right·bottom.</summary>
+    public static (int W, int H, int AnchorX, int AnchorY)? AskSize(DependencyObject owner, string title, int w, int h, bool anchor)
+    {
+        var wBox = new TextBox { Text = w.ToString(), Width = 60 };
+        var hBox = new TextBox { Text = h.ToString(), Width = 60 };
+        var anchors = new RadioButton[9];
+        var grid = new System.Windows.Controls.Primitives.UniformGrid { Rows = 3, Columns = 3, Width = 72, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0) };
+        for (int i = 0; i < 9; i++) grid.Children.Add(anchors[i] = new RadioButton { GroupName = "anchor", IsChecked = i == 4, Margin = new Thickness(2) });
+        var ok = new Button { Content = "OK", Width = 80, IsDefault = true, Margin = new Thickness(0, 0, 8, 0) };
+        var cancel = new Button { Content = "Cancel", Width = 80, IsCancel = true };
+        var panel = new StackPanel
+        {
+            Margin = new Thickness(12),
+            Children =
+            {
+                new StackPanel { Orientation = Orientation.Horizontal, Children = { new TextBlock { Text = "Width ", VerticalAlignment = VerticalAlignment.Center }, wBox,
+                    new TextBlock { Text = "   Height ", VerticalAlignment = VerticalAlignment.Center }, hBox } },
+            },
+        };
+        if (anchor) { panel.Children.Add(new TextBlock { Text = "Keep content at:", Margin = new Thickness(0, 10, 0, 0) }); panel.Children.Add(grid); }
+        panel.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0), Children = { ok, cancel } });
+        var win = new Window
+        {
+            Title = title, Width = 300, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = Window.GetWindow(owner), Content = panel,
+        };
+        ok.Click += (_, _) =>
+        {
+            if (int.TryParse(wBox.Text, out int nw) && int.TryParse(hBox.Text, out int nh) && nw is >= 1 and <= 4096 && nh is >= 1 and <= 4096)
+                win.DialogResult = true;
+            else
+                Error(new FormatException("Width and height must be whole numbers from 1 to 4096."));
+        };
+        win.Loaded += (_, _) => { wBox.Focus(); wBox.SelectAll(); };
+        if (win.ShowDialog() != true) return null;
+        int a = Array.FindIndex(anchors, r => r.IsChecked == true);
+        return (int.Parse(wBox.Text), int.Parse(hBox.Text), a % 3, a / 3);
+    }
+
     /// <summary>Windows color picker. Returns opaque ARGB or null on cancel.</summary>
     public static uint? PickColor(uint initial)
     {

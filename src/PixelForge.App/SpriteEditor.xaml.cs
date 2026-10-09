@@ -20,12 +20,6 @@ public partial class SpriteEditor : UserControl
     bool _dirty;
     WriteableBitmap? _bmp;
 
-    // active stroke
-    bool _stroking;
-    int _lastX, _lastY;
-    uint _strokeColor;
-    Point? _panFrom;
-
     public SpriteEditor()
     {
         InitializeComponent();
@@ -49,12 +43,14 @@ public partial class SpriteEditor : UserControl
         _history.Clear();
         _layer = Math.Min(_layer, s.Layers.Count - 1);
         _frame = 0;
+        (_float, _sel) = (null, null);
         RefreshAll();
     }
 
     /// <summary>Call before every edit.</summary>
     void Snapshot()
     {
+        CommitFloat();
         _history.Push(_sprite);
         _dirty = true;
         UpdateTitle();
@@ -88,7 +84,9 @@ public partial class SpriteEditor : UserControl
             if (_frame < _sprite.Frames.Count - 1) Compositor.Blend(shown, Compositor.Flatten(_sprite, _frame + 1), 0.15);
             Compositor.Blend(shown, current);
         }
+        if (_float is not null) PixelOps.Stamp(shown, w, h, _float, _fw, _fh, _fx, _fy);
         _bmp.WritePixels(new Int32Rect(0, 0, w, h), shown, w * 4, 0);
+        UpdateOverlay();
 
         if (FramesList.Items.Count > _frame && FramesList.Items[_frame] is FrameworkElement { Tag: Image thumb })
             thumb.Source = ImageIO.ToBitmap(current, w, h);
@@ -116,6 +114,7 @@ public partial class SpriteEditor : UserControl
         CanvasHost.Height = _sprite.Height * _zoom;
         GridOverlay.Fill = GridToggle.IsChecked == true && _zoom >= 4 ? Ui.GridBrush(_zoom) : null;
         Status.Text = $"{_sprite.Width}×{_sprite.Height}   {_zoom}×";
+        UpdateOverlay();
     }
 
     void OnWheel(object sender, MouseWheelEventArgs e)
@@ -135,91 +134,28 @@ public partial class SpriteEditor : UserControl
 
     void OnGridToggle(object sender, RoutedEventArgs e) => ApplyZoom();
 
-    // ---------- drawing ----------
-
-    (int X, int Y) PixelAt(MouseEventArgs e)
-    {
-        var p = e.GetPosition(CanvasHost);
-        return ((int)Math.Floor(p.X / _zoom), (int)Math.Floor(p.Y / _zoom));
-    }
-
-    void OnCanvasDown(object sender, MouseButtonEventArgs e)
-    {
-        Keyboard.Focus(this);
-        StopPlaying();
-        if (e.ChangedButton == MouseButton.Middle)
-        {
-            _panFrom = e.GetPosition(Scroller);
-            CanvasHost.CaptureMouse();
-            return;
-        }
-        if (_stroking || e.ChangedButton is not (MouseButton.Left or MouseButton.Right)) return;
-
-        bool left = e.ChangedButton == MouseButton.Left;
-        var (x, y) = PixelAt(e);
-        if (!Tools.InBounds(_sprite.Width, _sprite.Height, x, y)) return;
-        var cel = _sprite.Cel(_layer, _frame);
-
-        if (PickerBtn.IsChecked == true)
-        {
-            uint c = Compositor.Flatten(_sprite, _frame)[y * _sprite.Width + x];
-            if (left) _primary = c; else _secondary = c;
-            RefreshSwatches();
-            return;
-        }
-
-        Snapshot();
-        _strokeColor = EraserBtn.IsChecked == true ? 0 : left ? _primary : _secondary;
-        if (FillBtn.IsChecked == true)
-        {
-            Tools.Fill(cel, _sprite.Width, _sprite.Height, x, y, _strokeColor);
-        }
-        else
-        {
-            Tools.Set(cel, _sprite.Width, _sprite.Height, x, y, _strokeColor);
-            (_lastX, _lastY, _stroking) = (x, y, true);
-            CanvasHost.CaptureMouse();
-        }
-        Render();
-    }
-
-    void OnCanvasMove(object sender, MouseEventArgs e)
-    {
-        var (x, y) = PixelAt(e);
-        Status.Text = $"{_sprite.Width}×{_sprite.Height}   {_zoom}×   {x}, {y}";
-
-        if (_panFrom is Point from)
-        {
-            var now = e.GetPosition(Scroller);
-            Scroller.ScrollToHorizontalOffset(Scroller.HorizontalOffset - (now.X - from.X));
-            Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset - (now.Y - from.Y));
-            _panFrom = now;
-            return;
-        }
-        if (!_stroking || (x, y) == (_lastX, _lastY)) return;
-        Tools.Line(_sprite.Cel(_layer, _frame), _sprite.Width, _sprite.Height, _lastX, _lastY, x, y, _strokeColor);
-        (_lastX, _lastY) = (x, y);
-        Render();
-    }
-
-    void OnCanvasUp(object sender, MouseButtonEventArgs e)
-    {
-        _stroking = false;
-        _panFrom = null;
-        CanvasHost.ReleaseMouseCapture();
-    }
-
-    void OnCanvasLeave(object sender, MouseEventArgs e) => ApplyZoom();
-
     // ---------- palette / colors ----------
 
     void RefreshPalette()
     {
         PaletteWrap.Children.Clear();
-        foreach (var c in _sprite.Palette)
+        for (int i = 0; i < _sprite.Palette.Count; i++)
         {
+            uint c = _sprite.Palette[i];
+            int index = i;
             var sw = new Border { Width = 20, Height = 20, Margin = new Thickness(1), Background = Ui.BrushOf(c), ToolTip = $"#{c & 0xFFFFFF:X6}" };
-            sw.MouseLeftButtonDown += (_, _) => { _primary = c; RefreshSwatches(); };
+            sw.MouseLeftButtonDown += (_, _) =>
+            {
+                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
+                {
+                    Snapshot();
+                    _sprite.Palette.RemoveAt(index);
+                    RefreshPalette();
+                    return;
+                }
+                _primary = c;
+                RefreshSwatches();
+            };
             sw.MouseRightButtonDown += (_, _) => { _secondary = c; RefreshSwatches(); };
             PaletteWrap.Children.Add(sw);
         }
@@ -234,6 +170,40 @@ public partial class SpriteEditor : UserControl
             RefreshSwatches();
         };
         PaletteWrap.Children.Add(add);
+    }
+
+    void OnPaletteMenu(object sender, RoutedEventArgs e)
+    {
+        PaletteMenuBtn.ContextMenu.PlacementTarget = PaletteMenuBtn;
+        PaletteMenuBtn.ContextMenu.IsOpen = true;
+    }
+
+    const string PaletteFilter = "Palette (*.hex;*.gpl)|*.hex;*.gpl|Lospec hex (*.hex)|*.hex|GIMP palette (*.gpl)|*.gpl";
+
+    void OnLoadPalette(object sender, RoutedEventArgs e)
+    {
+        var dlg = new OpenFileDialog { Filter = PaletteFilter };
+        if (dlg.ShowDialog() != true) return;
+        try { SetPalette(PaletteIO.Load(dlg.FileName)); }
+        catch (Exception ex) { Ui.Error(ex); }
+    }
+
+    void OnSavePalette(object sender, RoutedEventArgs e)
+    {
+        var dlg = new SaveFileDialog { Filter = PaletteFilter, FileName = BaseName + ".hex" };
+        if (dlg.ShowDialog() != true) return;
+        try { PaletteIO.Save(dlg.FileName, _sprite.Palette); }
+        catch (Exception ex) { Ui.Error(ex); }
+    }
+
+    void OnResetPalette(object sender, RoutedEventArgs e) => SetPalette(Sprite.DefaultPalette);
+
+    void SetPalette(IEnumerable<uint> colors)
+    {
+        Snapshot();
+        _sprite.Palette.Clear();
+        _sprite.Palette.AddRange(colors);
+        RefreshPalette();
     }
 
     void RefreshSwatches()
@@ -267,8 +237,9 @@ public partial class SpriteEditor : UserControl
 
     void OnLayerSelected(object sender, SelectionChangedEventArgs e)
     {
-        if (!_refreshingLayers && LayersList.SelectedIndex >= 0)
-            _layer = _sprite.Layers.Count - 1 - LayersList.SelectedIndex;
+        if (_refreshingLayers || LayersList.SelectedIndex < 0) return;
+        CommitFloat();
+        _layer = _sprite.Layers.Count - 1 - LayersList.SelectedIndex;
     }
 
     void OnAddLayer(object sender, RoutedEventArgs e)
@@ -328,6 +299,7 @@ public partial class SpriteEditor : UserControl
 
     void SelectFrame(int f)
     {
+        CommitFloat();
         _frame = f;
         _refreshingFrames = true;
         FramesList.SelectedIndex = f;
@@ -408,6 +380,7 @@ public partial class SpriteEditor : UserControl
 
     void OnExportGif(object sender, RoutedEventArgs e)
     {
+        CommitFloat();
         var dlg = new SaveFileDialog { Filter = "Animated GIF (*.gif)|*.gif", FileName = BaseName + ".gif" };
         if (dlg.ShowDialog() != true) return;
         try
@@ -420,6 +393,7 @@ public partial class SpriteEditor : UserControl
 
     void OnExportSheet(object sender, RoutedEventArgs e)
     {
+        CommitFloat();
         if (Ui.Ask(this, "Export sprite sheet", "Columns (0 = all frames in one row):", "0") is not string text) return;
         if (!int.TryParse(text, out int cols) || cols < 0) { Ui.Error(new FormatException("Columns must be a whole number ≥ 0.")); return; }
         var dlg = new SaveFileDialog { Filter = "PNG image (*.png)|*.png", FileName = BaseName + "-sheet.png" };
@@ -443,6 +417,7 @@ public partial class SpriteEditor : UserControl
     {
         if (s is null || _stroking) return;
         _sprite = s;
+        (_float, _sel) = (null, null);
         _dirty = true;
         RefreshAll();
     }
@@ -454,15 +429,30 @@ public partial class SpriteEditor : UserControl
     void OnNew(object? sender, RoutedEventArgs? e)
     {
         if (!ConfirmDiscard()) return;
-        if (Ui.Ask(this, "New sprite", "Size (width x height):", $"{_sprite.Width}x{_sprite.Height}") is not string text) return;
-        var parts = text.ToLowerInvariant().Split('x', '×', ' ', ',');
-        try
-        {
-            var nums = parts.Where(p => p.Length > 0).Select(int.Parse).ToArray();
-            if (nums.Length != 2) throw new FormatException("Enter size as WIDTHxHEIGHT, e.g. 32x32.");
-            LoadSprite(new Sprite(nums[0], nums[1]), null);
-        }
-        catch (Exception ex) when (ex is FormatException or OverflowException or ArgumentOutOfRangeException) { Ui.Error(ex); }
+        if (Ui.AskSize(this, "New sprite", _sprite.Width, _sprite.Height, anchor: false) is not (int w, int h, _, _)) return;
+        LoadSprite(new Sprite(w, h), null);
+    }
+
+    void OnCanvasSize(object sender, RoutedEventArgs e)
+    {
+        CommitFloat();
+        if (Ui.AskSize(this, "Canvas size", _sprite.Width, _sprite.Height, anchor: true) is not (int w, int h, int ax, int ay)) return;
+        Resize(w, h, PixelOps.AnchorOffset(_sprite.Width, w, ax), PixelOps.AnchorOffset(_sprite.Height, h, ay));
+    }
+
+    void OnCrop(object sender, RoutedEventArgs e)
+    {
+        CommitFloat();
+        if (_sel is not { } s) { Ui.Error(new InvalidOperationException("Select an area first (Select tool, M).")); return; }
+        Resize(s.Width, s.Height, -s.X, -s.Y);
+    }
+
+    void Resize(int w, int h, int ox, int oy)
+    {
+        Snapshot();
+        _sprite = PixelOps.Resized(_sprite, w, h, ox, oy);
+        _sel = null;
+        RefreshAll();
     }
 
     void OnOpen(object? sender, RoutedEventArgs? e)
@@ -492,6 +482,7 @@ public partial class SpriteEditor : UserControl
 
     bool Save(string? path)
     {
+        CommitFloat();
         if (path is null)
         {
             var dlg = new SaveFileDialog { Filter = ProjectFilter, FileName = "sprite.pxf" };
@@ -511,6 +502,7 @@ public partial class SpriteEditor : UserControl
 
     void OnExportPng(object sender, RoutedEventArgs e)
     {
+        CommitFloat();
         var dlg = new SaveFileDialog { Filter = "PNG image (*.png)|*.png", FileName = System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(_path) ?? "sprite", ".png") };
         if (dlg.ShowDialog() != true) return;
         try { ImageIO.SavePng(dlg.FileName, Compositor.Flatten(_sprite, _frame), _sprite.Width, _sprite.Height); }
@@ -532,10 +524,26 @@ public partial class SpriteEditor : UserControl
             case Key.N when ctrl: OnNew(null, null); break;
             case Key.O when ctrl: OnOpen(null, null); break;
             case Key.G when ctrl: GridToggle.IsChecked = GridToggle.IsChecked != true; ApplyZoom(); break;
-            case Key.B when !ctrl: PencilBtn.IsChecked = true; break;
-            case Key.E when !ctrl: EraserBtn.IsChecked = true; break;
-            case Key.G when !ctrl: FillBtn.IsChecked = true; break;
-            case Key.I when !ctrl: PickerBtn.IsChecked = true; break;
+            case Key.B when !ctrl: SetTool(Tool.Pencil); break;
+            case Key.E when !ctrl: SetTool(Tool.Eraser); break;
+            case Key.G when !ctrl: SetTool(Tool.Fill); break;
+            case Key.I when !ctrl: SetTool(Tool.Picker); break;
+            case Key.L when !ctrl: SetTool(Tool.Line); break;
+            case Key.U when !ctrl: SetTool(Tool.Rect); break;
+            case Key.O when !ctrl: SetTool(Tool.Ellipse); break;
+            case Key.M when !ctrl: SetTool(Tool.Select); break;
+            case Key.OemOpenBrackets: BrushSize--; break;
+            case Key.OemCloseBrackets: BrushSize++; break;
+            case Key.A when ctrl: SelectAll(); break;
+            case Key.C when ctrl: Copy(); break;
+            case Key.X when ctrl: Cut(); break;
+            case Key.V when ctrl: Paste(); break;
+            case Key.Delete: DeleteSelection(); break;
+            case Key.H when !ctrl: TransformFloat(PixelOps.FlipH); break;
+            case Key.V when !ctrl: TransformFloat(PixelOps.FlipV); break;
+            case Key.R when !ctrl: TransformFloat(PixelOps.Rotate90, swapsSize: true); break;
+            case Key.Enter: CommitFloat(); break;
+            case Key.Escape: CancelFloat(); break;
             case Key.Space: OnPlay(null, null); break;
             case Key.Left: StopPlaying(); SelectFrame((_frame + _sprite.Frames.Count - 1) % _sprite.Frames.Count); break;
             case Key.Right: StopPlaying(); SelectFrame((_frame + 1) % _sprite.Frames.Count); break;

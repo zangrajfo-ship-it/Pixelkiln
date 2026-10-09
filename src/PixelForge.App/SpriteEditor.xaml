@@ -15,19 +15,35 @@
             <Button Content="Save as" Click="OnSaveAs" />
             <Button Content="Export PNG" Click="OnExportPng" />
             <Separator />
+            <Button Content="Canvas size…" Click="OnCanvasSize" />
+            <Button Content="Crop" ToolTip="Crop canvas to the selection" Click="OnCrop" />
+            <Separator />
             <Button Content="Undo" ToolTip="Ctrl+Z" Click="OnUndo" />
             <Button Content="Redo" ToolTip="Ctrl+Y" Click="OnRedo" />
             <Separator />
             <CheckBox x:Name="GridToggle" Content="Grid" ToolTip="Ctrl+G" IsChecked="True" Click="OnGridToggle" />
             <Separator />
+            <TextBlock Text="Size " VerticalAlignment="Center" />
+            <ComboBox x:Name="SizeBox" Width="44" SelectedIndex="0" ToolTip="Brush size  [ ]">
+                <ComboBoxItem>1</ComboBoxItem><ComboBoxItem>2</ComboBoxItem><ComboBoxItem>3</ComboBoxItem><ComboBoxItem>4</ComboBoxItem>
+                <ComboBoxItem>5</ComboBoxItem><ComboBoxItem>6</ComboBoxItem><ComboBoxItem>7</ComboBoxItem><ComboBoxItem>8</ComboBoxItem>
+            </ComboBox>
+            <CheckBox x:Name="FilledToggle" Content="Filled" ToolTip="Filled rectangles and ellipses" />
+            <CheckBox x:Name="MirrorXToggle" Content="Mirror X" ToolTip="Mirror drawing left/right" Click="OnMirrorToggle" />
+            <CheckBox x:Name="MirrorYToggle" Content="Mirror Y" ToolTip="Mirror drawing up/down" Click="OnMirrorToggle" />
+            <Separator />
             <TextBlock x:Name="Status" VerticalAlignment="Center" Margin="8,0" />
         </ToolBar>
 
-        <StackPanel DockPanel.Dock="Left" Width="70" Margin="4">
-            <RadioButton x:Name="PencilBtn" Content="Pencil" ToolTip="B" IsChecked="True" GroupName="tool" />
-            <RadioButton x:Name="EraserBtn" Content="Eraser" ToolTip="E" GroupName="tool" />
-            <RadioButton x:Name="FillBtn" Content="Fill" ToolTip="G" GroupName="tool" />
-            <RadioButton x:Name="PickerBtn" Content="Picker" ToolTip="I" GroupName="tool" />
+        <StackPanel x:Name="ToolsPanel" DockPanel.Dock="Left" Width="70" Margin="4">
+            <RadioButton Tag="Pencil" Content="Pencil" ToolTip="B" IsChecked="True" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Eraser" Content="Eraser" ToolTip="E" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Fill" Content="Fill" ToolTip="G" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Picker" Content="Picker" ToolTip="I" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Line" Content="Line" ToolTip="L  (Shift: 45°)" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Rect" Content="Rect" ToolTip="U  (Shift: square)" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Ellipse" Content="Ellipse" ToolTip="O  (Shift: circle)" GroupName="tool" Click="OnToolClick" />
+            <RadioButton Tag="Select" Content="Select" ToolTip="M — drag to select, drag inside to move. Ctrl+C/X/V, Del, H/V flip, R rotate, Enter apply, Esc cancel" GroupName="tool" Click="OnToolClick" />
             <Grid Height="56" Margin="2,12,2,0" ToolTip="Left/right mouse colors. Click to change.">
                 <Border x:Name="SecondarySwatch" Width="34" Height="34" HorizontalAlignment="Right" VerticalAlignment="Bottom"
                         BorderBrush="Gray" BorderThickness="1" MouseLeftButtonDown="OnSecondarySwatch" />
@@ -37,7 +53,18 @@
         </StackPanel>
 
         <DockPanel DockPanel.Dock="Right" Width="210" Margin="4">
-            <TextBlock DockPanel.Dock="Top" Text="Palette  (left / right click)" Margin="0,0,0,4" />
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+                <Button x:Name="PaletteMenuBtn" DockPanel.Dock="Right" Content="Palette ▾" Click="OnPaletteMenu">
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Load palette… (.hex, .gpl)" Click="OnLoadPalette" />
+                            <MenuItem Header="Save palette…" Click="OnSavePalette" />
+                            <MenuItem Header="Reset to default (DB32)" Click="OnResetPalette" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+                <TextBlock Text="Left / right click. Alt+click removes." VerticalAlignment="Center" FontSize="11" Foreground="Gray" TextWrapping="Wrap" />
+            </DockPanel>
             <WrapPanel x:Name="PaletteWrap" DockPanel.Dock="Top" />
             <TextBlock DockPanel.Dock="Top" Text="Layers" Margin="0,12,0,4" />
             <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,4,0,0">
@@ -95,6 +122,12 @@
                 </Rectangle>
                 <Image x:Name="CanvasImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                 <Rectangle x:Name="GridOverlay" IsHitTestVisible="False" />
+                <Canvas x:Name="Overlay" IsHitTestVisible="False">
+                    <Line x:Name="MirrorXLine" Stroke="#C0FF00FF" StrokeThickness="1" StrokeDashArray="4 3" Visibility="Collapsed" />
+                    <Line x:Name="MirrorYLine" Stroke="#C0FF00FF" StrokeThickness="1" StrokeDashArray="4 3" Visibility="Collapsed" />
+                    <Rectangle x:Name="SelRectBack" Stroke="Black" StrokeThickness="1" Visibility="Collapsed" />
+                    <Rectangle x:Name="SelRect" Stroke="White" StrokeThickness="1" StrokeDashArray="4 4" Visibility="Collapsed" />
+                </Canvas>
             </Grid>
         </ScrollViewer>
     </DockPanel>
