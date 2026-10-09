@@ -64,6 +64,8 @@ public partial class MusicEditor : UserControl
     {
         _pattern = Math.Clamp(_pattern, 0, _song.Patterns.Count - 1);
         BpmBox.Text = _song.Bpm.ToString();
+        Ui.MarkInvalid(BpmBox, null);
+        Ui.MarkInvalid(OrderBox, null);
         RefreshPatterns();
         RefreshInstrument();
         RedrawGrid();
@@ -78,6 +80,7 @@ public partial class MusicEditor : UserControl
         StepsGrid.InvalidateMeasure();
         StepsGrid.InvalidateVisual();
         Status.Text = $"Pattern {_pattern + 1}/{_song.Patterns.Count}   {_song.Steps} steps";
+        AnnounceCursor();
     }
 
     void UpdateTitle()
@@ -99,7 +102,7 @@ public partial class MusicEditor : UserControl
 
     void OnGridDown(object sender, MouseButtonEventArgs e)
     {
-        Keyboard.Focus(this);
+        StepsGrid.Focus();
         var p = e.GetPosition(StepsGrid);
         if (StepsGrid.InVolumeLane(p))
         {
@@ -110,6 +113,7 @@ public partial class MusicEditor : UserControl
             return;
         }
         if (StepsGrid.Hit(p) is not var (step, note)) return;
+        StepsGrid.KeyCursor = (step, note);
         int start = Pat.NoteStart(_channel, step);
 
         // right-click, or click on the note itself: remove it (with its length)
@@ -151,6 +155,64 @@ public partial class MusicEditor : UserControl
     {
         _drag = Drag.None;
         StepsGrid.ReleaseMouseCapture();
+    }
+
+    /// <summary>
+    /// Piano-roll keyboard (WCAG 2.1.1): arrows move the cursor, Enter adds/removes a note,
+    /// Shift+←/→ shortens/lengthens it, Del removes it, +/− change its volume. Space still plays.
+    /// </summary>
+    void OnGridKey(object sender, KeyEventArgs e)
+    {
+        var (st, n) = StepsGrid.KeyCursor;
+        bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+        int start = Pat.NoteStart(_channel, st);
+        switch (e.Key)
+        {
+            case Key.Left or Key.Right when shift:
+                if (start < 0) return;
+                Snapshot();
+                int len = Pat.Length(_channel, start) + (e.Key == Key.Right ? 1 : -1);
+                Pat.SetNote(_channel, start, Pat.Notes[_channel][start], len);
+                st = start + Pat.Length(_channel, start) - 1;
+                break;
+            case Key.Left: st = Math.Max(0, st - 1); break;
+            case Key.Right: st = Math.Min(_song.Steps - 1, st + 1); break;
+            case Key.Up: n = Math.Min(Song.MaxNote, n + 1); break;
+            case Key.Down: n = Math.Max(Song.MinNote, n - 1); break;
+            case Key.Enter:
+                Snapshot();
+                if (start >= 0 && Pat.Notes[_channel][start] == n) Pat.RemoveNote(_channel, start);
+                else { Pat.SetNote(_channel, st, n, 1); Preview(n); }
+                break;
+            case Key.Delete:
+                if (start < 0) return;
+                Snapshot();
+                Pat.RemoveNote(_channel, start);
+                break;
+            case Key.OemPlus or Key.Add or Key.OemMinus or Key.Subtract:
+                if (start < 0) return;
+                Snapshot();
+                int d = e.Key is Key.OemPlus or Key.Add ? 1 : -1;
+                Pat.Volumes[_channel][start] = Math.Clamp(Pat.Volumes[_channel][start] + d, 0, Pattern.MaxVolume);
+                break;
+            default: return;
+        }
+        StepsGrid.KeyCursor = (st, n);
+        StepsGrid.BringIntoView(StepsGrid.CellRect(st, n));
+        StepsGrid.InvalidateVisual();
+        AnnounceCursor();
+        e.Handled = true;
+    }
+
+    /// <summary>Tells screen readers what is under the piano-roll cursor.</summary>
+    void AnnounceCursor()
+    {
+        var (st, n) = StepsGrid.KeyCursor;
+        int start = Pat.NoteStart(_channel, st);
+        string state = start < 0 ? "empty"
+            : $"note {Song.NoteName(Pat.Notes[_channel][start])}, {Pat.Length(_channel, start)} steps, volume {Pat.Volumes[_channel][start]}";
+        System.Windows.Automation.AutomationProperties.SetName(StepsGrid,
+            $"Piano roll, pattern {_pattern + 1}, {(Channel)_channel}. Cursor {Song.NoteName(n)}, step {st + 1}: {state}");
     }
 
     void SetVolume(Point p)
@@ -205,7 +267,7 @@ public partial class MusicEditor : UserControl
     void AddSlider(string name, double min, double max, Func<Instrument, double> get, Action<Instrument, double> set, string unit)
     {
         var slider = new Slider { Minimum = min, Maximum = max, IsSnapToTickEnabled = true, TickFrequency = 1 };
-        var value = new TextBlock { FontSize = 11, Foreground = System.Windows.Media.Brushes.Gray, HorizontalAlignment = HorizontalAlignment.Right };
+        var value = new TextBlock { FontSize = 11, Foreground = (System.Windows.Media.Brush)FindResource("MutedText"), HorizontalAlignment = HorizontalAlignment.Right };
         slider.PreviewMouseLeftButtonDown += (_, _) => Snapshot();   // one undo step per drag
         slider.ValueChanged += (_, _) =>
         {
@@ -286,9 +348,10 @@ public partial class MusicEditor : UserControl
         var order = parts.Select(p => int.TryParse(p, out int n) ? n - 1 : -1).ToList();
         if (order.Count == 0 || order.Any(i => i < 0 || i >= _song.Patterns.Count))
         {
-            OrderBox.Text = string.Join(" ", _song.Order.Select(i => i + 1));   // invalid: revert
+            Ui.MarkInvalid(OrderBox, $"Use pattern numbers 1 to {_song.Patterns.Count}, separated by spaces (e.g. 1 1 2 1). Not applied.");
             return;
         }
+        Ui.MarkInvalid(OrderBox, null);
         if (order.SequenceEqual(_song.Order)) return;
         Snapshot();
         _song.Order.Clear();
@@ -302,7 +365,12 @@ public partial class MusicEditor : UserControl
 
     void OnBpmCommit(object sender, RoutedEventArgs e)
     {
-        if (!int.TryParse(BpmBox.Text, out int bpm) || bpm < 20 || bpm > 400) { BpmBox.Text = _song.Bpm.ToString(); return; }
+        if (!int.TryParse(BpmBox.Text, out int bpm) || bpm < 20 || bpm > 400)
+        {
+            Ui.MarkInvalid(BpmBox, "Tempo must be a whole number from 20 to 400. Not applied.");
+            return;
+        }
+        Ui.MarkInvalid(BpmBox, null);
         if (bpm == _song.Bpm) return;
         Snapshot();
         _song.Bpm = bpm;

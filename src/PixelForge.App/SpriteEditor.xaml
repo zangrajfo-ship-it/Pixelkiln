@@ -1,6 +1,7 @@
 <UserControl x:Class="PixelForge.App.SpriteEditor"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="True" FocusVisualStyle="{x:Null}">
     <UserControl.Resources>
         <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
             <Setter Property="Height" Value="32" />
@@ -24,7 +25,7 @@
             <CheckBox x:Name="GridToggle" Content="Grid" ToolTip="Ctrl+G" IsChecked="True" Click="OnGridToggle" />
             <Separator />
             <TextBlock Text="Size " VerticalAlignment="Center" />
-            <ComboBox x:Name="SizeBox" Width="44" SelectedIndex="0" ToolTip="Brush size  [ ]">
+            <ComboBox x:Name="SizeBox" AutomationProperties.Name="Brush size" Width="44" SelectedIndex="0" ToolTip="Brush size  [ ]">
                 <ComboBoxItem>1</ComboBoxItem><ComboBoxItem>2</ComboBoxItem><ComboBoxItem>3</ComboBoxItem><ComboBoxItem>4</ComboBoxItem>
                 <ComboBoxItem>5</ComboBoxItem><ComboBoxItem>6</ComboBoxItem><ComboBoxItem>7</ComboBoxItem><ComboBoxItem>8</ComboBoxItem>
             </ComboBox>
@@ -45,10 +46,10 @@
             <RadioButton Tag="Ellipse" Content="Ellipse" ToolTip="O  (Shift: circle)" GroupName="tool" Click="OnToolClick" />
             <RadioButton Tag="Select" Content="Select" ToolTip="M — drag to select, drag inside to move. Ctrl+C/X/V, Del, H/V flip, R rotate, Enter apply, Esc cancel" GroupName="tool" Click="OnToolClick" />
             <Grid Height="56" Margin="2,12,2,0" ToolTip="Left/right mouse colors. Click to change.">
-                <Border x:Name="SecondarySwatch" Width="34" Height="34" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                        BorderBrush="Gray" BorderThickness="1" MouseLeftButtonDown="OnSecondarySwatch" />
-                <Border x:Name="PrimarySwatch" Width="34" Height="34" HorizontalAlignment="Left" VerticalAlignment="Top"
-                        BorderBrush="White" BorderThickness="1" MouseLeftButtonDown="OnPrimarySwatch" />
+                <Button x:Name="SecondarySwatch" Width="34" Height="34" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                        Template="{StaticResource SwatchTemplate}" BorderBrush="Gray" BorderThickness="1" Click="OnSecondarySwatch" />
+                <Button x:Name="PrimarySwatch" Width="34" Height="34" HorizontalAlignment="Left" VerticalAlignment="Top"
+                        Template="{StaticResource SwatchTemplate}" BorderBrush="White" BorderThickness="1" Click="OnPrimarySwatch" />
             </Grid>
         </StackPanel>
 
@@ -63,7 +64,7 @@
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
-                <TextBlock Text="Left / right click. Alt+click removes." VerticalAlignment="Center" FontSize="11" Foreground="Gray" TextWrapping="Wrap" />
+                <TextBlock Text="Left / right click. Alt+click removes." VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource MutedText}" TextWrapping="Wrap" />
             </DockPanel>
             <WrapPanel x:Name="PaletteWrap" DockPanel.Dock="Top" />
             <TextBlock DockPanel.Dock="Top" Text="Layers" Margin="0,12,0,4" />
@@ -85,7 +86,7 @@
                 <Button Content="◀" ToolTip="Move frame left" Click="OnFrameLeft" />
                 <Button Content="▶" ToolTip="Move frame right" Click="OnFrameRight" />
                 <TextBlock Text="  ms" VerticalAlignment="Center" />
-                <TextBox x:Name="DurationBox" Width="50" ToolTip="Frame duration (Enter to apply)" KeyDown="OnDurationKey" LostKeyboardFocus="OnDurationCommit" />
+                <TextBox x:Name="DurationBox" AutomationProperties.Name="Frame duration in milliseconds" Width="50" ToolTip="Frame duration (Enter to apply)" KeyDown="OnDurationKey" LostKeyboardFocus="OnDurationCommit" />
                 <Separator />
                 <CheckBox x:Name="OnionToggle" Content="Onion skin" ToolTip="Show previous and next frame faintly" Click="OnOnionToggle" />
                 <Separator />
@@ -105,7 +106,8 @@
         </DockPanel>
 
         <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
-                      Background="#2B2B2B" PreviewMouseWheel="OnWheel">
+                      Background="#2B2B2B" PreviewMouseWheel="OnWheel" BorderThickness="2" BorderBrush="Transparent"
+                      AutomationProperties.Name="Sprite canvas">
             <Grid x:Name="CanvasHost" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Cross"
                   MouseDown="OnCanvasDown" MouseMove="OnCanvasMove" MouseUp="OnCanvasUp" MouseLeave="OnCanvasLeave">
                 <Rectangle>

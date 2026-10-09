@@ -22,10 +22,10 @@
             <Separator />
             <Button x:Name="PlaySongBtn" Content="▶ Song" ToolTip="Space — loop the whole song" Click="OnPlaySong" />
             <Button x:Name="PlayPatternBtn" Content="▶ Pattern" ToolTip="Loop the current pattern" Click="OnPlayPattern" />
-            <Button Content="■ Stop" Click="OnStop" />
+            <Button Content="■ Stop" ToolTip="Stop" Click="OnStop" />
             <Separator />
             <TextBlock Text="BPM " VerticalAlignment="Center" />
-            <TextBox x:Name="BpmBox" Width="40" ToolTip="20–400, Enter to apply" KeyDown="OnBpmKey" LostKeyboardFocus="OnBpmCommit" />
+            <TextBox x:Name="BpmBox" AutomationProperties.Name="Tempo in beats per minute" Width="40" ToolTip="20–400, Enter to apply" KeyDown="OnBpmKey" LostKeyboardFocus="OnBpmCommit" />
             <Separator />
             <TextBlock x:Name="Status" VerticalAlignment="Center" Margin="8,0" />
         </ToolBar>
@@ -36,8 +36,8 @@
             <RadioButton x:Name="Ch1" Content="Pulse 2" ToolTip="2" GroupName="ch" Click="OnChannel" />
             <RadioButton x:Name="Ch2" Content="Triangle" ToolTip="3 (bass)" GroupName="ch" Click="OnChannel" />
             <RadioButton x:Name="Ch3" Content="Noise" ToolTip="4 (drums)" GroupName="ch" Click="OnChannel" />
-            <TextBlock TextWrapping="Wrap" Foreground="Gray" FontSize="11" Margin="2,8,2,0"
-                       Text="Click: add note, drag right to make it longer. Click a note or right-click: remove. Drag in the Vol lane to set loudness." />
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource MutedText}" FontSize="11" Margin="2,8,2,0"
+                       Text="Click: add note, drag right to make it longer. Click a note or right-click: remove. Drag in the Vol lane to set loudness. Keyboard: click the grid, arrows move, Enter adds/removes, Shift+←/→ length, Del removes." />
             <TextBlock Text="Instrument" FontWeight="SemiBold" Margin="2,12,0,4" />
             <StackPanel x:Name="InstrumentPanel" />
         </StackPanel>
@@ -47,7 +47,7 @@
             <Button Content="+" Width="26" ToolTip="New empty pattern" Click="OnAddPattern" />
             <Button Content="Duplicate" ToolTip="Copy current pattern" Click="OnDuplicatePattern" Margin="2,0" />
             <Button Content="−" Width="26" ToolTip="Delete pattern" Click="OnDeletePattern" />
-            <TextBox x:Name="OrderBox" Width="220" DockPanel.Dock="Right" ToolTip="Pattern numbers in play order, e.g. 1 1 2 1 (Enter to apply)"
+            <TextBox x:Name="OrderBox" AutomationProperties.Name="Pattern play order" Width="220" DockPanel.Dock="Right" ToolTip="Pattern numbers in play order, e.g. 1 1 2 1 (Enter to apply)"
                      KeyDown="OnOrderKey" LostKeyboardFocus="OnOrderCommit" />
             <TextBlock Text="Order" VerticalAlignment="Center" Margin="12,0,6,0" DockPanel.Dock="Right" />
             <ListBox x:Name="PatternsList" Margin="6,0" SelectionChanged="OnPatternSelected" BorderThickness="0"
@@ -61,7 +61,8 @@
         </DockPanel>
 
         <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#2B2B2B">
-            <local:StepGrid x:Name="StepsGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Cursor="Hand"
+            <local:StepGrid x:Name="StepsGrid" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Cursor="Hand" Focusable="True"
+                            KeyDown="OnGridKey"
                             MouseDown="OnGridDown" MouseMove="OnGridMove" MouseUp="OnGridUp" />
         </ScrollViewer>
     </DockPanel>

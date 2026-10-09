@@ -280,6 +280,7 @@ public partial class TilemapEditor
     {
         if (_map.Tileset is not { } ts) return;
         var c = TilesetCell(e, ts);
+        TilesetHost.Focus();
         _tsDragFrom = c;
         TilesetHost.CaptureMouse();
         SetTilesetSelection(new Int32Rect(c.X, c.Y, 1, 1));
@@ -299,6 +300,22 @@ public partial class TilemapEditor
         if (CurrentTool != FillBtn && CurrentTool != AutoBtn) SetTool(PaintBtn);
     }
 
+    /// <summary>Arrows move the tileset selection, Shift+arrows grow/shrink it (WCAG 2.1.1).</summary>
+    void OnTilesetKey(object sender, KeyEventArgs e)
+    {
+        if (_map.Tileset is not { } ts) return;
+        int dx = e.Key == Key.Left ? -1 : e.Key == Key.Right ? 1 : 0, dy = e.Key == Key.Up ? -1 : e.Key == Key.Down ? 1 : 0;
+        if (dx == 0 && dy == 0) return;
+        var r = _tsSel;
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+            r = new Int32Rect(r.X, r.Y, Math.Clamp(r.Width + dx, 1, ts.Columns - r.X), Math.Clamp(r.Height + dy, 1, ts.Rows - r.Y));
+        else
+            r = new Int32Rect(Math.Clamp(r.X + dx, 0, ts.Columns - 1), Math.Clamp(r.Y + dy, 0, ts.Rows - 1), 1, 1);
+        SetTilesetSelection(r);
+        TilesetHost.BringIntoView(new Rect(r.X * ts.TileSize * TilesetScale, r.Y * ts.TileSize * TilesetScale, ts.TileSize * TilesetScale, ts.TileSize * TilesetScale));
+        e.Handled = true;
+    }
+
     void SetTilesetSelection(Int32Rect r)
     {
         if (_map.Tileset is not { } ts) return;
@@ -313,6 +330,8 @@ public partial class TilemapEditor
         for (int j = 0; j < r.Height; j++)
             for (int i = 0; i < r.Width; i++) stamp[j * r.Width + i] = (r.Y + j) * ts.Columns + r.X + i;
         SetStamp(stamp, r.Width, r.Height);
+        System.Windows.Automation.AutomationProperties.SetItemStatus(TilesetHost,
+            r.Width * r.Height == 1 ? $"Tile {stamp[0] + 1} of {ts.Count}" : $"{r.Width} by {r.Height} tiles from tile {stamp[0] + 1}");
     }
 
     // ---------- terrains ----------

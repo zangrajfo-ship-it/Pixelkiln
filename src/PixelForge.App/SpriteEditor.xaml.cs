@@ -28,6 +28,8 @@ public partial class SpriteEditor : UserControl
         IsVisibleChanged += (_, _) => UpdateTitle();
 
         void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadSprite(_sprite, null); }
+        // visible focus on the canvas (WCAG 2.4.7): shortcuts go to the editor while it has focus
+        IsKeyboardFocusedChanged += (_, _) => Scroller.BorderBrush = IsKeyboardFocused ? (Brush)FindResource("FocusRing") : Brushes.Transparent;
     }
 
     /// <summary>Current frame, flattened (used as a tileset source).</summary>
@@ -139,27 +141,28 @@ public partial class SpriteEditor : UserControl
     void RefreshPalette()
     {
         PaletteWrap.Children.Clear();
-        for (int i = 0; i < _sprite.Palette.Count; i++)
+        int count = _sprite.Palette.Count;
+        for (int i = 0; i < count; i++)
         {
             uint c = _sprite.Palette[i];
             int index = i;
-            var sw = new Border { Width = 20, Height = 20, Margin = new Thickness(1), Background = Ui.BrushOf(c), ToolTip = $"#{c & 0xFFFFFF:X6}" };
-            sw.MouseLeftButtonDown += (_, _) =>
+            // a button, so the palette works with the keyboard: Enter = left color, Shift+Enter = right color, Del = remove
+            var sw = Ui.Swatch(c, 24, $"Color {Ui.ColorName(c)}, {i + 1} of {count}");
+            sw.Click += (_, _) =>
             {
-                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
-                {
-                    Snapshot();
-                    _sprite.Palette.RemoveAt(index);
-                    RefreshPalette();
-                    return;
-                }
-                _primary = c;
-                RefreshSwatches();
+                if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) RemoveColor(index);
+                else { _primary = c; RefreshSwatches(); }
             };
-            sw.MouseRightButtonDown += (_, _) => { _secondary = c; RefreshSwatches(); };
+            sw.MouseRightButtonUp += (_, e) => { _secondary = c; RefreshSwatches(); e.Handled = true; };
+            sw.PreviewKeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Delete) { RemoveColor(index); e.Handled = true; }
+                else if (e.Key == Key.Enter && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) { _secondary = c; RefreshSwatches(); e.Handled = true; }
+            };
             PaletteWrap.Children.Add(sw);
         }
-        var add = new Button { Content = "+", Width = 20, Height = 20, Margin = new Thickness(1), ToolTip = "Add color to palette" };
+        var add = new Button { Content = "+", Width = 24, Height = 24, Margin = new Thickness(1), ToolTip = "Add color to palette" };
+        System.Windows.Automation.AutomationProperties.SetName(add, "Add color to palette");
         add.Click += (_, _) =>
         {
             if (Ui.PickColor(_primary) is not uint c) return;
@@ -206,18 +209,29 @@ public partial class SpriteEditor : UserControl
         RefreshPalette();
     }
 
+    void RemoveColor(int index)
+    {
+        Snapshot();
+        _sprite.Palette.RemoveAt(index);
+        RefreshPalette();
+        if (PaletteWrap.Children.Count > 0)   // keep keyboard focus in the palette
+            ((UIElement)PaletteWrap.Children[Math.Min(index, PaletteWrap.Children.Count - 1)]).Focus();
+    }
+
     void RefreshSwatches()
     {
         PrimarySwatch.Background = Ui.BrushOf(_primary);
         SecondarySwatch.Background = Ui.BrushOf(_secondary);
+        System.Windows.Automation.AutomationProperties.SetName(PrimarySwatch, $"Left mouse color {Ui.ColorName(_primary)}. Press to change.");
+        System.Windows.Automation.AutomationProperties.SetName(SecondarySwatch, $"Right mouse color {Ui.ColorName(_secondary)}. Press to change.");
     }
 
-    void OnPrimarySwatch(object sender, MouseButtonEventArgs e)
+    void OnPrimarySwatch(object sender, RoutedEventArgs e)
     {
         if (Ui.PickColor(_primary) is uint c) { _primary = c; RefreshSwatches(); }
     }
 
-    void OnSecondarySwatch(object sender, MouseButtonEventArgs e)
+    void OnSecondarySwatch(object sender, RoutedEventArgs e)
     {
         if (Ui.PickColor(_secondary) is uint c) { _secondary = c; RefreshSwatches(); }
     }
@@ -286,6 +300,7 @@ public partial class SpriteEditor : UserControl
         {
             var thumb = new Image { Width = 48, Height = 48, Stretch = Stretch.Uniform, Source = ImageIO.ToBitmap(Compositor.Flatten(_sprite, f), _sprite.Width, _sprite.Height) };
             RenderOptions.SetBitmapScalingMode(thumb, BitmapScalingMode.NearestNeighbor);
+            System.Windows.Automation.AutomationProperties.SetName(thumb, $"Frame {f + 1}, {_sprite.Frames[f].DurationMs} ms");
             FramesList.Items.Add(new StackPanel
             {
                 Tag = thumb,
@@ -294,6 +309,7 @@ public partial class SpriteEditor : UserControl
         }
         FramesList.SelectedIndex = _frame;
         DurationBox.Text = _sprite.Frames[_frame].DurationMs.ToString();
+        Ui.MarkInvalid(DurationBox, null);
         _refreshingFrames = false;
     }
 
@@ -305,6 +321,7 @@ public partial class SpriteEditor : UserControl
         FramesList.SelectedIndex = f;
         _refreshingFrames = false;
         DurationBox.Text = _sprite.Frames[f].DurationMs.ToString();
+        Ui.MarkInvalid(DurationBox, null);
         Render();
     }
 
@@ -338,9 +355,10 @@ public partial class SpriteEditor : UserControl
     {
         if (!int.TryParse(DurationBox.Text, out int ms) || ms < 10 || ms > 60000)
         {
-            DurationBox.Text = _sprite.Frames[_frame].DurationMs.ToString();
+            Ui.MarkInvalid(DurationBox, "Frame duration must be a whole number of milliseconds from 10 to 60000. Not applied.");
             return;
         }
+        Ui.MarkInvalid(DurationBox, null);
         if (ms == _sprite.Frames[_frame].DurationMs) return;
         Snapshot();
         _sprite.Frames[_frame].DurationMs = ms;

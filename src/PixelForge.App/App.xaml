@@ -1,9 +1,24 @@
-﻿<Application x:Class="PixelForge.App.App"
+<Application x:Class="PixelForge.App.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:PixelForge.App"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <!-- secondary text: 7.5:1 on white (WCAG 1.4.3) -->
+        <SolidColorBrush x:Key="MutedText" Color="#555555" />
+        <SolidColorBrush x:Key="FocusRing" Color="#3B82F6" />
+        <!-- color swatch button: the fill is the color; focus shows a thick ring -->
+        <ControlTemplate x:Key="SwatchTemplate" TargetType="Button">
+            <Border x:Name="Ring" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" />
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter TargetName="Ring" Property="BorderBrush" Value="{StaticResource FocusRing}" />
+                    <Setter TargetName="Ring" Property="BorderThickness" Value="3" />
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Ring" Property="BorderBrush" Value="White" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
     </Application.Resources>
 </Application>

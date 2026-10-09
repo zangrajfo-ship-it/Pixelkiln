@@ -29,6 +29,7 @@ public partial class TilemapEditor : UserControl
         IsVisibleChanged += (_, _) => UpdateTitle();
 
         void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadMap(_map, null); }
+        IsKeyboardFocusedChanged += (_, _) => Scroller.BorderBrush = IsKeyboardFocused ? (Brush)FindResource("FocusRing") : Brushes.Transparent;
     }
 
     // ---------- document ----------
@@ -92,7 +93,7 @@ public partial class TilemapEditor : UserControl
     {
         CanvasHost.Width = _map.Width * CellPx;
         CanvasHost.Height = _map.Height * CellPx;
-        GridOverlay.Fill = GridToggle.IsChecked == true && CellPx >= 4 ? Ui.GridBrush(CellPx) : null;
+        GridOverlay.Fill = GridToggle.IsChecked == true && CellPx >= 4 ? Ui.GridBrush(CellPx, Color.FromArgb(0x60, 0xFF, 0xFF, 0xFF)) : null;   // light lines on the dark map
         Status.Text = $"{_map.Width}×{_map.Height} tiles of {_map.TileSize}px   {_zoom}×";
         RefreshObjects();
     }
