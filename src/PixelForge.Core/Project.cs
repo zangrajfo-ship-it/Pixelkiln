@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace PixelForge.Core;
 
-public enum AssetType { Sprite, Image, Tilemap, Song, Sound, Scene, Character, Palette }
+public enum AssetType { Sprite, Image, Tilemap, Song, Sound, Scene, Character, Palette, Audio, Mix }
 
 /// <summary>One file of a project. <see cref="Id"/> never changes; <see cref="Path"/> is relative to the project folder.</summary>
 public sealed class AssetEntry
@@ -28,6 +28,8 @@ public sealed class ProjectSettings
     public Dictionary<int, string> CollisionCategories { get; set; } = new() { [0] = "world", [1] = "player", [2] = "enemy", [3] = "pickup" };
     /// <summary>Category bit → bit mask of categories it collides with (missing = collides with everything).</summary>
     public Dictionary<int, uint> CollisionMasks { get; set; } = [];
+    /// <summary>Music playlists for the game (songs, WAVs or mixes in order).</summary>
+    public List<Playlist> Playlists { get; set; } = [];
 
     public bool Collides(int a, int b) =>
         (CollisionMasks.GetValueOrDefault(a, uint.MaxValue) & 1u << b) != 0 && (CollisionMasks.GetValueOrDefault(b, uint.MaxValue) & 1u << a) != 0;
@@ -49,6 +51,7 @@ public sealed class Project
         [".pxf"] = AssetType.Sprite, [".png"] = AssetType.Image, [".gif"] = AssetType.Image, [".bmp"] = AssetType.Image,
         [".pxm"] = AssetType.Tilemap, [".pxs"] = AssetType.Song, [".sfx"] = AssetType.Sound,
         [".pxscene"] = AssetType.Scene, [".pxchar"] = AssetType.Character, [".hex"] = AssetType.Palette, [".gpl"] = AssetType.Palette,
+        [".wav"] = AssetType.Audio, [".pxmix"] = AssetType.Mix,
     };
 
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -236,6 +239,7 @@ public sealed class Project
                 AssetType.Tilemap => Tilemap.Load(path).TilesetAssetId is Guid g ? [g] : [],
                 AssetType.Character => Character.Load(path).SpriteAssetId is Guid c ? [c] : [],
                 AssetType.Scene => Scene.Load(path).ReferencedAssets(),
+                AssetType.Mix => Mix.Load(path).ReferencedAssets(),
                 _ => [],
             };
         }

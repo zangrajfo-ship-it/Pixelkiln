@@ -31,6 +31,8 @@ public sealed class AssetItem(AssetEntry entry, string fullPath) : INotifyProper
     public string Glyph => _thumb is not null ? "" : Entry.Type switch
     {
         AssetType.Song => "",
+        AssetType.Audio => "",
+        AssetType.Mix => "",
         AssetType.Sound => "",
         AssetType.Scene => "",
         AssetType.Character => "",

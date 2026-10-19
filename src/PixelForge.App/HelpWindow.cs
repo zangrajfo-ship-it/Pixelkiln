@@ -41,6 +41,13 @@ static class HelpWindow
             ("Del", "Delete selected object or area"), ("Space", "Play animations and movement tracks"),
             ("Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / fit"),
         ]),
+        ("Audio", [
+            ("Space / L / Home", "Play or stop / loop region / playhead to start"),
+            ("Click on the timeline", "Playhead (or select a clip)"), ("Drag a clip", "Move; snaps to clip edges, Shift = free"),
+            ("← → / Shift+← →", "Move clip by 10 / 100 ms"), ("↑ ↓", "Move clip to the track above / below"),
+            ("[ ]", "Select previous / next clip"), ("S / Del", "Split at playhead / delete clip"),
+            ("Library: Enter", "Add to the selected track at the playhead"), ("Ctrl+E", "Export WAV"),
+        ]),
         ("Music", [
             ("Space", "Play / stop song"), ("1 2 3 4", "Pulse 1, pulse 2, triangle, noise"),
             ("Piano roll: arrows", "Move cursor"), ("Enter", "Add / remove note"),

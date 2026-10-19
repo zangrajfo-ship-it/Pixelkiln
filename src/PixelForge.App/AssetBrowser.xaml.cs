@@ -64,7 +64,7 @@ public partial class AssetBrowser : UserControl
         DetailName.Text = a.Path;
         DetailText.Text = AssetInfo.Describe(a.Type, item.FullPath);
         PreviewImage.Source = AssetItem.Make(a.Type, item.FullPath, p, 160);
-        PreviewButton.Visibility = a.Type is AssetType.Song or AssetType.Sound or AssetType.Sprite ? Visibility.Visible : Visibility.Collapsed;
+        PreviewButton.Visibility = a.Type is AssetType.Song or AssetType.Sound or AssetType.Audio or AssetType.Mix or AssetType.Sprite ? Visibility.Visible : Visibility.Collapsed;
         UsedByText.Text = "Looking for users…";
         var users = await Task.Run(() => p.UsersOf(a.Id).Select(u => u.Name).ToList());
         if (Selected?.Id != a.Id) return;   // selection moved on meanwhile
@@ -85,6 +85,7 @@ public partial class AssetBrowser : UserControl
             {
                 case AssetType.Song: AudioOut.Shared.PlayOnce(Synth.Render(Song.Load(item.FullPath))); break;
                 case AssetType.Sound: AudioOut.Shared.PlayOnce(Sfx.Load(item.FullPath).Render()); break;
+                case AssetType.Audio or AssetType.Mix when App.Project is { } p: AudioOut.Shared.PlayOnce(new AudioLibrary(p).Samples(item.Entry.Id)); break;
                 case AssetType.Sprite:
                     _animSprite = ProjectFile.Load(item.FullPath);
                     if (_animSprite.Frames.Count < 2) return;

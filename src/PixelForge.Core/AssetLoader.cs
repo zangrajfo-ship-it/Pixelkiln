@@ -16,6 +16,8 @@ public static class AssetLoader
             case AssetType.Palette: PaletteIO.Load(path); break;
             case AssetType.Character: Character.Load(path); break;
             case AssetType.Scene: Scene.Load(path); break;
+            case AssetType.Audio: WavReader.Load(path); break;
+            case AssetType.Mix: Mix.Load(path); break;
         }
     }
 

@@ -20,6 +20,8 @@ sealed class AudioOut : ISampleProvider, IDisposable
     readonly object _lock = new();
     readonly List<(float[] Data, int Pos)> _oneShots = [];
     SongStream? _song;
+    float[]? _clip;          // audio studio playback: one clip with a position the UI can follow
+    int _clipPos, _loopFrom = -1, _loopTo = -1;
 
     AudioOut()
     {
@@ -42,6 +44,23 @@ sealed class AudioOut : ISampleProvider, IDisposable
         }
     }
 
+    /// <summary>Plays samples from a position; with a loop region it jumps back from loopTo to loopFrom until stopped.</summary>
+    public void PlayClip(float[] samples, int from = 0, int loopFrom = -1, int loopTo = -1)
+    {
+        lock (_lock)
+        {
+            _clip = samples;
+            _clipPos = Math.Clamp(from, 0, samples.Length);
+            bool loop = loopFrom >= 0 && loopTo > loopFrom && loopTo <= samples.Length;
+            (_loopFrom, _loopTo) = loop ? (loopFrom, loopTo) : (-1, -1);
+        }
+    }
+
+    public void StopClip() { lock (_lock) _clip = null; }
+
+    /// <summary>Sample position of the playing clip; null when nothing plays (finished or stopped).</summary>
+    public int? ClipPosition { get { lock (_lock) return _clip is null ? null : _clipPos; } }
+
     public int Read(float[] buffer, int offset, int count)
     {
         Array.Clear(buffer, offset, count);
@@ -54,6 +73,12 @@ sealed class AudioOut : ISampleProvider, IDisposable
             catch (Exception ex) when (ex is ArgumentOutOfRangeException or IndexOutOfRangeException)
             {
                 // the song was edited mid-read (pattern removed etc.); this block stays silent
+            }
+            for (int i = 0; _clip is { } c && i < count; i++)
+            {
+                if (_clipPos == _loopTo) _clipPos = _loopFrom;
+                if (_clipPos >= c.Length) { _clip = null; break; }
+                buffer[offset + i] += c[_clipPos++];
             }
             for (int k = _oneShots.Count - 1; k >= 0; k--)
             {

@@ -12,7 +12,7 @@ namespace PixelForge.App;
 public partial class MainWindow : Window
 {
     // order = autosave file index; new editors are appended, whatever their tab position
-    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd];
+    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd, AudioEd];
 
     TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed);
     IEditor? Current => (Tabs?.SelectedItem as TabItem)?.Content as IEditor;   // SelectedContent lags behind SelectionChanged
@@ -163,8 +163,15 @@ public partial class MainWindow : Window
             AssetType.Sound => SfxEd,
             AssetType.Character => CharEd,
             AssetType.Scene => SceneEd,
+            AssetType.Mix => AudioEd,
             _ => null,
         };
+        if (a.Type == AssetType.Audio)   // a WAV is material: it goes onto a track
+        {
+            Tabs.SelectedItem = TabOf(AudioEd);
+            AudioEd.AddClip(a.Id);
+            return;
+        }
         if (a.Type == AssetType.Palette)
         {
             Tabs.SelectedIndex = 0;
