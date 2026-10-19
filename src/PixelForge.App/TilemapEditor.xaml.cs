@@ -127,6 +127,8 @@ public partial class TilemapEditor : UserControl
         Snapshot();
         _map.Tileset = new Tileset(px, w, h, _map.TileSize);
         _map.TilesetSource = source;
+        // remember the tileset by asset id when it lives in the open project (ADR-0001)
+        _map.TilesetAssetId = source is not null && App.Project?.FindByPath(source) is { } asset ? asset.Id : null;
         RefreshTileset();
         Render();
     }
@@ -264,10 +266,24 @@ public partial class TilemapEditor : UserControl
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
+    /// <summary>The asset browser renamed or moved the open file: keep saving to the new place.</summary>
+    public void OnFileMoved(string oldPath, string newPath)
+    {
+        if (!string.Equals(_path, oldPath, StringComparison.OrdinalIgnoreCase)) return;
+        _path = newPath;
+        UpdateTitle();
+    }
+
     public void OpenPath(string path, bool confirmed = false)
     {
         if (!confirmed && !ConfirmDiscard()) return;
-        try { LoadMap(Tilemap.Load(path), path); App.AddRecent(path); }
+        try
+        {
+            var m = Tilemap.Load(path);
+            if (App.Project is { } p) AssetLoader.RefreshTileset(m, p);   // the tileset asset may have changed since
+            LoadMap(m, path);
+            App.AddRecent(path);
+        }
         catch (Exception ex) { Ui.Error(ex); }
     }
 

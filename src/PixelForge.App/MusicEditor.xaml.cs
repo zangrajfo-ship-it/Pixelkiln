@@ -456,6 +456,14 @@ public partial class MusicEditor : UserControl
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
+    /// <summary>The asset browser renamed or moved the open file: keep saving to the new place.</summary>
+    public void OnFileMoved(string oldPath, string newPath)
+    {
+        if (!string.Equals(_path, oldPath, StringComparison.OrdinalIgnoreCase)) return;
+        _path = newPath;
+        UpdateTitle();
+    }
+
     public void OpenPath(string path, bool confirmed = false)
     {
         if (!confirmed && !ConfirmDiscard()) return;

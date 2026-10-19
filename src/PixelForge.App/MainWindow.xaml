@@ -2,23 +2,33 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:PixelForge.App"
-        Title="PixelForge" Width="1280" Height="820" WindowStartupLocation="CenterScreen"
+        Title="PixelForge" Width="1400" Height="860" WindowStartupLocation="CenterScreen"
         PreviewKeyDown="OnPreviewKeyDown" Closing="OnClosing">
     <DockPanel>
         <Menu x:Name="MainMenu" DockPanel.Dock="Top" />
-        <TabControl x:Name="Tabs" SelectionChanged="OnTabChanged">
-            <TabItem Header="Sprite">
-                <local:SpriteEditor x:Name="SpriteEd" />
-            </TabItem>
-            <TabItem Header="Tilemap">
-                <local:TilemapEditor x:Name="MapEd" />
-            </TabItem>
-            <TabItem Header="Music">
-                <local:MusicEditor x:Name="MusicEd" />
-            </TabItem>
-            <TabItem Header="SFX">
-                <local:SfxEditor x:Name="SfxEd" />
-            </TabItem>
-        </TabControl>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="AssetsColumn" Width="270" MinWidth="0" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <local:AssetBrowser x:Name="Assets" Grid.Column="0" />
+            <GridSplitter x:Name="AssetsSplitter" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#2A2A2A"
+                          AutomationProperties.Name="Resize asset browser" />
+            <TabControl x:Name="Tabs" Grid.Column="2" SelectionChanged="OnTabChanged">
+                <TabItem Header="Sprite">
+                    <local:SpriteEditor x:Name="SpriteEd" />
+                </TabItem>
+                <TabItem Header="Tilemap">
+                    <local:TilemapEditor x:Name="MapEd" />
+                </TabItem>
+                <TabItem Header="Music">
+                    <local:MusicEditor x:Name="MusicEd" />
+                </TabItem>
+                <TabItem Header="SFX">
+                    <local:SfxEditor x:Name="SfxEd" />
+                </TabItem>
+            </TabControl>
+        </Grid>
     </DockPanel>
 </Window>

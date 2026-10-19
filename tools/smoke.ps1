@@ -11,6 +11,13 @@ param(
     [string]$ShotDir = ""
 )
 $ErrorActionPreference = 'Stop'
+# settings, autosave and the test project live in a temp folder: the user's real settings are never touched
+$work = Join-Path $env:TEMP ("pf-smoke-" + [guid]::NewGuid().ToString('N'))
+$env:PIXELFORGE_HOME = Join-Path $work 'home'
+$projectDir = Join-Path $work 'game'
+New-Item -ItemType Directory -Force $projectDir | Out-Null
+Copy-Item "$PSScriptRoot\..\tests\PixelForge.Core.Tests\Fixtures\*" $projectDir
+$expectedAssets = (Get-ChildItem $projectDir).Count
 Add-Type -AssemblyName System.Drawing, UIAutomationClient, UIAutomationTypes
 Add-Type @'
 using System; using System.Runtime.InteropServices;
@@ -33,12 +40,18 @@ function Save-Shot($h, $file) {
 }
 
 if (-not (Test-Path $Exe)) { throw "Build first: $Exe not found." }
-$p = Start-Process $Exe -PassThru
+$p = Start-Process $Exe -ArgumentList "`"$projectDir`"" -PassThru
 $failures = @()
 try {
     for ($i = 0; $i -lt 50 -and $p.MainWindowHandle -eq 0; $i++) { Start-Sleep -Milliseconds 200; $p.Refresh() }
     Start-Sleep 2
     $root = [System.Windows.Automation.AutomationElement]::FromHandle($p.MainWindowHandle)
+    $A = [System.Windows.Automation.AutomationElement]
+    $list = $root.FindFirst('Descendants', (New-Object System.Windows.Automation.PropertyCondition $A::NameProperty, 'Assets'))
+    $count = if ($list) { (Find-All $list ([System.Windows.Automation.ControlType]::ListItem)).Count } else { 0 }
+    Write-Host "assets in browser: $count (expected $expectedAssets)"
+    if ($count -ne $expectedAssets) { $failures += "asset browser shows $count assets, expected $expectedAssets" }
+    if (-not (Test-Path (Join-Path $projectDir 'game.pfproj'))) { $failures += 'project file was not created from the folder' }
     $tabs = Find-All $root ([System.Windows.Automation.ControlType]::TabItem)
     if ($tabs.Count -ne 4) { $failures += "expected 4 tabs, found $($tabs.Count)" }
     foreach ($t in $tabs) {
@@ -47,7 +60,7 @@ try {
         Start-Sleep -Milliseconds 700
         $menu = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
         $items = $menu.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | ForEach-Object { $_.Current.Name -replace '_', '' }
-        foreach ($required in 'File', 'Options', 'Help') {
+        foreach ($required in 'File', 'Project', 'Options', 'Help') {
             if ($items -notcontains $required) { $failures += "${name}: menu '$required' missing" }
         }
         Write-Host ("{0,-8} menus: {1}" -f $name, ($items -join ', '))
@@ -58,6 +71,7 @@ try {
 }
 finally {
     if (-not $p.HasExited) { Stop-Process $p -Force }
+    Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
 }
 if ($failures) { $failures | ForEach-Object { Write-Host "FAIL: $_" -ForegroundColor Red }; exit 1 }
 Write-Host 'SMOKE OK' -ForegroundColor Green

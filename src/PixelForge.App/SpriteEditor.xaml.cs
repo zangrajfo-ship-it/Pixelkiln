@@ -215,6 +215,13 @@ public partial class SpriteEditor : UserControl
 
     void OnResetPalette(object sender, RoutedEventArgs e) => SetPalette(Sprite.DefaultPalette);
 
+    /// <summary>Palette asset from the project: replaces the sprite's palette (undoable).</summary>
+    public void ApplyPaletteFile(string path)
+    {
+        try { SetPalette(PaletteIO.Load(path)); }
+        catch (Exception ex) when (ex is InvalidDataException or IOException) { Ui.Error(ex); }
+    }
+
     void SetPalette(IEnumerable<uint> colors)
     {
         Snapshot();
@@ -514,6 +521,14 @@ public partial class SpriteEditor : UserControl
     public string[] FileExtensions => [".pxf", ".png", ".gif", ".bmp", ".jpg"];
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
+
+    /// <summary>The asset browser renamed or moved the open file: keep saving to the new place.</summary>
+    public void OnFileMoved(string oldPath, string newPath)
+    {
+        if (!string.Equals(_path, oldPath, StringComparison.OrdinalIgnoreCase)) return;
+        _path = newPath;
+        UpdateTitle();
+    }
 
     public void OpenPath(string path, bool confirmed = false)
     {
