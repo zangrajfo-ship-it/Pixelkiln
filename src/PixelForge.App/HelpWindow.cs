@@ -12,6 +12,9 @@ static class HelpWindow
         ("Everywhere", [
             ("F1", "This list"), ("Ctrl+N / Ctrl+O / Ctrl+S", "New / open / save (current tab)"),
             ("Ctrl+Z / Ctrl+Y", "Undo / redo"), ("Ctrl+, ", "Preferences"),
+            ("Ctrl+Shift+P", "Command palette: find and run any command or open any asset"),
+            ("Ctrl+Shift+B", "Show / hide the asset browser"),
+            ("Asset browser: Enter / F2 / Del / Ctrl+D / Space", "Open, rename, remove, favorite, preview"),
             ("Alt", "Menu"), ("Tab / Shift+Tab", "Move between controls"),
         ]),
         ("Sprite", [

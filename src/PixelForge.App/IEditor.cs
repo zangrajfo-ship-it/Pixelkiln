@@ -24,6 +24,9 @@ interface IEditor
     bool IsDirty { get; }
     string? CurrentPath { get; }
 
+    /// <summary>Called after the asset browser renamed or moved a file on disk.</summary>
+    void OnFileMoved(string oldPath, string newPath);
+
     /// <summary>Writes the current document for crash recovery (does not change the saved state).</summary>
     void WriteAutosave(string file);
 

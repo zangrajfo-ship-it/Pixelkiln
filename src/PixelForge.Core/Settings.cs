@@ -29,8 +29,13 @@ public sealed class Settings
     /// <summary>0 = off.</summary>
     public int AutosaveMinutes { get; set; } = 2;
     public List<string> RecentFiles { get; set; } = [];
+    /// <summary>Project reopened at start-up (null = none).</summary>
+    public string? LastProject { get; set; }
 
-    public static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PixelForge");
+    /// <summary>%AppData%\PixelForge, or PIXELFORGE_HOME when set (tests and portable use keep real settings untouched).</summary>
+    public static string Folder => Environment.GetEnvironmentVariable("PIXELFORGE_HOME") is { Length: > 0 } home
+        ? home
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PixelForge");
     public static string DefaultPath => Path.Combine(Folder, "settings.json");
 
     /// <summary>Most recent first, no duplicates (case-insensitive), capped.</summary>
@@ -59,6 +64,7 @@ public sealed class Settings
         DefaultSpriteHeight = Math.Clamp(DefaultSpriteHeight, 1, 4096),
         UndoLimit = Math.Clamp(UndoLimit, 10, 1000),
         AutosaveMinutes = Math.Clamp(AutosaveMinutes, 0, 60),
+        LastProject = LastProject,
         RecentFiles = [.. (RecentFiles ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxRecent)],
     };
 

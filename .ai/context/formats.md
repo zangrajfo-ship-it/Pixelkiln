@@ -4,7 +4,9 @@ Vsi formati so JSON (UTF-8). Branje in pisanje gre skozi `DocumentFile`:
 - poškodovana datoteka sproži `InvalidDataException` z imenom datoteke;
 - datoteko novejše različice program zavrne;
 - shranjevanje je atomično (`.tmp` + `File.Replace`);
-- pred prvim prepisom starejše različice se naredi `<datoteka>.v<n>.bak`. Slikovne pike so `uint` ARGB (`0xAARRGGBB`), vrstica za vrstico, kodirane v base64 kot little-endian bajti (= Bgra32). Zlati primerki: `tests/PixelForge.Core.Tests/Fixtures/`. Regresija: `FormatRegressionTests`.
+- pred prvim prepisom starejše različice se naredi `<datoteka>.v<n>.bak`.
+
+Slikovne pike so `uint` ARGB (`0xAARRGGBB`), vrstica za vrstico, kodirane v base64 kot little-endian bajti (= Bgra32). Zlati primerki: `tests/PixelForge.Core.Tests/Fixtures/`. Regresija: `FormatRegressionTests`.
 
 ## `.pxf`: sprajt (`ProjectFile`)
 | Polje | Od | Opis |

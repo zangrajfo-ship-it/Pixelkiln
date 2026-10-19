@@ -186,3 +186,44 @@ public sealed class ProjectTests : IDisposable
         Assert.True(sw.ElapsedMilliseconds < 100, $"search took {sw.ElapsedMilliseconds} ms");
     }
 }
+
+public sealed class AssetInfoTests : IDisposable
+{
+    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-info-" + Guid.NewGuid().ToString("N"));
+
+    public AssetInfoTests() => Directory.CreateDirectory(_dir);
+    public void Dispose() => Directory.Delete(_dir, recursive: true);
+
+    [Fact]
+    public void Describes_each_type_and_damaged_or_missing_files()
+    {
+        var s = new Sprite(8, 4);
+        s.AddFrame(1);
+        s.Tags.Add(new FrameTag { Name = "walk", From = 0, To = 1 });
+        string sp = Path.Combine(_dir, "a.pxf");
+        ProjectFile.Save(s, sp);
+        Assert.StartsWith("8×4 px, 2 frames, 1 layer, 0.20 s, tags: walk", AssetInfo.Describe(AssetType.Sprite, sp));
+
+        string song = Path.Combine(_dir, "b.pxs");
+        Song.Save(new Song { Bpm = 120 }, song);   // 16 steps of 1/8 s = 2 s
+        Assert.StartsWith("120 BPM, 1 pattern, 0:02", AssetInfo.Describe(AssetType.Song, song));
+
+        string bad = Path.Combine(_dir, "c.pxm");
+        File.WriteAllText(bad, "garbage");
+        Assert.StartsWith("Cannot be read", AssetInfo.Describe(AssetType.Tilemap, bad));
+        Assert.Equal("File is missing.", AssetInfo.Describe(AssetType.Sprite, Path.Combine(_dir, "none.pxf")));
+    }
+
+    [Fact]
+    public void Thumbnail_and_palette_image()
+    {
+        var px = new uint[100 * 50];
+        px[0] = 0xFFFF0000;
+        var (t, w, h) = AssetInfo.Thumbnail(px, 100, 50, 20);
+        Assert.Equal((20, 10, 0xFFFF0000u), (w, h, t[0]));
+        Assert.Same(px, AssetInfo.Thumbnail(px, 100, 50, 200).Pixels);   // never upscales
+        var (pp, pw, ph) = AssetInfo.PaletteImage([0xFF000000, 0xFFFFFFFF]);
+        Assert.Equal((32, 4), (pw, ph));
+        Assert.Equal(0xFFFFFFFFu, pp[4]);
+    }
+}
