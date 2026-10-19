@@ -84,6 +84,24 @@ try {
         Write-Host ("{0,-8} menus: {1}" -f $name, ($items -join ', '))
         if ($ShotDir) { New-Item -ItemType Directory -Force $ShotDir | Out-Null; Save-Shot $p.MainWindowHandle (Join-Path $ShotDir "$name.png") }
     }
+    # modes: the Sprite tab has a Paint mode with its own menus
+    $spriteTab = $tabs | Where-Object { $_.Current.Name -eq 'Sprite' } | Select-Object -First 1
+    $spriteTab.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+    Start-Sleep -Milliseconds 500
+    $paintMode = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq 'Paint mode' } | Select-Object -First 1
+    if (-not $paintMode) { $failures += 'Paint mode button missing' }
+    else {
+        $paintMode.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+        Start-Sleep -Milliseconds 1200
+        $menu = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
+        $items = $menu.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | ForEach-Object { $_.Current.Name -replace '_', '' }
+        Write-Host ("Paint    menus: {0} | title: {1}" -f ($items -join ', '), $root.Current.Name)
+        if ($items -notcontains 'Layer' -or $root.Current.Name -notlike '*untitled painting*') { $failures += 'Paint mode did not take over menus and title' }
+        if ($ShotDir) { Save-Shot $p.MainWindowHandle (Join-Path $ShotDir 'Paint.png') }
+        $pixelMode = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq 'Pixel mode' } | Select-Object -First 1
+        $pixelMode.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+        Start-Sleep -Milliseconds 500
+    }
     # game preview opens from the Scene tab, renders and closes
     $sceneTab = $tabs | Where-Object { $_.Current.Name -eq 'Scene' } | Select-Object -First 1
     if ($sceneTab) {

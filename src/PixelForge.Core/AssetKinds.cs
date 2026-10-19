@@ -60,6 +60,8 @@ public static class AssetKinds
             }),
         new(AssetType.Palette, [".hex", ".gpl"], p => PaletteIO.Load(p), p => $"{PaletteIO.Load(p).Count} colors", (p, _) => AssetInfo.PaletteImage(PaletteIO.Load(p))),
         new(AssetType.Audio, [".wav"], p => WavReader.Load(p), p => $"WAV, {WavReader.Load(p).Length / (double)Synth.SampleRate:0.00} s"),
+        new(AssetType.Paint, [".pxpaint"], p => PaintDoc.Load(p), p => PaintDoc.Load(p) is var d ? $"Painting {d.Width}×{d.Height} px, {Plural(d.Layers.Count, "layer")}" : "",
+            (p, _) => PaintDoc.Load(p).Preview(512)),
         new(AssetType.Mix, [".pxmix"], p => Mix.Load(p), p => DescribeMix(Mix.Load(p)), null,
             p => Mix.Load(p).ReferencedAssets(),
             (p, map) =>
