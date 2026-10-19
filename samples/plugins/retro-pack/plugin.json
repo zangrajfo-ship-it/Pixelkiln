@@ -1,0 +1,29 @@
+{
+  // Sample PixelForge plugin: data only, no code (ADR-0002).
+  "apiVersion": 1,
+  "id": "retro-pack",
+  "name": "Retro pack",
+  "version": "1.0.0",
+  "description": "A 16-colour fantasy-console palette, generator presets, a Godot export profile and a macro.",
+  "author": "PixelForge samples",
+  "contributions": {
+    "palettes": [
+      {
+        "name": "Fantasy console 16",
+        "colors": ["#000000", "#1D2B53", "#7E2553", "#008751", "#AB5236", "#5F574F", "#C2C3C7", "#FFF1E8",
+                   "#FF004D", "#FFA300", "#FFEC27", "#00E436", "#29ADFF", "#83769C", "#FF77A8", "#FFCCAA"]
+      }
+    ],
+    "generatorPresets": [
+      { "name": "Chunky critter", "generator": "sprite", "settings": { "seed": "critter", "density": "0.52" } },
+      { "name": "Castle bricks", "generator": "tiles", "settings": { "seed": "castle", "pattern": "Bricks", "baseColor": "#8A6F5A", "variants": "4" } },
+      { "name": "Deep cave", "generator": "layout", "settings": { "seed": "deep", "layout": "Cave", "fill": "0.5" } }
+    ],
+    "exportProfiles": [
+      { "name": "Godot 4 (retro pack)", "target": "Godot4", "outputFolder": "export/godot-retro", "resFolder": "retro", "zip": true }
+    ],
+    "macros": [
+      { "name": "Mirror sprite both ways", "commands": ["Sprite › Edit › Flip horizontally", "Sprite › Edit › Flip vertically"] }
+    ]
+  }
+}

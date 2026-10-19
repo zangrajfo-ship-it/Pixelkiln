@@ -75,6 +75,7 @@ public partial class MainWindow : Window
         MainMenu.Items.Add(ProjectMenu());
         MainMenu.Items.Add(Ui.Menu("_Options",
             Ui.Item("_Command palette…", "Ctrl+Shift+P", ShowCommandPalette),
+            Ui.Item("P_lugins…", null, () => PluginsWindow.Show(this)),
             Ui.Item("_Preferences…", "Ctrl+,", () => PreferencesWindow.Show(this))));
         MainMenu.Items.Add(Ui.Menu("_Help",
             Ui.Item("_Keyboard shortcuts", "F1", () => HelpWindow.Show(this)),
@@ -203,24 +204,6 @@ public partial class MainWindow : Window
     }
 
     // ---------- command palette ----------
-
-    void ShowCommandPalette()
-    {
-        var commands = new List<Command>(CommandRegistry.FromMenu(MainMenu));
-        foreach (TabItem tab in Tabs.Items)
-        {
-            var t = tab;
-            commands.Add(new Command($"Go to {t.Header} tab", "View", null, () => true, () => Tabs.SelectedItem = t));
-        }
-        if (App.Project is { } p)
-            foreach (var a in p.Assets)
-            {
-                var asset = a;
-                commands.Add(new Command($"Open asset: {a.Path}", "Asset", null, () => File.Exists(p.FullPath(asset)), () => OpenAsset(asset)));
-            }
-        foreach (var source in CommandRegistry.Sources) commands.AddRange(source());
-        CommandPalette.Show(this, commands);
-    }
 
     // ---------- autosave + recovery ----------
 

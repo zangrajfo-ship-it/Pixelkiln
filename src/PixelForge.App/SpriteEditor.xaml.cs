@@ -222,6 +222,9 @@ public partial class SpriteEditor : UserControl
         catch (Exception ex) when (ex is InvalidDataException or IOException) { Ui.Error(ex); }
     }
 
+    /// <summary>Replaces the sprite's palette (undoable); used by plugin palettes.</summary>
+    public void ApplyPaletteColors(IEnumerable<uint> colors) => SetPalette(colors);
+
     void SetPalette(IEnumerable<uint> colors)
     {
         Snapshot();

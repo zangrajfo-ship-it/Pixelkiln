@@ -67,28 +67,34 @@ static class CommandPalette
             Content = new DockPanel { Margin = new Thickness(10), Children = { box, hint, list } },
         };
 
+        var recent = App.Settings.RecentCommands;
+        int Rank(Command c) => recent.IndexOf(c.Title) is var i and >= 0 ? i : int.MaxValue;
+
         void Fill()
         {
             list.Items.Clear();
-            foreach (var c in CommandRegistry.Filter(commands, box.Text).Take(200))
+            foreach (var c in CommandRegistry.Filter(commands, box.Text).OrderBy(Rank).Take(200))   // recently used first, then menu order
             {
                 bool can = c.CanRun();
-                var row = new DockPanel { Tag = c, Opacity = can ? 1 : 0.5 };
+                var row = new DockPanel { Opacity = can ? 1 : 0.5 };
                 var gesture = new TextBlock { Text = c.Gesture ?? "", Margin = new Thickness(12, 0, 0, 0) };
                 gesture.SetResourceReference(TextBlock.ForegroundProperty, "MutedText");
                 DockPanel.SetDock(gesture, Dock.Right);
                 row.Children.Add(gesture);
                 row.Children.Add(new TextBlock { Text = c.Title });
-                AutomationProperties.SetName(row, c.Title + (c.Gesture is null ? "" : $", {c.Gesture}") + (can ? "" : ", not available now"));
-                list.Items.Add(row);
+                // the name goes on the list item itself: that is what screen readers announce
+                var item = new ListBoxItem { Content = row, Tag = c };
+                AutomationProperties.SetName(item, c.Title + (c.Gesture is null ? "" : $", {c.Gesture}") + (can ? "" : ", not available now"));
+                list.Items.Add(item);
             }
             list.SelectedIndex = list.Items.Count > 0 ? 0 : -1;
         }
 
         void RunSelected()
         {
-            if (list.SelectedItem is not FrameworkElement { Tag: Command c } || !c.CanRun()) return;
+            if (list.SelectedItem is not ListBoxItem { Tag: Command c } || !c.CanRun()) return;
             win.Close();
+            App.RememberCommand(c.Title);
             c.Run();
         }
 

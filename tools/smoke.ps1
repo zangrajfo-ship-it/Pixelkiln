@@ -18,6 +18,9 @@ $projectDir = Join-Path $work 'game'
 New-Item -ItemType Directory -Force $projectDir | Out-Null
 Copy-Item "$PSScriptRoot\..\tests\PixelForge.Core.Tests\Fixtures\*" $projectDir
 $expectedAssets = (Get-ChildItem $projectDir).Count
+# the sample data plugin, installed into the temp home
+New-Item -ItemType Directory -Force (Join-Path $env:PIXELFORGE_HOME 'plugins') | Out-Null
+Copy-Item -Recurse (Join-Path $PSScriptRoot '../samples/plugins/retro-pack') (Join-Path $env:PIXELFORGE_HOME 'plugins')
 Add-Type -AssemblyName System.Drawing, UIAutomationClient, UIAutomationTypes
 Add-Type @'
 using System; using System.Runtime.InteropServices;
@@ -37,6 +40,21 @@ function Save-Shot($h, $file) {
     $bmp = New-Object System.Drawing.Bitmap ($r.Ri - $r.L), ($r.B - $r.T)
     $g = [System.Drawing.Graphics]::FromImage($bmp); $hdc = $g.GetHdc()
     [PfWin]::PrintWindow($h, $hdc, 2) | Out-Null; $g.ReleaseHdc($hdc); $bmp.Save($file); $bmp.Dispose()
+}
+
+# opens a top-level menu and returns the item whose name matches (retries: menus open asynchronously)
+function Find-MenuItem($root, $top, $pattern) {
+    for ($try = 0; $try -lt 5; $try++) {
+        $bar = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
+        $m = $bar.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | Where-Object { ($_.Current.Name -replace '_', '') -eq $top } | Select-Object -First 1
+        $ec = $m.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+        if ($ec.Current.ExpandCollapseState -eq 'Expanded') { $ec.Collapse(); Start-Sleep -Milliseconds 200 }
+        $ec.Expand()
+        Start-Sleep -Milliseconds 500
+        $item = (Find-All $root ([System.Windows.Automation.ControlType]::MenuItem)) | Where-Object { ($_.Current.Name -replace '_', '') -like $pattern } | Select-Object -First 1
+        if ($item) { return $item }
+    }
+    return $null
 }
 
 if (-not (Test-Path $Exe)) { throw "Build first: $Exe not found." }
@@ -89,15 +107,31 @@ try {
             }
         }
     }
+    # command palette: commands of every tab and of the sample plugin are listed
+    $palItem = Find-MenuItem $root 'Options' 'Command palette*'
+    $palItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+    Start-Sleep 2
+    $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+    $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
+    $pal = $wins | Where-Object { $_.Current.Name -eq 'Command palette' } | Select-Object -First 1
+    if (-not $pal) { $failures += 'command palette did not open' }
+    else {
+        $box = (Find-All $pal ([System.Windows.Automation.ControlType]::Edit))[0]
+        foreach ($q in 'Retro pack Macro', 'Flip horizontally', 'Generate tileset from seed') {
+            $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($q)
+            Start-Sleep -Milliseconds 400
+            $names = (Find-All $pal ([System.Windows.Automation.ControlType]::ListItem)) | ForEach-Object { $_.Current.Name }
+            Write-Host ("palette '{0}': {1}" -f $q, (($names | Select-Object -First 2) -join ' | '))
+            if (-not $names) { $failures += "command palette found nothing for '$q'" }
+        }
+        $pal.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+        Start-Sleep -Milliseconds 500
+    }
     # history: select the first asset, Project > History of selected asset
     $first = (Find-All $list ([System.Windows.Automation.ControlType]::ListItem))[0]
     $first.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
     Start-Sleep -Milliseconds 300
-    $menu = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
-    $projMenu = $menu.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | Where-Object { ($_.Current.Name -replace '_', '') -eq 'Project' } | Select-Object -First 1
-    $projMenu.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
-    Start-Sleep -Milliseconds 500
-    $histItem = (Find-All $root ([System.Windows.Automation.ControlType]::MenuItem)) | Where-Object { ($_.Current.Name -replace '_', '') -like 'History*' } | Select-Object -First 1
+    $histItem = Find-MenuItem $root 'Project' 'History*'
     if (-not $histItem) { $failures += 'Project > History missing' }
     else {
         $histItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
@@ -116,11 +150,7 @@ try {
         }
     }
     # export: Project > Export, run the default Godot profile on the fixture project
-    $menu = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
-    $projMenu = $menu.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | Where-Object { ($_.Current.Name -replace '_', '') -eq 'Project' } | Select-Object -First 1
-    $projMenu.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
-    Start-Sleep -Milliseconds 500
-    $exportItem = (Find-All $root ([System.Windows.Automation.ControlType]::MenuItem)) | Where-Object { ($_.Current.Name -replace '_', '') -like 'Export*' } | Select-Object -First 1
+    $exportItem = Find-MenuItem $root 'Project' 'Export*'
     if (-not $exportItem) { $failures += 'Project > Export missing' }
     else {
         $exportItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()

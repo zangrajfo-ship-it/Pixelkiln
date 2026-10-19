@@ -493,11 +493,16 @@ public partial class TilemapEditor
                 ("_Pattern", nameof(TilePattern.Noise), Enum.GetNames<TilePattern>()),
                 ("_Base color (hex)", "4A7A3A", null),
                 ("_Variants", "4", ["1", "2", "4", "8"])) is not { } f) return;
-        if (!ColorUtil.TryParseHex(f[2], out uint baseColor)) { Ui.Error(new FormatException("Base color: RRGGBB, e.g. 4A7A3A.")); return; }
+        GenerateTileset(f[0], Enum.Parse<TilePattern>(f[1]), f[2], int.Parse(f[3]));
+    }
+
+    public void GenerateTileset(string seed, TilePattern pattern, string baseColorHex, int variants)
+    {
+        if (!ColorUtil.TryParseHex(baseColorHex.TrimStart('#'), out uint baseColor)) { Ui.Error(new FormatException("Base color: RRGGBB, e.g. 4A7A3A.")); return; }
         if (_map.Tileset is not null && MessageBox.Show(Window.GetWindow(this), "Replace the current tileset? Ctrl+Z undoes.", "Generate tileset", MessageBoxButton.OKCancel) != MessageBoxResult.OK) return;
         try
         {
-            var (px, w, h) = Procedural.Tiles(Rng.Seed(f[0]), _map.TileSize, PaletteTools.Ramp(baseColor | 0xFF000000), Enum.Parse<TilePattern>(f[1]), int.Parse(f[3]));
+            var (px, w, h) = Procedural.Tiles(Rng.Seed(seed), _map.TileSize, PaletteTools.Ramp(baseColor | 0xFF000000), pattern, variants);
             SetTileset(px, w, h, null);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) { Ui.Error(ex); }
@@ -511,14 +516,18 @@ public partial class TilemapEditor
                 ("_Seed (number or word)", Random.Shared.Next(100000).ToString(), null),
                 ("_Layout", "Cave", ["Cave", "Platforms"]),
                 ("_Fill (cave)", "0.45", ["0.40", "0.45", "0.50", "0.55"])) is not { } f) return;
-        ulong seed = Rng.Seed(f[0]);
-        var solid = f[1] == "Cave"
-            ? Procedural.Cave(seed, _map.Width, _map.Height, double.Parse(f[2], System.Globalization.CultureInfo.InvariantCulture))
-            : Procedural.Platforms(seed, _map.Width, _map.Height);
+        GenerateLayout(f[0], f[1], double.Parse(f[2], System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    public void GenerateLayout(string seedText, string layout, double fill)
+    {
+        if (_map.Tileset is null) { Ui.Error(new InvalidOperationException("Load or generate a tileset first.")); return; }
+        ulong seed = Rng.Seed(seedText);
+        var solid = layout == "Cave" ? Procedural.Cave(seed, _map.Width, _map.Height, fill) : Procedural.Platforms(seed, _map.Width, _map.Height);
         Snapshot();
         Procedural.Fill(_map, _map.Layers[_layer], solid, CurrentTerrain, _stamp.FirstOrDefault(t => t >= 0));
         Render();
-        Status.Text = $"{f[1]} from seed “{f[0]}” on layer “{_map.Layers[_layer].Name}”{(CurrentTerrain is null ? " with the selected tile" : " with the chosen terrain")}. Ctrl+Z undoes.";
+        Status.Text = $"{layout} from seed “{seedText}” on layer “{_map.Layers[_layer].Name}”{(CurrentTerrain is null ? " with the selected tile" : " with the chosen terrain")}. Ctrl+Z undoes.";
     }
 
     /// <summary>Shows the tileset selection repeated 4×4, to spot seams in repeating patterns.</summary>
