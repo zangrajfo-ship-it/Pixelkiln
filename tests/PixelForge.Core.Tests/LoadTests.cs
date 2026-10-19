@@ -5,6 +5,7 @@ namespace PixelForge.Core.Tests;
 
 /// <summary>Big documents and projects. Limits are generous (slow CI machines); they catch order-of-magnitude regressions.</summary>
 [Trait("Category", "Load")]
+[Collection("Load")]
 public sealed class LoadTests : IDisposable
 {
     readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-load-" + Guid.NewGuid().ToString("N"));
@@ -75,3 +76,7 @@ public sealed class LoadTests : IDisposable
         Assert.InRange(Ms(() => sb.Render(boxes: true)), 0, 100);
     }
 }
+
+/// <summary>Timings are only meaningful when nothing else runs at the same time.</summary>
+[CollectionDefinition("Load", DisableParallelization = true)]
+public sealed class LoadCollection;

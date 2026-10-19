@@ -115,3 +115,26 @@ public partial class SpriteEditor
         RefreshAll();
     }
 }
+
+public partial class SpriteEditor
+{
+    sealed record PixelStyle(List<uint> Palette, uint Primary, uint Secondary);
+
+    public object? CopyStyle() => new PixelStyle([.. _sprite.Palette], _primary, _secondary);
+
+    public string? PasteStyle(object style)
+    {
+        if (style is not PixelStyle s) return null;
+        SetPalette(s.Palette);
+        (_primary, _secondary) = (s.Primary, s.Secondary);
+        RefreshSwatches();
+        return $"Palette ({s.Palette.Count} colors) and left/right colors pasted.";
+    }
+
+    public string CurrentToolName => CurrentTool.ToString();
+
+    public void SelectTool(string name)
+    {
+        if (Enum.TryParse<Tool>(name, true, out var t)) SetTool(t);
+    }
+}

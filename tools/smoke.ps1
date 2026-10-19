@@ -127,6 +127,22 @@ try {
         $pal.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
         Start-Sleep -Milliseconds 500
     }
+    # workspace: Options > Workspace > Levels selects the Scene tab
+    $ws = Find-MenuItem $root 'Options' 'Workspace*'
+    if (-not $ws) { $failures += 'Options > Workspace missing' }
+    else {
+        $ws.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+        Start-Sleep -Milliseconds 500
+        # submenus open in their own popup window: look through every top-level window of the app
+        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+        $levels = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @($root) |
+            ForEach-Object { Find-All $_ ([System.Windows.Automation.ControlType]::MenuItem) } | Where-Object { $_.Current.Name -eq 'Levels' } | Select-Object -First 1
+        $levels.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep -Milliseconds 700
+        $sel = (Find-All $root ([System.Windows.Automation.ControlType]::TabItem)) | Where-Object { $_.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Current.IsSelected } | Select-Object -First 1
+        Write-Host "workspace Levels -> tab $($sel.Current.Name)"
+        if ($sel.Current.Name -ne 'Scene') { $failures += 'workspace Levels did not select the Scene tab' }
+    }
     # history: select the first asset, Project > History of selected asset
     $first = (Find-All $list ([System.Windows.Automation.ControlType]::ListItem))[0]
     $first.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()

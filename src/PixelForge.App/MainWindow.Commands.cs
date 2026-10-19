@@ -17,11 +17,18 @@ public partial class MainWindow
         var commands = new List<Command>();
         foreach (TabItem tab in Tabs.Items)
         {
-            if (tab.Content is not IEditor ed) continue;
             var t = tab;
-            foreach (var menu in ed.Menus)
-                foreach (var c in CommandRegistry.FromMenu(menu, $"{t.Header} › {((string)menu.Header).Replace("_", "")}"))
-                    commands.Add(c with { Run = () => { Tabs.SelectedItem = t; c.Run(); } });
+            // the first mode keeps the plain tab prefix ("Sprite › Edit › …"), so existing macros keep working
+            var modes = tab.Content is ModeHost host ? host.Modes : tab.Content is IEditor single ? [("", single)] : [];
+            for (int m = 0; m < modes.Count; m++)
+            {
+                var ed = modes[m].Editor;
+                string prefix = m == 0 ? $"{t.Header}" : $"{t.Header} › {modes[m].Name}";
+                foreach (var menu in ed.Menus)
+                    foreach (var c in CommandRegistry.FromMenu(menu, $"{prefix} › {((string)menu.Header).Replace("_", "")}"))
+                        commands.Add(c with { Run = () => { Reveal(ed); c.Run(); } });
+                if (m > 0) commands.Add(new Command($"Go to {t.Header} › {modes[m].Name} mode", "View", $"Ctrl+{m + 1}", () => true, () => Reveal(ed)));
+            }
             commands.Add(new Command($"Go to {t.Header} tab", "View", null, () => true, () => Tabs.SelectedItem = t));
         }
         // shared menus (Project, Options, Help): the ones not owned by the current editor
@@ -53,7 +60,7 @@ public partial class MainWindow
             foreach (var pal in c.Palettes ?? [])
                 yield return new Command(prefix + $"Use palette: {pal.Name}", "Plugin", null, () => true, () =>
                 {
-                    Tabs.SelectedItem = TabOf(SpriteEd);
+                    Reveal(SpriteEd);
                     SpriteEd.ApplyPaletteColors(pal.Argb());
                 });
             foreach (var g in c.GeneratorPresets ?? [])
@@ -72,15 +79,15 @@ public partial class MainWindow
         switch (g.Generator)
         {
             case "sprite":
-                Tabs.SelectedItem = TabOf(SpriteEd);
+                Reveal(SpriteEd);
                 SpriteEd.GenerateSprite(S("seed", "1"), D("density", 0.45));
                 break;
             case "tiles":
-                Tabs.SelectedItem = TabOf(MapEd);
+                Reveal(MapEd);
                 MapEd.GenerateTileset(S("seed", "1"), Enum.Parse<TilePattern>(S("pattern", nameof(TilePattern.Noise))), S("baseColor", "4A7A3A"), int.Parse(S("variants", "4")));
                 break;
             case "layout":
-                Tabs.SelectedItem = TabOf(MapEd);
+                Reveal(MapEd);
                 MapEd.GenerateLayout(S("seed", "1"), S("layout", "Cave"), D("fill", 0.45));
                 break;
         }

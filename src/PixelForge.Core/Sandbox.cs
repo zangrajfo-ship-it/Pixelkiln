@@ -28,14 +28,19 @@ public static class SceneRenderer
                     foreach (var i in s.InstancesOf(l.Id).OrderBy(i => i.Z))
                     {
                         if (Look(i) is not { } look) continue;
-                        // ponytail: tracks move and fade objects here; scale and rotation are shown only in the editor
                         var pose = i.Track?.Sample(timeMs) ?? new Keyframe(0);
                         int ox = i.FlipX ? look.Sprite.Width - look.OriginX : look.OriginX;
                         int dx = (int)Math.Round(i.X + pose.X) - ox + lx - l.OffsetX, dy = (int)Math.Round(i.Y + pose.Y) - look.OriginY + ly - l.OffsetY;
-                        if (dx >= w || dy >= h || dx + look.Sprite.Width <= 0 || dy + look.Sprite.Height <= 0) continue;   // off screen
+                        bool transformed = pose.ScaleX != 1 || pose.ScaleY != 1 || pose.Rotation != 0;
+                        // off screen: a transformed sprite fits in a circle of its scaled diagonal around the pivot
+                        int reach = transformed ? (int)Math.Ceiling(Math.Sqrt(look.Sprite.Width * look.Sprite.Width + look.Sprite.Height * look.Sprite.Height) * Math.Max(Math.Abs(pose.ScaleX), Math.Abs(pose.ScaleY))) : 0;
+                        if (dx - reach >= w || dy - reach >= h || dx + look.Sprite.Width + reach <= 0 || dy + look.Sprite.Height + reach <= 0) continue;
                         int f = SceneAssets.FrameAt(look.Sprite, look.From, look.To, timeMs);
                         if (!flat.TryGetValue((look.Sprite, f), out var px)) flat[(look.Sprite, f)] = px = Compositor.Flatten(look.Sprite, f);
-                        Blit(o, w, h, px, look.Sprite.Width, look.Sprite.Height, dx, dy, i.FlipX, pose.Opacity);
+                        if (transformed)
+                            BlitTransformed(o, w, h, px, look.Sprite.Width, look.Sprite.Height, look.OriginX, look.OriginY,
+                                i.X + pose.X + lx - l.OffsetX, i.Y + pose.Y + ly - l.OffsetY, (i.FlipX ? -1 : 1) * pose.ScaleX, pose.ScaleY, pose.Rotation, pose.Opacity);
+                        else Blit(o, w, h, px, look.Sprite.Width, look.Sprite.Height, dx, dy, i.FlipX, pose.Opacity);
                     }
                     break;
             }
@@ -72,6 +77,45 @@ public static class SceneRenderer
                 int sx = flipX ? sw - 1 - (tx - x) : tx - x;
                 uint p = src[(ty - y) * sw + sx];
                 uint alpha = (uint)((p >> 24) * Math.Clamp(opacity, 0, 1));
+                if (alpha == 0) continue;
+                int di = ty * dw + tx;
+                if (alpha == 255) { dst[di] = p; continue; }
+                uint d = dst[di];
+                uint Mix(int shift) => ((p >> shift & 0xFF) * alpha + (d >> shift & 0xFF) * (255 - alpha)) / 255 << shift;
+                dst[di] = 0xFF000000 | Mix(16) | Mix(8) | Mix(0);
+            }
+    }
+
+    /// <summary>
+    /// Scaled and rotated copy (nearest pixel, alpha-over), like the scene editor shows it: the sprite's origin sits on
+    /// the pivot; scale first, then rotation (degrees, clockwise on screen); a negative scaleX mirrors.
+    /// </summary>
+    public static void BlitTransformed(uint[] dst, int dw, int dh, uint[] src, int sw, int sh, int originX, int originY,
+        double pivotX, double pivotY, double scaleX, double scaleY, double rotation, double opacity)
+    {
+        if (Math.Abs(scaleX) < 1e-6 || Math.Abs(scaleY) < 1e-6) return;
+        double rad = rotation * Math.PI / 180, cos = Math.Cos(rad), sin = Math.Sin(rad);
+        // destination bounds from the four transformed corners
+        double minX = double.MaxValue, minY = double.MaxValue, maxX = double.MinValue, maxY = double.MinValue;
+        foreach (var (cx, cy) in new[] { (0.0, 0.0), (sw, 0.0), (0.0, sh), ((double)sw, (double)sh) })
+        {
+            double vx = (cx - originX) * scaleX, vy = (cy - originY) * scaleY;
+            double x = pivotX + vx * cos - vy * sin, y = pivotY + vx * sin + vy * cos;
+            (minX, minY, maxX, maxY) = (Math.Min(minX, x), Math.Min(minY, y), Math.Max(maxX, x), Math.Max(maxY, y));
+        }
+        int x0 = Math.Max(0, (int)Math.Floor(minX)), y0 = Math.Max(0, (int)Math.Floor(minY));
+        int x1 = Math.Min(dw, (int)Math.Ceiling(maxX)), y1 = Math.Min(dh, (int)Math.Ceiling(maxY));
+        double a = Math.Clamp(opacity, 0, 1);
+        for (int ty = y0; ty < y1; ty++)
+            for (int tx = x0; tx < x1; tx++)
+            {
+                // back from the pixel centre to the source: undo rotation, then scale
+                double px = tx + 0.5 - pivotX, py = ty + 0.5 - pivotY;
+                double rx = px * cos + py * sin, ry = -px * sin + py * cos;
+                int sx = (int)Math.Floor(rx / scaleX + originX), sy = (int)Math.Floor(ry / scaleY + originY);
+                if (sx < 0 || sy < 0 || sx >= sw || sy >= sh) continue;
+                uint p = src[sy * sw + sx];
+                uint alpha = (uint)((p >> 24) * a);
                 if (alpha == 0) continue;
                 int di = ty * dw + tx;
                 if (alpha == 255) { dst[di] = p; continue; }

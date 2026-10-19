@@ -14,7 +14,7 @@ namespace PixelForge.App;
 /// Character Studio: a character on top of a sprite asset. States map to the sprite's tags (timing stays in the
 /// sprite), plus origin, facing, hit/hurt/solid boxes, game properties, preview with speed and transitions.
 /// </summary>
-public partial class CharacterEditor : UserControl, IEditor
+public partial class CharacterEditor : UserControl, IEditor, IStyleSource
 {
     Character _char = NewCharacter();
     readonly History<Character> _history = new(c => c.Clone(), App.Settings.UndoLimit);
@@ -73,6 +73,19 @@ public partial class CharacterEditor : UserControl, IEditor
         _history.Push(_char);
         _dirty = true;
         UpdateTitle();
+    }
+
+    sealed record CharacterStyle(CharacterKind Kind, Facing Facing, Dictionary<string, string> Properties);
+
+    public object? CopyStyle() => new CharacterStyle(_char.Kind, _char.Facing, new(_char.Properties));
+
+    public string? PasteStyle(object style)
+    {
+        if (style is not CharacterStyle s) return null;
+        Snapshot();
+        (_char.Kind, _char.Facing, _char.Properties) = (s.Kind, s.Facing, new(s.Properties));
+        RefreshAll();
+        return "Kind, facing and properties pasted.";
     }
 
     void RefreshAll()

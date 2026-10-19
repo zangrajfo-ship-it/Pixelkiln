@@ -3,6 +3,9 @@ using System.Text.Json;
 namespace PixelForge.Core;
 
 /// <summary>User preferences, stored as JSON in %AppData%\PixelForge\settings.json.</summary>
+/// <summary>A workspace: which tab and mode to show, whether the asset browser is open, and the tool to start with.</summary>
+public sealed record WorkspaceProfile(string Name, string Tab, string? Mode = null, bool AssetBrowser = true, string? Tool = null);
+
 public sealed class Settings
 {
     public const int MaxRecent = 12;
@@ -31,6 +34,8 @@ public sealed class Settings
     public List<string> RecentFiles { get; set; } = [];
     /// <summary>Command palette titles, most recent first (shown on top when the palette opens).</summary>
     public List<string> RecentCommands { get; set; } = [];
+    /// <summary>The user's own workspace profiles (the built-in ones are not stored).</summary>
+    public List<WorkspaceProfile> Workspaces { get; set; } = [];
     /// <summary>Project reopened at start-up (null = none).</summary>
     public string? LastProject { get; set; }
 
@@ -76,6 +81,7 @@ public sealed class Settings
         LastProject = LastProject,
         RecentFiles = [.. (RecentFiles ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxRecent)],
         RecentCommands = [.. (RecentCommands ?? []).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().Take(MaxRecent)],
+        Workspaces = [.. (Workspaces ?? []).Where(w => !string.IsNullOrWhiteSpace(w.Name) && !string.IsNullOrWhiteSpace(w.Tab)).GroupBy(w => w.Name).Select(g => g.Last()).Take(20)],
     };
 
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true };

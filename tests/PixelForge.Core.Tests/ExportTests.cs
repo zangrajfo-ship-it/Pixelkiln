@@ -180,6 +180,21 @@ public sealed class ExportTests : IDisposable
     }
 
     [Fact]
+    public void Cancelled_export_writes_nothing_and_reports_progress()
+    {
+        var p = Game();
+        var seen = new List<string>();
+        using var cts = new CancellationTokenSource();
+        var progress = new SyncProgress(m => { seen.Add(m); if (seen.Count == 2) cts.Cancel(); });
+        Assert.Throws<OperationCanceledException>(() => Exporter.Run(p, new ExportProfile(), progress, cts.Token));
+        Assert.Equal(2, seen.Count);
+        Assert.False(Directory.Exists(Path.Combine(p.Root, "export", "godot")));
+    }
+
+    /// <summary>Progress&lt;T&gt; posts to a sync context; tests need the call to happen right away.</summary>
+    sealed class SyncProgress(Action<string> on) : IProgress<string> { public void Report(string value) => on(value); }
+
+    [Fact]
     public void Selected_assets_bring_their_dependencies()
     {
         var p = Game();

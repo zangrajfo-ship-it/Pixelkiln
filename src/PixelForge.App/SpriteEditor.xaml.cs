@@ -8,11 +8,12 @@ using PixelForge.Core;
 
 namespace PixelForge.App;
 
-public partial class SpriteEditor : UserControl
+public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
 {
     static readonly int[] ZoomLevels = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64];
 
     Sprite _sprite = new(App.Settings.DefaultSpriteWidth, App.Settings.DefaultSpriteHeight);
+    readonly ViewAids _aids;
     readonly History<Sprite> _history = new(s => s.Clone(), App.Settings.UndoLimit, s => 4L * s.Width * s.Height * s.Layers.Count * s.Frames.Count);
     int _layer, _frame, _zoom = 16;
     uint _primary = 0xFF000000, _secondary = 0;
@@ -24,6 +25,7 @@ public partial class SpriteEditor : UserControl
     public SpriteEditor()
     {
         InitializeComponent();
+        _aids = new ViewAids(this, CanvasCore, Scroller, CanvasCore, () => _zoom);
         // TabControl re-fires Loaded on every tab switch; init once
         Loaded += Init;
         IsVisibleChanged += (_, _) => UpdateTitle();
@@ -51,6 +53,7 @@ public partial class SpriteEditor : UserControl
         _path = path;
         _dirty = false;
         _history.Clear();
+        _aids.Bind(path);
         _layer = Math.Min(_layer, s.Layers.Count - 1);
         _frame = 0;
         (_float, _sel, _selMask) = (null, null, null);
@@ -530,6 +533,7 @@ public partial class SpriteEditor : UserControl
     {
         if (!string.Equals(_path, oldPath, StringComparison.OrdinalIgnoreCase)) return;
         _path = newPath;
+        _aids.Rebind(newPath);
         UpdateTitle();
     }
 
@@ -586,6 +590,7 @@ public partial class SpriteEditor : UserControl
             ProjectFile.Save(_sprite, path);
             App.AddRecent(path);
             _path = path;
+            _aids.Rebind(path);
             _dirty = false;
             UpdateTitle();
             return true;

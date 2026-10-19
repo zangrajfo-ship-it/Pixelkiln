@@ -118,4 +118,28 @@ public sealed class SandboxTests : IDisposable
         Assert.Equal(0xFFFF0000, dst[1]);
         Assert.InRange(dst[0] & 0xFFu, 0x7Fu, 0x81u);
     }
+
+    [Fact]
+    public void Transformed_blit_scales_rotates_and_mirrors_around_the_origin()
+    {
+        const uint R = 0xFFFF0000, B = 0xFF0000FF;
+        uint[] At(double sx, double sy, double rot)
+        {
+            var dst = new uint[10 * 10];
+            SceneRenderer.BlitTransformed(dst, 10, 10, [R, B], 2, 1, 0, 0, 5, 5, sx, sy, rot, 1);
+            return dst;
+        }
+        var scaled = At(2, 2, 0);                                   // 2×1 → 4×2 from the pivot
+        Assert.Equal([R, R, B, B], scaled[(5 * 10 + 5)..(5 * 10 + 9)]);
+        Assert.Equal(R, scaled[6 * 10 + 5]);
+        Assert.Equal(8, scaled.Count(p => p != 0));
+
+        var turned = At(1, 1, 90);                                  // clockwise on screen: the row points down
+        Assert.Equal(R, turned[5 * 10 + 4]);
+        Assert.Equal(B, turned[6 * 10 + 4]);
+
+        var mirrored = At(-1, 1, 0);                                // negative scale mirrors around the origin
+        Assert.Equal(R, mirrored[5 * 10 + 4]);
+        Assert.Equal(B, mirrored[5 * 10 + 3]);
+    }
 }

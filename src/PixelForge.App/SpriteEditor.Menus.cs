@@ -61,6 +61,8 @@ public partial class SpriteEditor : IEditor
                 Ui.Item("_Snap sprite to palette", null, SnapToPalette),
                 Ui.Item("Show colors _outside the palette", null, ShowOffPalette))),
         Ui.Menu("_View",
+            _aids.Menu(),
+            new Separator(),
             Ui.Item("Zoom _in", "Ctrl+=", () => ZoomStep(+1)),
             Ui.Item("Zoom _out", "Ctrl+-", () => ZoomStep(-1)),
             Ui.Item("_Fit to window", "Ctrl+0", ZoomFit),

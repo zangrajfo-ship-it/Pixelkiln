@@ -22,6 +22,8 @@ public partial class AssetBrowser : UserControl
 
     static Project? P => App.Project;
     AssetEntry? Selected => (List.SelectedItem as AssetItem)?.Entry;
+    /// <summary>Every selected asset, in list order (Ctrl/Shift+click selects several).</summary>
+    List<AssetEntry> SelectedAll => [.. List.Items.Cast<AssetItem>().Where(List.SelectedItems.Contains).Select(i => i.Entry)];
 
     public AssetBrowser()
     {
@@ -192,6 +194,79 @@ public partial class AssetBrowser : UserControl
                 "Remove asset", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
         p.Remove(a.Id);
     });
+
+    // ---------- several assets ----------
+
+    /// <summary>Runs a change over the selection; versions of the touched files are recorded first.</summary>
+    void DoMany(string what, Func<Project, List<AssetEntry>, string?> change)
+    {
+        if (P is not { } p || SelectedAll is not { Count: > 0 } sel) return;
+        try
+        {
+            foreach (var a in sel) App.RecordVersion(p.FullPath(a), "before " + what);
+            if (change(p, sel) is string status) Status(status);
+            App.NotifyProjectChanged();
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException or KeyNotFoundException or InvalidDataException or InvalidOperationException)
+        {
+            Ui.Error(ex);
+        }
+    }
+
+    void Status(string text) => System.Windows.Automation.AutomationProperties.SetItemStatus(List, text);
+
+    void OnBatchRename(object sender, RoutedEventArgs e) => DoMany("rename", (p, sel) =>
+    {
+        if (Ui.Ask(this, "Rename selected", $"Pattern for {sel.Count} file(s): {{name}} = current name, {{n}} = number (01, 02 …)", "{name}") is not string pattern) return null;
+        var moved = Batch.Rename(p, [.. sel.Select(a => a.Id)], pattern);
+        foreach (var (from, to) in moved) FileMoved?.Invoke(from, to);
+        return $"Renamed {moved.Count} file(s).";
+    });
+
+    void OnBatchTags(object sender, RoutedEventArgs e) => DoMany("tags", (p, sel) =>
+    {
+        if (Ui.AskFields(this, $"Tags for {sel.Count} asset(s)", ("_Add (commas)", "", null), ("_Remove (commas)", "", null)) is not { } f) return null;
+        Batch.Tag(p, sel.Select(a => a.Id), f[0].Split(','), f[1].Split(','));
+        return "Tags updated.";
+    });
+
+    void OnBatchScale(object sender, RoutedEventArgs e) => DoMany("scale", (p, sel) =>
+    {
+        if (Ui.AskFields(this, "Scale selected sprites", ("_Percent", "200", ["25", "50", "200", "300", "400"])) is not { } f) return null;
+        if (!int.TryParse(f[0], out int pct)) throw new ArgumentException("A whole percentage, e.g. 200.");
+        var files = Batch.ScaleSprites(p, sel.Select(a => a.Id), pct);
+        foreach (var f2 in files) App.NotifyAssetRestored(f2);   // open tabs reload the scaled file
+        return $"Scaled {files.Count} sprite(s); previous versions are in the history.";
+    });
+
+    void OnBatchConvert(object sender, RoutedEventArgs e) => DoMany("convert", (p, sel) =>
+    {
+        var made = Batch.Convert(p, sel.Select(a => a.Id));
+        return made.Count == 0 ? "Only images and sprites can be converted." : $"Made {made.Count} new file(s): " + string.Join(", ", made.Select(a => a.Path));
+    });
+
+    /// <summary>Points every scene, character, map, mix, playlist and export profile that uses the selected asset at another one of the same type.</summary>
+    void OnReplaceEverywhere(object sender, RoutedEventArgs e)
+    {
+        if (P is not { } p || Selected is not { } a) return;
+        var users = p.UsersOf(a.Id).ToList();
+        var candidates = p.Assets.Where(x => x.Type == a.Type && x.Id != a.Id).OrderBy(x => x.Path).ToList();
+        if (candidates.Count == 0) { Ui.Error(new InvalidOperationException($"There is no other {a.Type} in the project to use instead.")); return; }
+        if (Ui.AskFields(this, $"Replace “{a.Name}” everywhere", ("_Use instead", candidates[0].Path, [.. candidates.Select(c => c.Path)])) is not { } f) return;
+        var target = candidates.First(c => c.Path == f[0]);
+        if (MessageBox.Show(Window.GetWindow(this), $"{users.Count} asset(s) use “{a.Name}”" + (users.Count > 0 ? ":\n" + string.Join("\n", users.Take(15).Select(u => "• " + u.Path)) : ".")
+                + $"\n\nPoint them, playlists and export profiles at “{target.Name}”? Previous versions are kept in the history.",
+                "Replace everywhere", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        try
+        {
+            foreach (var u in users) App.RecordVersion(p.FullPath(u), $"before replacing {a.Name}");
+            var changed = p.ReplaceReferences(a.Id, target.Id);
+            foreach (var c in changed) { App.RecordVersion(p.FullPath(c), $"{a.Name} → {target.Name}"); App.NotifyAssetRestored(p.FullPath(c)); }
+            App.NotifyProjectChanged();
+            Status($"{changed.Count} asset(s) now use {target.Name}.");
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException or UnauthorizedAccessException) { Ui.Error(ex); }
+    }
 
     void OnImport(object sender, RoutedEventArgs e)
     {

@@ -33,3 +33,20 @@ interface IEditor
     /// <summary>Loads a recovered document as unsaved work.</summary>
     void RestoreAutosave(string file, string? originalPath);
 }
+
+/// <summary>Editors whose look can be copied to another document or object (Ctrl+Alt+C / Ctrl+Alt+V).</summary>
+interface IStyleSource
+{
+    /// <summary>The style of the current document or selection; null when there is nothing to copy.</summary>
+    object? CopyStyle();
+
+    /// <summary>Applies a copied style (undoable); returns what happened, or null when the style does not fit here.</summary>
+    string? PasteStyle(object style);
+}
+
+/// <summary>Editors with named tools a workspace profile can preselect.</summary>
+interface IToolSelectable
+{
+    string CurrentToolName { get; }
+    void SelectTool(string name);
+}

@@ -43,7 +43,7 @@
                 <Button Content="Check project…" Click="OnCheck" ToolTip="Missing, damaged, unregistered and unused assets, broken references" />
             </WrapPanel>
 
-            <ListBox x:Name="List" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+            <ListBox x:Name="List" SelectionMode="Extended" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                      HorizontalContentAlignment="Stretch" AutomationProperties.Name="Assets"
                      SelectionChanged="OnSelected" MouseDoubleClick="OnDoubleClick" KeyDown="OnListKey">
                 <ListBox.ItemTemplate>
@@ -71,6 +71,13 @@
                         <MenuItem Header="_Favorite" InputGestureText="Ctrl+D" Click="OnFavorite" />
                         <MenuItem Header="_Tags…" Click="OnTags" />
                         <MenuItem Header="_History…" InputGestureText="Ctrl+H" Click="OnHistory" />
+                        <MenuItem Header="Replace _everywhere with…" Click="OnReplaceEverywhere" />
+                        <MenuItem Header="_Selected assets (batch)">
+                            <MenuItem Header="_Rename with a pattern…" Click="OnBatchRename" />
+                            <MenuItem Header="_Add or remove tags…" Click="OnBatchTags" />
+                            <MenuItem Header="_Scale sprites…" Click="OnBatchScale" />
+                            <MenuItem Header="_Convert image ↔ sprite" Click="OnBatchConvert" />
+                        </MenuItem>
                         <Separator />
                         <MenuItem Header="Remove from project" InputGestureText="Del" Click="OnRemove" />
                     </ContextMenu>

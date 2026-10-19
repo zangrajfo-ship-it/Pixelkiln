@@ -16,11 +16,12 @@ namespace PixelForge.App;
 /// movement tracks), areas (trigger, checkpoint, spawn, camera, kill), camera start, validation.
 /// Drawn with WPF elements (one per object), so moving things around stays fast in big scenes.
 /// </summary>
-public partial class SceneEditor : UserControl, IEditor
+public partial class SceneEditor : UserControl, IEditor, IStyleSource
 {
     static readonly double[] Zooms = [0.25, 0.5, 1, 2, 3, 4, 6, 8];
 
     Scene _scene = new();
+    readonly ViewAids _aids;
     readonly History<Scene> _history = new(s => s.Clone(), App.Settings.UndoLimit);
     string? _path;
     bool _dirty, _refreshing;
@@ -44,6 +45,7 @@ public partial class SceneEditor : UserControl, IEditor
     public SceneEditor()
     {
         InitializeComponent();
+        _aids = new ViewAids(this, SceneCanvas, Scroller, SceneCanvas, () => _zoom);
         AreaKindBox.ItemsSource = Enum.GetNames<AreaKind>();
         AreaKindBox.SelectedIndex = 0;
         SelAreaKindBox.ItemsSource = Enum.GetNames<AreaKind>();
@@ -68,6 +70,7 @@ public partial class SceneEditor : UserControl, IEditor
         _scene = s;
         _path = path;
         _dirty = false;
+        _aids.Bind(path);
         _history.Clear();
         _sel = null;
         _layerId = s.Layers.LastOrDefault(l => l.Kind == SceneLayerKind.Instances)?.Id ?? s.Layers.Last().Id;
@@ -157,6 +160,8 @@ public partial class SceneEditor : UserControl, IEditor
             }
         }
         foreach (var ar in _scene.Areas) AddArea(ar);
+        _aids.Attach(SceneCanvas);
+        _aids.Layout(_scene.Width, _scene.Height, 1, 1 / _zoom);
         // camera start: the game's view at the target resolution
         var (tw, th) = Target;
         Place(new Rectangle { Width = tw, Height = th, Stroke = Brushes.White, StrokeThickness = 1 / _zoom, StrokeDashArray = [6, 4], IsHitTestVisible = false }, _scene.CameraX, _scene.CameraY);
@@ -293,7 +298,14 @@ public partial class SceneEditor : UserControl, IEditor
 
     // ---------- mouse ----------
 
-    int Snap(double v) => SnapToggle.IsChecked == true && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? (int)Math.Round(v / Tile) * Tile : (int)Math.Floor(v);
+    /// <summary>Guides win over the tile grid; Shift turns both off.</summary>
+    int Snap(double v, bool vertical)
+    {
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) return (int)Math.Floor(v);
+        double g = _aids.Snap(v, vertical, _zoom);
+        if (g != v) return (int)Math.Round(g);
+        return SnapToggle.IsChecked == true ? (int)Math.Round(v / Tile) * Tile : (int)Math.Floor(v);
+    }
 
     object? HitTest(Point p)
     {
@@ -324,7 +336,7 @@ public partial class SceneEditor : UserControl, IEditor
         else if (PlaceTool.IsChecked == true) PlaceAt(p);
         else if (AreaTool.IsChecked == true)
         {
-            _dragFrom = new Point(Snap(p.X), Snap(p.Y));
+            _dragFrom = new Point(Snap(p.X, true), Snap(p.Y, false));
             _areaPreview = new Rectangle { Stroke = Brushes.White, StrokeThickness = 1 / _zoom, StrokeDashArray = [4, 3] };
             Place(_areaPreview, _dragFrom.Value.X, _dragFrom.Value.Y);
             SceneCanvas.CaptureMouse();
@@ -354,7 +366,7 @@ public partial class SceneEditor : UserControl, IEditor
         }
         if (_sel is null) return;
         if (!_dragSnapshotDone) { Snapshot(); _dragSnapshotDone = true; }   // a plain click is not an edit
-        int nx = Snap(_dragOrig.X + p.X - from.X), ny = Snap(_dragOrig.Y + p.Y - from.Y);
+        int nx = Snap(_dragOrig.X + p.X - from.X, true), ny = Snap(_dragOrig.Y + p.Y - from.Y, false);
         if (_sel is SceneInstance i) (i.X, i.Y) = (nx, ny);
         else if (_sel is SceneArea a) (a.X, a.Y) = (nx, ny);
         Rebuild();
@@ -362,7 +374,7 @@ public partial class SceneEditor : UserControl, IEditor
 
     (int X, int Y, int W, int H) AreaRect(Point from, Point p)
     {
-        int x2 = Snap(p.X), y2 = Snap(p.Y);
+        int x2 = Snap(p.X, true), y2 = Snap(p.Y, false);
         int x = (int)Math.Min(from.X, x2), y = (int)Math.Min(from.Y, y2);
         return (x, y, Math.Max(1, (int)Math.Abs(x2 - from.X)), Math.Max(1, (int)Math.Abs(y2 - from.Y)));
     }
@@ -397,7 +409,7 @@ public partial class SceneEditor : UserControl, IEditor
             layer = new SceneLayer { Name = "Objects" };
             _scene.Layers.Add(layer);
         }
-        var inst = new SceneInstance { AssetId = assetId, LayerId = layer.Id, X = Snap(p.X), Y = Snap(p.Y), Name = App.Project?.Find(assetId)?.Name ?? "" };
+        var inst = new SceneInstance { AssetId = assetId, LayerId = layer.Id, X = Snap(p.X, true), Y = Snap(p.Y, false), Name = App.Project?.Find(assetId)?.Name ?? "" };
         _scene.Instances.Add(inst);
         _sel = inst;
         RefreshLayers();
@@ -770,11 +782,43 @@ public partial class SceneEditor : UserControl, IEditor
         {
             Scene.Save(_scene, path);
             (_path, _dirty) = (path, false);
+            _aids.Rebind(path);
             UpdateTitle();
             App.AddRecent(path);
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Ui.Error(ex); return false; }
+    }
+
+    // ---------- style (Ctrl+Alt+C / V): how an object or area behaves, not where it is ----------
+
+    sealed record ObjectStyle(string? Animation, bool FlipX, int Z, Dictionary<string, string> Properties, KeyframeTrack? Track);
+    sealed record AreaStyle(AreaKind Kind, Dictionary<string, string> Properties);
+
+    public object? CopyStyle() => _sel switch
+    {
+        SceneInstance i => new ObjectStyle(i.Animation, i.FlipX, i.Z, new(i.Properties), i.Track?.Clone()),
+        SceneArea a => new AreaStyle(a.Kind, new(a.Properties)),
+        _ => null,
+    };
+
+    public string? PasteStyle(object style)
+    {
+        switch (style, _sel)
+        {
+            case (ObjectStyle s, SceneInstance i):
+                Snapshot();
+                (i.Animation, i.FlipX, i.Z, i.Properties, i.Track) = (s.Animation, s.FlipX, s.Z, new(s.Properties), s.Track?.Clone());
+                break;
+            case (AreaStyle s, SceneArea a):
+                Snapshot();
+                (a.Kind, a.Properties) = (s.Kind, new(s.Properties));
+                break;
+            default: return null;
+        }
+        RefreshSelection();
+        Rebuild();
+        return "Style pasted to the selection.";
     }
 
     // ---------- IEditor ----------
@@ -802,7 +846,7 @@ public partial class SceneEditor : UserControl, IEditor
 
     public void OnFileMoved(string oldPath, string newPath)
     {
-        if (string.Equals(_path, oldPath, StringComparison.OrdinalIgnoreCase)) { _path = newPath; UpdateTitle(); }
+        if (string.Equals(_path, oldPath, StringComparison.OrdinalIgnoreCase)) { _path = newPath; _aids.Rebind(newPath); UpdateTitle(); }
     }
 
     public void WriteAutosave(string file) => Scene.Save(_scene, file);
@@ -834,6 +878,8 @@ public partial class SceneEditor : UserControl, IEditor
             Ui.Item("_Delete selected", "Del", () => OnDeleteSelected(null, null)),
             Ui.Item("_Check scene…", null, () => OnCheck(null, null))),
         Ui.Menu("_View",
+            _aids.Menu(),
+            new Separator(),
             Ui.Item("Zoom _in", "Ctrl+=", () => ZoomStep(+1)),
             Ui.Item("Zoom _out", "Ctrl+-", () => ZoomStep(-1)),
             Ui.Item("_Fit to window", "Ctrl+0", ZoomFit),
