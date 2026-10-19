@@ -149,3 +149,17 @@ Lastnik je dovolil izvedbo vseh faz brez ustavljanja. Po vsaki fazi: build, test
 - Izvoz Godot 4 ni preizkušen v pravem Godotu (ni nameščen).
 - Ročno nepreizkušeno: delo z miško v urejevalnikih prizora, likov in časovnici zvoka, poslušanje, igranje predogleda s tipkovnico.
 - Odloženo: ločeni deli telesa likov (skeletni model), skaliranje in vrtenje sledi v predogledu igre, zlivanje korakov undo pri drsnikih.
+
+## Faza 11: temelji za nove načine (končana)
+Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.claude/plans/yeah-make-a-plan-bright-lynx.md`).
+- **Popravek J:** predogled igre zdaj skalira in vrti po gibalni sledi (`SceneRenderer.BlitTransformed`, pivot = izhodišče, enako kot urejevalnik), izpust zunaj pogleda upošteva doseg.
+- **`AssetKinds`** (ADR-0004): register vrst nadomesti `switch` stavke v Core; `Project.ReplaceReferences` prek `Remap` (prizori, liki, mape, mešanice, predvajalni seznami, izvozni profili).
+- **`ModeHost`:** Sprite (Pixel), Character (States) in Scene (Layout) so gostitelji načinov; Ctrl+1…9; ukazi drugih načinov v paleti s predpono.
+- **Asinhrono:** `Ui.RunLong` (napredek, preklic, lastnik onemogočen); izvoz in preverjanje izvoza tečeta v ozadju, preklic pred zamenjavo mape ne pusti sledi.
+- **Brskalnik:** večkratni izbor, paketno preimenovanje z vzorcem (`{name}`, `{n}`, zamenjave prek začasnih imen), oznake, skaliranje sprajtov, pretvorba slika ↔ sprajt, zamenjava sredstva povsod (z zapisom različic pred spremembo).
+- **Ravnila, vodila, referenčna slika** (`ViewAids`) v Pixel in Scene načinu; v prizoru pripenjanje na vodila pred mrežo ploščic; shranjeno v `.pfproj` po ID-ju sredstva.
+- **Kopiranje sloga** Ctrl+Alt+C/V: Pixel (paleta, barvi), Scene (lastnosti objekta ali območja), Character (vrsta, smer, lastnosti).
+- **Delovni profili** (Options → Workspace): vgrajeni Pixel art, Painting, Animation, Levels in lastni (zavihek, način, brskalnik, orodje).
+- **Testi:** 144/144 (novi: transformirani izris, register in zamenjava povsod, paketne operacije, preklic izvoza, profili v nastavitvah). Obremenitveni testi tečejo zaporedno (vzporedno so dajali lažne napake). Smoke preveri še delovni profil.
+- **Ni ročno preizkušeno:** vlečenje in pripenjanje na vodila z miško, paketne operacije v brskalniku, kopiranje sloga s tipkovnico.
+- **Opomba:** profil Painting do Faze 13 odpre prvi način (Pixel).

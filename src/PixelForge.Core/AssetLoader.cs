@@ -4,22 +4,7 @@ namespace PixelForge.Core;
 public static class AssetLoader
 {
     /// <summary>Loads the file to prove it is readable; throws a readable exception if not.</summary>
-    public static void Probe(AssetType type, string path)
-    {
-        switch (type)
-        {
-            case AssetType.Sprite: ProjectFile.Load(path); break;
-            case AssetType.Image: ImageIO.LoadImage(path); break;
-            case AssetType.Tilemap: Tilemap.Load(path); break;
-            case AssetType.Song: Song.Load(path); break;
-            case AssetType.Sound: Sfx.Load(path); break;
-            case AssetType.Palette: PaletteIO.Load(path); break;
-            case AssetType.Character: Character.Load(path); break;
-            case AssetType.Scene: Scene.Load(path); break;
-            case AssetType.Audio: WavReader.Load(path); break;
-            case AssetType.Mix: Mix.Load(path); break;
-        }
-    }
+    public static void Probe(AssetType type, string path) => AssetKinds.Of(type).Probe(path);
 
     /// <summary>A picture of an image or sprite file (sprite: first frame, all visible layers).</summary>
     public static (uint[] Pixels, int Width, int Height) LoadImage(string path)

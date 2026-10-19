@@ -154,16 +154,17 @@ static class ExportWindow
             RefreshProfiles(0);
             Store();
         };
-        check.Click += (_, _) =>
+        check.Click += async (_, _) =>
         {
-            if (Store() && Current() is { } pr) report.Text = Exporter.Plan(p, pr).Report;
+            if (!Store() || Current() is not { } pr) return;
+            if (await Ui.RunLong(win, "Checking export", (progress, cancel) => Exporter.Plan(p, pr, progress, cancel)) is { } r) report.Text = r.Report;
         };
-        export.Click += (_, _) =>
+        export.Click += async (_, _) =>
         {
             if (!Store() || Current() is not { } pr) return;
             try
             {
-                var r = Exporter.Run(p, pr);
+                if (await Ui.RunLong(win, "Exporting", (progress, cancel) => Exporter.Run(p, pr, progress, cancel)) is not { } r) { report.Text = "Export cancelled; the previous export is unchanged."; return; }
                 report.Text = (r.Ok ? $"Exported to {pr.OutputFolder}{(pr.Zip ? " (+ .zip)" : "")}.\n\n" : "") + r.Report;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Ui.Error(ex); }

@@ -18,6 +18,22 @@ public sealed class AssetEntry
     [JsonIgnore] public string Folder => System.IO.Path.GetDirectoryName(Path) ?? "";
 }
 
+/// <summary>Guides (document pixels) and a reference picture shown under or over an asset while editing; never exported.</summary>
+public sealed class AssetView
+{
+    public List<double> GuidesX { get; set; } = [];
+    public List<double> GuidesY { get; set; } = [];
+    /// <summary>Picture file (relative to the project when inside it).</summary>
+    public string? Reference { get; set; }
+    public double ReferenceOpacity { get; set; } = 0.4;
+    public bool ReferenceVisible { get; set; } = true;
+    public bool IsEmpty => GuidesX.Count == 0 && GuidesY.Count == 0 && Reference is null;
+
+    /// <summary>Nearest guide within tolerance (document pixels), else the value unchanged.</summary>
+    public static double Snap(double v, IEnumerable<double> guides, double tolerance) =>
+        guides.Select(g => (g, d: Math.Abs(g - v))).Where(x => x.d <= tolerance).OrderBy(x => x.d).Select(x => (double?)x.g).FirstOrDefault() ?? v;
+}
+
 public sealed class ProjectSettings
 {
     /// <summary>Game resolution used by scene preview and camera.</summary>
@@ -34,6 +50,8 @@ public sealed class ProjectSettings
     /// <summary>Version history limits (.history): versions kept per asset and total size.</summary>
     public int HistoryMaxVersions { get; set; } = VersionStore.DefaultMaxVersions;
     public int HistoryMaxMegabytes { get; set; } = VersionStore.DefaultMaxMegabytes;
+    /// <summary>Per-asset view state (guides, reference picture): editing aids, not content, so asset formats stay unchanged.</summary>
+    public Dictionary<Guid, AssetView> Views { get; set; } = [];
 
     public bool Collides(int a, int b) =>
         (CollisionMasks.GetValueOrDefault(a, uint.MaxValue) & 1u << b) != 0 && (CollisionMasks.GetValueOrDefault(b, uint.MaxValue) & 1u << a) != 0;
@@ -50,13 +68,7 @@ public sealed class Project
     /// <summary>Folders inside the project that are never assets.</summary>
     public static readonly string[] HiddenFolders = [".history", ".trash", "export"];
 
-    public static readonly IReadOnlyDictionary<string, AssetType> TypesByExtension = new Dictionary<string, AssetType>(StringComparer.OrdinalIgnoreCase)
-    {
-        [".pxf"] = AssetType.Sprite, [".png"] = AssetType.Image, [".gif"] = AssetType.Image, [".bmp"] = AssetType.Image,
-        [".pxm"] = AssetType.Tilemap, [".pxs"] = AssetType.Song, [".sfx"] = AssetType.Sound,
-        [".pxscene"] = AssetType.Scene, [".pxchar"] = AssetType.Character, [".hex"] = AssetType.Palette, [".gpl"] = AssetType.Palette,
-        [".wav"] = AssetType.Audio, [".pxmix"] = AssetType.Mix,
-    };
+    public static IReadOnlyDictionary<string, AssetType> TypesByExtension => AssetKinds.ByExtension;
 
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = "Game";
@@ -238,16 +250,27 @@ public sealed class Project
         if (!File.Exists(path)) return [];
         try
         {
-            return a.Type switch
-            {
-                AssetType.Tilemap => Tilemap.Load(path).TilesetAssetId is Guid g ? [g] : [],
-                AssetType.Character => Character.Load(path).SpriteAssetId is Guid c ? [c] : [],
-                AssetType.Scene => Scene.Load(path).ReferencedAssets(),
-                AssetType.Mix => Mix.Load(path).ReferencedAssets(),
-                _ => [],
-            };
+            return AssetKinds.Of(a.Type).References?.Invoke(path) ?? [];
         }
         catch (Exception ex) when (ex is InvalidDataException or IOException) { return []; }   // damaged files are reported by Check
+    }
+
+    /// <summary>
+    /// Points every use of <paramref name="oldId"/> at <paramref name="newId"/>: asset files that refer to it, playlists and
+    /// export profiles. Returns the assets whose files changed (the caller records versions before).
+    /// </summary>
+    public List<AssetEntry> ReplaceReferences(Guid oldId, Guid newId)
+    {
+        if (Find(newId) is not { } target) throw new InvalidOperationException("The replacement is not in the project.");
+        if (Find(oldId) is { } old && old.Type != target.Type) throw new InvalidOperationException($"A {old.Type} can only be replaced by another {old.Type}, not a {target.Type}.");
+        Guid Map(Guid g) => g == oldId ? newId : g;
+        var changed = new List<AssetEntry>();
+        foreach (var a in Assets.Where(a => a.Id != newId && ReferencesOf(a).Contains(oldId)).ToList())
+            if (AssetKinds.Of(a.Type).Remap is { } remap && remap(FullPath(a), Map)) changed.Add(a);
+        foreach (var pl in Settings.Playlists) pl.Items = [.. pl.Items.Select(Map)];
+        foreach (var e in Settings.ExportProfiles) if (e.Assets is { } ids) e.Assets = [.. ids.Select(Map).Distinct()];
+        Save();
+        return changed;
     }
 
     /// <summary>Which assets use <paramref name="id"/> (back-references for the asset browser).</summary>

@@ -33,6 +33,7 @@ public partial class SpriteEditor
         TileGridOverlay.Fill = TileGridToggle.IsChecked == true
             ? Ui.GridBrush(s.TileGridWidth * _zoom, s.TileGridHeight * _zoom, Ui.ColorOf(s.TileGridColor), s.TileGridOffsetX * _zoom, s.TileGridOffsetY * _zoom)
             : null;
+        _aids.Layout(_sprite.Width, _sprite.Height, _zoom, 1);
     }
 
     void UpdateTiledBg()

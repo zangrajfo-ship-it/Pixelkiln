@@ -42,4 +42,19 @@ public class SettingsTests
         }
         finally { File.Delete(bad); }
     }
+
+    [Fact]
+    public void Workspaces_and_recent_commands_survive_and_bad_ones_are_dropped()
+    {
+        var s = new Settings();
+        s.Workspaces.Add(new WorkspaceProfile("Mine", "Scene", "Layout", false, null));
+        s.Workspaces.Add(new WorkspaceProfile("", "Scene"));
+        s.Workspaces.Add(new WorkspaceProfile("Mine", "Sprite", "Pixel", true, "Pencil"));   // same name: the last one wins
+        s.AddRecentCommand("A");
+        s.AddRecentCommand("B");
+        s.AddRecentCommand("A");
+        var t = Settings.Deserialize(s.Serialize()).Sanitized();
+        Assert.Equal([new WorkspaceProfile("Mine", "Sprite", "Pixel", true, "Pencil")], t.Workspaces);
+        Assert.Equal(["A", "B"], t.RecentCommands);
+    }
 }

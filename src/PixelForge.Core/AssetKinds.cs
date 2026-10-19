@@ -1,0 +1,131 @@
+namespace PixelForge.Core;
+
+/// <summary>
+/// Everything PixelForge knows about one kind of asset file: extensions, how to check, describe and picture it,
+/// which assets it refers to and how to point those references elsewhere. New formats register here instead of
+/// adding a case to every switch.
+/// </summary>
+public sealed record AssetKind(
+    AssetType Type,
+    string[] Extensions,
+    Action<string> Probe,
+    Func<string, string> Describe,
+    Func<string, Project?, (uint[] Pixels, int Width, int Height)?>? Picture = null,
+    Func<string, IEnumerable<Guid>>? References = null,
+    /// <summary>Loads, replaces referenced ids through the map, saves; returns whether anything changed.</summary>
+    Func<string, Func<Guid, Guid>, bool>? Remap = null);
+
+public static class AssetKinds
+{
+    static readonly List<AssetKind> _all =
+    [
+        new(AssetType.Sprite, [".pxf"], p => ProjectFile.Load(p), p => DescribeSprite(ProjectFile.Load(p)), (p, _) => AssetLoader.LoadImage(p)),
+        new(AssetType.Image, [".png", ".gif", ".bmp"], p => ImageIO.LoadImage(p), p => ImageIO.LoadImage(p) is var (_, w, h) ? $"{w}×{h} image" : "",
+            (p, _) => ImageIO.LoadImage(p)),
+        new(AssetType.Tilemap, [".pxm"], p => Tilemap.Load(p), p => DescribeMap(Tilemap.Load(p)), MapPicture,
+            p => Tilemap.Load(p).TilesetAssetId is Guid g ? [g] : [],
+            (p, map) =>
+            {
+                var m = Tilemap.Load(p);
+                if (m.TilesetAssetId is not Guid g || map(g) == g) return false;
+                m.TilesetAssetId = map(g);
+                Tilemap.Save(m, p);
+                return true;
+            }),
+        new(AssetType.Song, [".pxs"], p => Song.Load(p), p => DescribeSong(Song.Load(p))),
+        new(AssetType.Sound, [".sfx"], p => Sfx.Load(p), p => $"Sound effect, {Sfx.Load(p).Duration:0.00} s"),
+        new(AssetType.Scene, [".pxscene"], p => Scene.Load(p), p => DescribeScene(Scene.Load(p)), null,
+            p => Scene.Load(p).ReferencedAssets(),
+            (p, map) =>
+            {
+                var s = Scene.Load(p);
+                bool changed = false;
+                Guid M(Guid g) { var n = map(g); changed |= n != g; return n; }
+                foreach (var l in s.Layers) if (l.AssetId is Guid g) l.AssetId = M(g);
+                foreach (var i in s.Instances) i.AssetId = M(i.AssetId);
+                if (s.MusicAssetId is Guid music) s.MusicAssetId = M(music);
+                if (changed) Scene.Save(s, p);
+                return changed;
+            }),
+        new(AssetType.Character, [".pxchar"], p => Character.Load(p), p => DescribeCharacter(Character.Load(p)), null,
+            p => Character.Load(p).SpriteAssetId is Guid c ? [c] : [],
+            (p, map) =>
+            {
+                var c = Character.Load(p);
+                if (c.SpriteAssetId is not Guid g || map(g) == g) return false;
+                c.SpriteAssetId = map(g);
+                Character.Save(c, p);
+                return true;
+            }),
+        new(AssetType.Palette, [".hex", ".gpl"], p => PaletteIO.Load(p), p => $"{PaletteIO.Load(p).Count} colors", (p, _) => AssetInfo.PaletteImage(PaletteIO.Load(p))),
+        new(AssetType.Audio, [".wav"], p => WavReader.Load(p), p => $"WAV, {WavReader.Load(p).Length / (double)Synth.SampleRate:0.00} s"),
+        new(AssetType.Mix, [".pxmix"], p => Mix.Load(p), p => DescribeMix(Mix.Load(p)), null,
+            p => Mix.Load(p).ReferencedAssets(),
+            (p, map) =>
+            {
+                var m = Mix.Load(p);
+                bool changed = false;
+                foreach (var c in m.Tracks.SelectMany(t => t.Clips))
+                {
+                    var n = map(c.AssetId);
+                    changed |= n != c.AssetId;
+                    c.AssetId = n;
+                }
+                if (changed) Mix.Save(m, p);
+                return changed;
+            }),
+    ];
+
+    public static IReadOnlyList<AssetKind> All => _all;
+
+    /// <summary>Extension → type, rebuilt when a kind registers (looked up once per file when scanning folders).</summary>
+    public static IReadOnlyDictionary<string, AssetType> ByExtension { get; private set; } = Index();
+
+    static Dictionary<string, AssetType> Index() =>
+        _all.SelectMany(k => k.Extensions.Select(e => (e, k.Type))).ToDictionary(x => x.e, x => x.Type, StringComparer.OrdinalIgnoreCase);
+
+    public static AssetKind Of(AssetType type) => _all.First(k => k.Type == type);
+
+    public static AssetKind? ForExtension(string ext) => _all.FirstOrDefault(k => k.Extensions.Contains(ext, StringComparer.OrdinalIgnoreCase));
+
+    /// <summary>Adds a new kind (each new format registers itself once, from its own file).</summary>
+    public static void Register(AssetKind kind)
+    {
+        if (_all.Any(k => k.Type == kind.Type)) throw new InvalidOperationException($"{kind.Type} is registered twice.");
+        _all.Add(kind);
+        ByExtension = Index();
+    }
+
+    // ---------- descriptions ----------
+
+    static string Plural(int n, string word, string plural = "s") => $"{n} {word}{(n == 1 ? "" : plural)}";
+
+    static string DescribeSprite(Sprite s) =>
+        $"{s.Width}×{s.Height} px, {Plural(s.Frames.Count, "frame")}, {Plural(s.Layers.Count, "layer")}, " +
+        $"{s.Frames.Sum(f => f.DurationMs) / 1000.0:0.00} s" + (s.Tags.Count > 0 ? $", tags: {string.Join(", ", s.Tags.Select(t => t.Name))}" : "");
+
+    static string DescribeMap(Tilemap m) => $"{m.Width}×{m.Height} tiles of {m.TileSize} px, {Plural(m.Layers.Count, "layer")}, {Plural(m.Objects.Count, "object")}";
+
+    static string DescribeSong(Song s)
+    {
+        double seconds = s.Order.Count * s.Steps * s.StepSeconds;
+        return $"{s.Bpm} BPM, {Plural(s.Patterns.Count, "pattern")}, {(int)seconds / 60}:{(int)seconds % 60:00}";
+    }
+
+    static string DescribeMix(Mix m) =>
+        $"Mix, {m.Tracks.Count} tracks, {m.Tracks.Sum(t => t.Clips.Count)} clips{(m.LoopStartMs is int a ? $", loop {a / 1000.0:0.##}–{m.LoopEndMs / 1000.0:0.##} s" : "")}";
+
+    static string DescribeScene(Scene s) =>
+        $"Scene {s.Width}×{s.Height} px{(s.Level.Length > 0 ? $", level {s.Level} #{s.Order}" : "")}, {s.Layers.Count} layers, {s.Instances.Count} instances, {s.Areas.Count} areas";
+
+    static string DescribeCharacter(Character c) => $"{c.Kind}, {Plural(c.Animations.Count, "state")}, {Plural(c.Boxes.Count, "box", "es")}";
+
+    static (uint[], int, int)? MapPicture(string path, Project? project)
+    {
+        var m = Tilemap.Load(path);
+        if (project is not null) AssetLoader.RefreshTileset(m, project);
+        int w = m.Width * m.TileSize, h = m.Height * m.TileSize;
+        if (m.Tileset is null || (long)w * h > 4_000_000) return null;   // ponytail: no picture for huge maps; render a crop if needed
+        return (m.Render(), w, h);
+    }
+}

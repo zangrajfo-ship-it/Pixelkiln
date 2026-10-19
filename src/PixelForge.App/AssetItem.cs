@@ -73,13 +73,7 @@ public sealed class AssetItem(AssetEntry entry, string fullPath) : INotifyProper
     {
         try
         {
-            (uint[] px, int w, int h)? img = type switch
-            {
-                AssetType.Sprite or AssetType.Image => AssetLoader.LoadImage(path),
-                AssetType.Palette => AssetInfo.PaletteImage(PaletteIO.Load(path)),
-                AssetType.Tilemap => MapImage(path, project),
-                _ => null,
-            };
+            var img = AssetKinds.Of(type).Picture?.Invoke(path, project);
             if (img is not var (p, iw, ih)) return null;
             var (tp, tw, th) = AssetInfo.Thumbnail(p, iw, ih, max);
             var bmp = ImageIO.ToBitmap(tp, tw, th);
@@ -90,14 +84,5 @@ public sealed class AssetItem(AssetEntry entry, string fullPath) : INotifyProper
         {
             return null;   // the browser shows the type icon; Check project reports the problem
         }
-    }
-
-    static (uint[], int, int)? MapImage(string path, Project? project)
-    {
-        var m = Tilemap.Load(path);
-        if (project is not null) AssetLoader.RefreshTileset(m, project);
-        int w = m.Width * m.TileSize, h = m.Height * m.TileSize;
-        if (m.Tileset is null || (long)w * h > 4_000_000) return null;   // ponytail: no thumbnail for huge maps; render a crop if needed
-        return (m.Render(), w, h);
     }
 }

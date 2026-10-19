@@ -14,7 +14,30 @@ public partial class MainWindow : Window
     // order = autosave file index; new editors are appended, whatever their tab position
     IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd, AudioEd];
 
-    TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed);
+    TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed || t.Content is ModeHost h && h.Contains(ed));
+
+    /// <summary>Shows the tab and, inside it, the mode that holds the editor.</summary>
+    void Reveal(IEditor ed)
+    {
+        var tab = TabOf(ed);
+        Tabs.SelectedItem = tab;
+        (tab.Content as ModeHost)?.Activate(ed);
+    }
+
+    /// <summary>Tabs whose editors are modes: new modes are added here (or later with host.Add), never as new tabs.</summary>
+    void HostModes()
+    {
+        foreach (var (ed, name) in new (UserControl Editor, string Name)[] { (SpriteEd, "Pixel"), (CharEd, "States"), (SceneEd, "Layout") })
+        {
+            var tab = TabOf((IEditor)ed);
+            tab.Content = null;   // detach before re-parenting
+            var host = new ModeHost((name, (IEditor)ed));
+            host.ModeChanged += BuildMenu;
+            tab.Content = host;
+        }
+    }
+
+    ModeHost HostOf(IEditor ed) => (ModeHost)TabOf(ed).Content;
     IEditor? Current => (Tabs?.SelectedItem as TabItem)?.Content as IEditor;   // SelectedContent lags behind SelectionChanged
 
     readonly DispatcherTimer _autosave = new();
@@ -22,6 +45,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        HostModes();
         MapEd.SpriteImage = () => SpriteEd.CurrentImage;
         CharEd.IsSpriteOpenDirty = path => SpriteEd.IsDirty && string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase);
         CharEd.SpriteFileChanged = path =>
@@ -76,6 +100,9 @@ public partial class MainWindow : Window
         MainMenu.Items.Add(Ui.Menu("_Options",
             Ui.Item("_Command palette…", "Ctrl+Shift+P", ShowCommandPalette),
             Ui.Item("P_lugins…", null, () => PluginsWindow.Show(this)),
+            WorkspaceMenu(),
+            Ui.Item("Copy st_yle", "Ctrl+Alt+C", CopyStyle),
+            Ui.Item("Paste s_tyle", "Ctrl+Alt+V", PasteStyle),
             Ui.Item("_Preferences…", "Ctrl+,", () => PreferencesWindow.Show(this))));
         MainMenu.Items.Add(Ui.Menu("_Help",
             Ui.Item("_Keyboard shortcuts", "F1", () => HelpWindow.Show(this)),
@@ -188,7 +215,7 @@ public partial class MainWindow : Window
         };
         if (a.Type == AssetType.Audio)   // a WAV is material: it goes onto a track
         {
-            Tabs.SelectedItem = TabOf(AudioEd);
+            Reveal(AudioEd);
             AudioEd.AddClip(a.Id);
             return;
         }
@@ -199,7 +226,7 @@ public partial class MainWindow : Window
             return;
         }
         if (target is null) { Ui.Error(new NotSupportedException($"{a.Type} assets open in their own studio.")); return; }
-        Tabs.SelectedItem = TabOf(target);
+        Reveal(target);
         target.OpenPath(path);
     }
 
@@ -270,6 +297,7 @@ public partial class MainWindow : Window
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
         if (e.Key == Key.F1) { HelpWindow.Show(this); e.Handled = true; return; }
         if (e.Key == Key.OemComma && ctrl) { PreferencesWindow.Show(this); e.Handled = true; return; }
+        if (!(e.OriginalSource is TextBoxBase) && HandleStyleKeys(e)) return;
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         if (e.Key == Key.P && ctrl && shift) { ShowCommandPalette(); e.Handled = true; return; }
         if (e.Key == Key.B && ctrl && shift) { SetAssetsVisible(!AssetsVisible); e.Handled = true; return; }

@@ -83,7 +83,7 @@ Bere se PCM 8/16/24/32 in float 32, poljubno število kanalov (povprečje v mono
 |---|---|---|
 | `Version` | v1 | shema manifesta |
 | `Id`, `Name` | v1 | GUID projekta, ime |
-| `Settings` | v1 | `TargetWidth`, `TargetHeight`, `TileSize`, `CollisionCategories{bit → ime}`, `CollisionMasks{bit → maska}` (manjka = trči z vsem; trk velja, ko ga dovolita obe strani), `Playlists[]` (`Name`, `Items[]` ID-ji, `Loop`, `Shuffle`) |
+| `Settings` | v1 | `TargetWidth`, `TargetHeight`, `TileSize`, `CollisionCategories{bit → ime}`, `CollisionMasks{bit → maska}` (manjka = trči z vsem; trk velja, ko ga dovolita obe strani), `Playlists[]` (`Name`, `Items[]` ID-ji, `Loop`, `Shuffle`), `ExportProfiles[]`, `HistoryMaxVersions`, `HistoryMaxMegabytes`, `Views{ID sredstva → GuidesX[], GuidesY[], Reference, ReferenceOpacity, ReferenceVisible}` (vodila in referenčna slika; pomoč pri urejanju, ne vsebina) |
 | `Assets[]` | v1 | `Id` (GUID, stabilen), `Type` (besedilo enuma `AssetType`), `Path` (relativna, ne sme iz mape), `Tags[]`, `Favorite` |
 
 Odstranjena sredstva gredo v `.trash/`. Mape `.history`, `.trash` in `export` niso sredstva.

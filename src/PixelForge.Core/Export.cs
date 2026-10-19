@@ -41,7 +41,7 @@ public sealed class ExportResult
 /// </summary>
 public static class Exporter
 {
-    public static ExportResult Plan(Project p, ExportProfile prof)
+    public static ExportResult Plan(Project p, ExportProfile prof, IProgress<string>? progress = null, CancellationToken cancel = default)
     {
         var r = new ExportResult();
         if (prof.Name.Trim().Length == 0) r.Errors.Add("The profile needs a name.");
@@ -58,6 +58,8 @@ public static class Exporter
         var ctx = new Context(p, prof, r, set);
         foreach (var a in set.OrderBy(a => a.Path, StringComparer.Ordinal))
         {
+            cancel.ThrowIfCancellationRequested();
+            progress?.Report(a.Path);
             try { ctx.Export(a); }
             catch (Exception ex) when (ex is InvalidDataException or IOException or NotSupportedException or ArgumentException)
             {
@@ -69,9 +71,10 @@ public static class Exporter
     }
 
     /// <summary>Plans, and when there are no errors writes the files (and the zip).</summary>
-    public static ExportResult Run(Project p, ExportProfile prof)
+    public static ExportResult Run(Project p, ExportProfile prof, IProgress<string>? progress = null, CancellationToken cancel = default)
     {
-        var r = Plan(p, prof);
+        var r = Plan(p, prof, progress, cancel);
+        cancel.ThrowIfCancellationRequested();   // past this point the folder swap runs to the end
         if (!r.Ok) return r;
         string outDir = Path.GetFullPath(Path.Combine(p.Root, prof.OutputFolder));
         string staging = outDir + ".staging", old = outDir + ".old";

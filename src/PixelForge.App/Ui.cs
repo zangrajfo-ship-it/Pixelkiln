@@ -35,6 +35,40 @@ static class Ui
         return win.ShowDialog() == true ? box.Text : null;
     }
 
+    /// <summary>
+    /// Runs slow work on a worker thread with a small progress window (Cancel button) while the owner stays
+    /// responsive but disabled. Returns the result, or default when cancelled; errors from the work are rethrown.
+    /// </summary>
+    public static async Task<T?> RunLong<T>(Window owner, string title, Func<IProgress<string>, CancellationToken, T> work)
+    {
+        using var cts = new CancellationTokenSource();
+        var text = new TextBlock { Text = "Starting…", TextTrimming = TextTrimming.CharacterEllipsis, Width = 360, Margin = new Thickness(0, 0, 0, 8) };
+        AutomationProperties.SetLiveSetting(text, AutomationLiveSetting.Polite);
+        var bar = new ProgressBar { IsIndeterminate = true, Height = 6, Margin = new Thickness(0, 0, 0, 10) };
+        var cancel = new Button { Content = "Cancel", Width = 80, HorizontalAlignment = HorizontalAlignment.Right };
+        var win = new Window
+        {
+            Title = title, SizeToContent = SizeToContent.WidthAndHeight, ResizeMode = ResizeMode.NoResize, Owner = owner,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false,
+            Content = new StackPanel { Margin = new Thickness(14), Children = { text, bar, cancel } },
+        };
+        cancel.Click += (_, _) => { cts.Cancel(); text.Text = "Cancelling…"; cancel.IsEnabled = false; };
+        bool done = false;
+        win.Closing += (_, e) => { if (!done) { cts.Cancel(); e.Cancel = true; } };   // closing the window cancels; it closes when the work stops
+        var progress = new Progress<string>(m => text.Text = m);
+        owner.IsEnabled = false;
+        win.Show();
+        try { return await Task.Run(() => work(progress, cts.Token)); }
+        catch (OperationCanceledException) { return default; }
+        finally
+        {
+            done = true;
+            win.Close();
+            owner.IsEnabled = true;
+            owner.Activate();
+        }
+    }
+
     /// <summary>Several labelled fields (a combo box when options are given). Returns the values, or null on cancel.</summary>
     public static string[]? AskFields(DependencyObject owner, string title, params (string Label, string Value, string[]? Options)[] fields)
     {
