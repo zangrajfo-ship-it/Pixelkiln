@@ -16,7 +16,7 @@ $work = Join-Path $env:TEMP ("pf-smoke-" + [guid]::NewGuid().ToString('N'))
 $env:PIXELFORGE_HOME = Join-Path $work 'home'
 $projectDir = Join-Path $work 'game'
 New-Item -ItemType Directory -Force $projectDir | Out-Null
-Copy-Item "$PSScriptRoot\..\tests\PixelForge.Core.Tests\Fixtures\*" $projectDir
+Get-ChildItem -File (Join-Path $PSScriptRoot "../tests/PixelForge.Core.Tests/Fixtures") | Copy-Item -Destination $projectDir   # top level only: Fixtures/current refers to asset ids of no project
 $expectedAssets = (Get-ChildItem $projectDir).Count
 # the sample data plugin, installed into the temp home
 New-Item -ItemType Directory -Force (Join-Path $env:PIXELFORGE_HOME 'plugins') | Out-Null

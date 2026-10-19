@@ -1,0 +1,104 @@
+{
+  "Version": 1,
+  "Width": 320,
+  "Height": 180,
+  "Background": 4280295472,
+  "Level": "World 1",
+  "Order": 2,
+  "CameraX": 8,
+  "CameraY": 0,
+  "MusicAssetId": "44444444-4444-4444-4444-444444444444",
+  "Layers": [
+    {
+      "Id": "d87c7eb4-d1e7-4c35-a44a-809709874621",
+      "Name": "Sky",
+      "Kind": "Image",
+      "AssetId": "11111111-1111-1111-1111-111111111111",
+      "ParallaxX": 0.5,
+      "ParallaxY": 1,
+      "OffsetX": 0,
+      "OffsetY": 0,
+      "RepeatX": true,
+      "Visible": true
+    },
+    {
+      "Id": "e1f4b9f9-53d7-4acb-bf4a-de444bdd61e1",
+      "Name": "Ground",
+      "Kind": "Tilemap",
+      "AssetId": "22222222-2222-2222-2222-222222222222",
+      "ParallaxX": 1,
+      "ParallaxY": 1,
+      "OffsetX": 0,
+      "OffsetY": 0,
+      "RepeatX": false,
+      "Visible": true
+    },
+    {
+      "Id": "601d9825-e02b-46e5-add8-dedc873f3653",
+      "Name": "Objects",
+      "Kind": "Instances",
+      "ParallaxX": 1,
+      "ParallaxY": 1,
+      "OffsetX": 0,
+      "OffsetY": 0,
+      "RepeatX": false,
+      "Visible": true
+    }
+  ],
+  "Instances": [
+    {
+      "Id": "7880fe92-eb27-4359-8d60-b6dae143c4c4",
+      "Name": "Hero",
+      "AssetId": "33333333-3333-3333-3333-333333333333",
+      "LayerId": "601d9825-e02b-46e5-add8-dedc873f3653",
+      "X": 16,
+      "Y": 64,
+      "Animation": "idle",
+      "FlipX": true,
+      "Z": 1,
+      "Track": {
+        "Keys": [
+          {
+            "TimeMs": 0,
+            "X": 0,
+            "Y": 0,
+            "ScaleX": 1,
+            "ScaleY": 1,
+            "Rotation": 0,
+            "Opacity": 1,
+            "Easing": "Linear"
+          },
+          {
+            "TimeMs": 800,
+            "X": 32,
+            "Y": 0,
+            "ScaleX": 1,
+            "ScaleY": 1,
+            "Rotation": 0,
+            "Opacity": 0.5,
+            "Easing": "EaseOut"
+          }
+        ],
+        "Loop": false,
+        "DurationMs": 800
+      },
+      "Properties": {
+        "hp": "3"
+      }
+    }
+  ],
+  "Areas": [
+    {
+      "Id": "2c259a1a-492a-45af-8a73-7e1357c0fad4",
+      "Kind": "Checkpoint",
+      "Name": "cp1",
+      "X": 100,
+      "Y": 40,
+      "W": 8,
+      "H": 32,
+      "Properties": {
+        "id": "1"
+      }
+    }
+  ]
+}
