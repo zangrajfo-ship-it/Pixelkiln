@@ -53,14 +53,28 @@ public partial class App : Application
     {
         Settings.AddRecent(path);
         SaveSettings();
-        if (Project is not { } p || p.FindByPath(path) is not null) return;
-        try
-        {
-            p.Add(path);
-            ProjectChanged?.Invoke();
-        }
-        catch (InvalidOperationException) { }   // outside the project folder or not an asset type: just a loose file
+        if (Project is not { } p) return;
+        if (p.FindByPath(path) is null)
+            try
+            {
+                p.Add(path);
+                ProjectChanged?.Invoke();
+            }
+            catch (InvalidOperationException) { return; }   // outside the project folder or not an asset type: just a loose file
+        RecordVersion(path);
     }
+
+    /// <summary>Keeps the file's current content in the project's .history (opened and saved files pass through here).</summary>
+    public static void RecordVersion(string path, string note = "")
+    {
+        if (Project is not { } p || p.FindByPath(path) is not { } a) return;
+        try { new VersionStore(p).Record(a.Id, note); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }   // history is a safety net; never block saving
+    }
+
+    /// <summary>Raised after a version was restored, so an editor showing that file can reload it.</summary>
+    public static event Action<string>? AssetRestored;
+    public static void NotifyAssetRestored(string path) => AssetRestored?.Invoke(path);
 
     static void SaveSettings()
     {

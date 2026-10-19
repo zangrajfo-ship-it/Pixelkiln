@@ -35,6 +35,44 @@ static class Ui
         return win.ShowDialog() == true ? box.Text : null;
     }
 
+    /// <summary>Several labelled fields (a combo box when options are given). Returns the values, or null on cancel.</summary>
+    public static string[]? AskFields(DependencyObject owner, string title, params (string Label, string Value, string[]? Options)[] fields)
+    {
+        var grid = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(180) });
+        var inputs = new List<Control>();
+        for (int i = 0; i < fields.Length; i++)
+        {
+            var (label, value, options) = fields[i];
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Control input = options is null ? new TextBox { Text = value } : new ComboBox { ItemsSource = options, SelectedItem = value };
+            input.Margin = new Thickness(0, 3, 0, 3);
+            var l = new Label { Content = label, Target = input, Padding = new Thickness(0, 4, 10, 4) };
+            Grid.SetRow(l, i);
+            Grid.SetRow(input, i);
+            Grid.SetColumn(input, 1);
+            grid.Children.Add(l);
+            grid.Children.Add(input);
+            inputs.Add(input);
+        }
+        var ok = new Button { Content = "OK", Width = 80, IsDefault = true, Margin = new Thickness(0, 0, 8, 0) };
+        var cancel = new Button { Content = "Cancel", Width = 80, IsCancel = true };
+        var win = new Window
+        {
+            Title = title, SizeToContent = SizeToContent.WidthAndHeight, ResizeMode = ResizeMode.NoResize,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = Window.GetWindow(owner),
+            Content = new StackPanel
+            {
+                Margin = new Thickness(12),
+                Children = { grid, new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { ok, cancel } } },
+            },
+        };
+        ok.Click += (_, _) => win.DialogResult = true;
+        win.Loaded += (_, _) => inputs.FirstOrDefault()?.Focus();
+        return win.ShowDialog() == true ? [.. inputs.Select(c => c is TextBox t ? t.Text : (string?)((ComboBox)c).SelectedItem ?? "")] : null;
+    }
+
     /// <summary>Width/height dialog, optionally with a 3×3 anchor grid. Anchor 0/1/2 = left·top / center / right·bottom.</summary>
     public static (int W, int H, int AnchorX, int AnchorY)? AskSize(DependencyObject owner, string title, int w, int h, bool anchor)
     {

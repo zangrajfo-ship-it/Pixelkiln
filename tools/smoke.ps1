@@ -89,6 +89,32 @@ try {
             }
         }
     }
+    # history: select the first asset, Project > History of selected asset
+    $first = (Find-All $list ([System.Windows.Automation.ControlType]::ListItem))[0]
+    $first.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+    Start-Sleep -Milliseconds 300
+    $menu = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
+    $projMenu = $menu.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | Where-Object { ($_.Current.Name -replace '_', '') -eq 'Project' } | Select-Object -First 1
+    $projMenu.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+    Start-Sleep -Milliseconds 500
+    $histItem = (Find-All $root ([System.Windows.Automation.ControlType]::MenuItem)) | Where-Object { ($_.Current.Name -replace '_', '') -like 'History*' } | Select-Object -First 1
+    if (-not $histItem) { $failures += 'Project > History missing' }
+    else {
+        $histItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep 2
+        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
+        $hist = $wins | Where-Object { $_.Current.Name -like 'History*' } | Select-Object -First 1
+        if (-not $hist) { $failures += 'history window did not open' }
+        else {
+            $versions = (Find-All $hist ([System.Windows.Automation.ControlType]::ListItem)).Count
+            Write-Host "history: $versions version(s)"
+            if ($versions -lt 1) { $failures += 'history shows no versions' }
+            if (-not (Test-Path (Join-Path $projectDir '.history\index.json'))) { $failures += '.history/index.json missing' }
+            $hist.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+            Start-Sleep -Milliseconds 500
+        }
+    }
     # export: Project > Export, run the default Godot profile on the fixture project
     $menu = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
     $projMenu = $menu.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | Where-Object { ($_.Current.Name -replace '_', '') -eq 'Project' } | Select-Object -First 1

@@ -105,7 +105,9 @@ static class PaletteStudio
                     if (Run(s) is not int n) return;
                     if (n == 0) continue;
                     backups.Add((path, old));
+                    App.RecordVersion(path, "before palette studio");
                     ProjectFile.Save(s, path);
+                    App.RecordVersion(path, "palette studio");
                     total += n;
                     changed(path);
                 }

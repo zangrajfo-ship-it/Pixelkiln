@@ -31,6 +31,9 @@ public sealed class ProjectSettings
     /// <summary>Music playlists for the game (songs, WAVs or mixes in order).</summary>
     public List<Playlist> Playlists { get; set; } = [];
     public List<ExportProfile> ExportProfiles { get; set; } = [];
+    /// <summary>Version history limits (.history): versions kept per asset and total size.</summary>
+    public int HistoryMaxVersions { get; set; } = VersionStore.DefaultMaxVersions;
+    public int HistoryMaxMegabytes { get; set; } = VersionStore.DefaultMaxMegabytes;
 
     public bool Collides(int a, int b) =>
         (CollisionMasks.GetValueOrDefault(a, uint.MaxValue) & 1u << b) != 0 && (CollisionMasks.GetValueOrDefault(b, uint.MaxValue) & 1u << a) != 0;
