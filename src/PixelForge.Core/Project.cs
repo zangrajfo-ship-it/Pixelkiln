@@ -30,6 +30,7 @@ public sealed class ProjectSettings
     public Dictionary<int, uint> CollisionMasks { get; set; } = [];
     /// <summary>Music playlists for the game (songs, WAVs or mixes in order).</summary>
     public List<Playlist> Playlists { get; set; } = [];
+    public List<ExportProfile> ExportProfiles { get; set; } = [];
 
     public bool Collides(int a, int b) =>
         (CollisionMasks.GetValueOrDefault(a, uint.MaxValue) & 1u << b) != 0 && (CollisionMasks.GetValueOrDefault(b, uint.MaxValue) & 1u << a) != 0;

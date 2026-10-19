@@ -101,6 +101,11 @@ public partial class MainWindow : Window
             new Separator(),
             Ui.Item("C_heck project…", null, () => { if (App.Project is { } p) HealthWindow.Show(this, p); }, open),
             Ui.Item("Project _settings and collisions…", null, () => { if (App.Project is { } p) ProjectSettingsWindow.Show(this, p); }, open),
+            Ui.Item("_Export…", "Ctrl+Shift+E", () =>
+            {
+                if (App.Project is { } p)
+                    ExportWindow.Show(this, p, [.. Editors.Where(ed => ed.IsDirty).Select(ed => ed.CurrentPath ?? "untitled")]);
+            }, open),
             Ui.Item("_Palette studio…", null, () =>
             {
                 if (App.Project is { } p)
@@ -271,6 +276,12 @@ public partial class MainWindow : Window
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         if (e.Key == Key.P && ctrl && shift) { ShowCommandPalette(); e.Handled = true; return; }
         if (e.Key == Key.B && ctrl && shift) { SetAssetsVisible(!AssetsVisible); e.Handled = true; return; }
+        if (e.Key == Key.E && ctrl && shift && App.Project is { } project)
+        {
+            ExportWindow.Show(this, project, [.. Editors.Where(ed => ed.IsDirty).Select(ed => ed.CurrentPath ?? "untitled")]);
+            e.Handled = true;
+            return;
+        }
         if (Assets.IsKeyboardFocusWithin) return;   // the asset browser has its own keys (Del, F2, Enter …)
         if (ControlOwnsKey(e.OriginalSource, e.Key)) return;
         Current?.HandleKey(e);
