@@ -1,0 +1,174 @@
+{
+  "apiVersion": 1,
+  "id": "level-dungeon",
+  "name": "Dungeon (top-down RPG)",
+  "version": "1.0",
+  "kind": "Level",
+  "primary": "level",
+  "tags": [
+    "level",
+    "top-down",
+    "dungeon",
+    "rpg"
+  ],
+  "description": "Rooms with doorways and pillars, seen from above.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "dungeon"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "dungeon"
+    },
+    {
+      "key": "difficulty",
+      "label": "Difficulty (1–5)",
+      "default": "2",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ]
+    },
+    {
+      "key": "width",
+      "label": "Width (tiles)",
+      "default": "60",
+      "options": [
+        "30",
+        "60",
+        "120",
+        "200"
+      ]
+    },
+    {
+      "key": "tileset",
+      "label": "Tileset",
+      "default": "(generate)",
+      "source": "Image"
+    }
+  ],
+  "steps": [
+    {
+      "id": "tiles",
+      "type": "tileset",
+      "name": "{name} tiles",
+      "core": true,
+      "settings": {
+        "tileSize": "16",
+        "pattern": "Bricks",
+        "baseColor": "5A5A6A",
+        "variants": "4",
+        "seed": "{seed}",
+        "asset": "{tileset}"
+      }
+    },
+    {
+      "id": "map",
+      "type": "tilemap",
+      "name": "{name} map",
+      "core": true,
+      "settings": {
+        "width": "{width}",
+        "height": "40",
+        "tilesetStep": "tiles",
+        "layout": "Rooms",
+        "fill": "0.45",
+        "seed": "{seed}",
+        "difficulty": "{difficulty}"
+      }
+    },
+    {
+      "id": "hero-sprite",
+      "type": "sprite",
+      "name": "{name} hero",
+      "settings": {
+        "width": "16",
+        "height": "16",
+        "seed": "{seed}"
+      },
+      "states": [
+        {
+          "name": "idle",
+          "frames": 2
+        },
+        {
+          "name": "walk_down",
+          "frames": 4
+        },
+        {
+          "name": "walk_up",
+          "frames": 4
+        }
+      ]
+    },
+    {
+      "id": "hero",
+      "type": "character",
+      "name": "{name} hero",
+      "settings": {
+        "spriteStep": "hero-sprite",
+        "kind": "Player",
+        "origin": "feet"
+      },
+      "boxes": [
+        {
+          "kind": "Hurt",
+          "rect": "body"
+        },
+        {
+          "kind": "Solid",
+          "rect": "feet",
+          "category": 1
+        }
+      ],
+      "properties": {
+        "speed": "80"
+      }
+    },
+    {
+      "id": "coins",
+      "type": "items",
+      "name": "coin",
+      "settings": {
+        "names": "{name} coin",
+        "size": "8",
+        "seed": "{seed}"
+      }
+    },
+    {
+      "id": "music",
+      "type": "song",
+      "name": "{name} music",
+      "settings": {
+        "seed": "{seed}",
+        "bpm": "100",
+        "scale": "major",
+        "patterns": "4"
+      }
+    },
+    {
+      "id": "level",
+      "type": "level",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "mapStep": "map",
+        "playerStep": "hero",
+        "collectibleStep": "coins",
+        "musicStep": "music",
+        "genre": "top-down",
+        "checkpoints": "{difficulty}",
+        "hazards": "{difficulty}",
+        "collectibles": "10",
+        "seed": "{seed}",
+        "background": "101018"
+      }
+    }
+  ]
+}

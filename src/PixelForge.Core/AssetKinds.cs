@@ -34,7 +34,7 @@ public static class AssetKinds
             }),
         new(AssetType.Song, [".pxs"], p => Song.Load(p), p => DescribeSong(Song.Load(p))),
         new(AssetType.Sound, [".sfx"], p => Sfx.Load(p), p => $"Sound effect, {Sfx.Load(p).Duration:0.00} s"),
-        new(AssetType.Scene, [".pxscene"], p => Scene.Load(p), p => DescribeScene(Scene.Load(p)), null,
+        new(AssetType.Scene, [".pxscene"], p => Scene.Load(p), p => DescribeScene(Scene.Load(p)), ScenePicture,
             p => Scene.Load(p).ReferencedAssets(),
             (p, map) =>
             {
@@ -47,7 +47,8 @@ public static class AssetKinds
                 if (changed) Scene.Save(s, p);
                 return changed;
             }),
-        new(AssetType.Character, [".pxchar"], p => Character.Load(p), p => DescribeCharacter(Character.Load(p)), null,
+        new(AssetType.Character, [".pxchar"], p => Character.Load(p), p => DescribeCharacter(Character.Load(p)),
+            (p, project) => project is not null && Character.Load(p).SpriteAssetId is Guid sid && project.Resolve(sid) is string sp ? AssetLoader.LoadImage(sp) : null,
             p => Character.Load(p).SpriteAssetId is Guid c ? [c] : [],
             (p, map) =>
             {
@@ -119,6 +120,15 @@ public static class AssetKinds
         $"Scene {s.Width}×{s.Height} px{(s.Level.Length > 0 ? $", level {s.Level} #{s.Order}" : "")}, {s.Layers.Count} layers, {s.Instances.Count} instances, {s.Areas.Count} areas";
 
     static string DescribeCharacter(Character c) => $"{c.Kind}, {Plural(c.Animations.Count, "state")}, {Plural(c.Boxes.Count, "box", "es")}";
+
+    /// <summary>The whole scene at its camera-free size (needs the project for its assets); huge scenes get no picture.</summary>
+    static (uint[], int, int)? ScenePicture(string path, Project? project)
+    {
+        if (project is null) return null;
+        var s = Scene.Load(path);
+        if ((long)s.Width * s.Height > 4_000_000) return null;
+        return (SceneRenderer.Render(s, new SceneAssets(project), 0, 0, s.Width, s.Height, 0), s.Width, s.Height);
+    }
 
     static (uint[], int, int)? MapPicture(string path, Project? project)
     {

@@ -1,0 +1,72 @@
+{
+  "apiVersion": 1,
+  "id": "music-chiptune-loop",
+  "name": "Chiptune loop",
+  "version": "1.0",
+  "kind": "Music",
+  "primary": "song",
+  "tags": [
+    "music",
+    "loop"
+  ],
+  "description": "Bass, arpeggio, melody and drums in a scale; one pattern per bar.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "loop"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "tune"
+    },
+    {
+      "key": "bpm",
+      "label": "Tempo (BPM)",
+      "default": "120",
+      "options": [
+        "90",
+        "110",
+        "120",
+        "140",
+        "160"
+      ]
+    },
+    {
+      "key": "scale",
+      "label": "Scale",
+      "default": "major",
+      "options": [
+        "major",
+        "minor",
+        "pentatonic"
+      ]
+    },
+    {
+      "key": "bars",
+      "label": "Bars",
+      "default": "4",
+      "options": [
+        "2",
+        "4",
+        "8",
+        "16"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "song",
+      "type": "song",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "seed": "{seed}",
+        "bpm": "{bpm}",
+        "scale": "{scale}",
+        "patterns": "{bars}"
+      }
+    }
+  ]
+}

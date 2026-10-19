@@ -1,0 +1,57 @@
+{
+  "apiVersion": 1,
+  "id": "pack-pickups",
+  "name": "Pickups",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "items",
+  "tags": [
+    "asset",
+    "pickup",
+    "item"
+  ],
+  "description": "Coin, gem, heart, key and star sprites.",
+  "parameters": [
+    {
+      "key": "names",
+      "label": "Names (commas)",
+      "default": "coin, gem, heart, key, star"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "12",
+      "options": [
+        "8",
+        "12",
+        "16",
+        "24",
+        "32"
+      ]
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "pack-pickups"
+    },
+    {
+      "key": "palette",
+      "label": "Palette",
+      "default": "(default)",
+      "source": "Palette"
+    }
+  ],
+  "steps": [
+    {
+      "id": "items",
+      "type": "items",
+      "core": true,
+      "settings": {
+        "names": "{names}",
+        "size": "{size}",
+        "seed": "{seed}",
+        "palette": "{palette}"
+      }
+    }
+  ]
+}

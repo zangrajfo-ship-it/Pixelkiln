@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <Using Include="System.IO" />
+    <!-- built-in templates (data only), read by TemplateLibrary.BuiltIn -->
+    <EmbeddedResource Include="Templates\*.template.json" />
   </ItemGroup>
 
 </Project>

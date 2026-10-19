@@ -66,7 +66,7 @@ public sealed class Project
     public const int SchemaVersion = 1;
     public const string Extension = ".pfproj";
     /// <summary>Folders inside the project that are never assets.</summary>
-    public static readonly string[] HiddenFolders = [".history", ".trash", "export"];
+    public static readonly string[] HiddenFolders = [".history", ".trash", "export", "templates"];
 
     public static IReadOnlyDictionary<string, AssetType> TypesByExtension => AssetKinds.ByExtension;
 

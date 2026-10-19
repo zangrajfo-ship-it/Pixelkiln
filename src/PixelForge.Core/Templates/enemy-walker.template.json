@@ -1,0 +1,125 @@
+{
+  "apiVersion": 1,
+  "id": "enemy-walker",
+  "name": "Enemy",
+  "version": "1.0",
+  "kind": "Character",
+  "primary": "char",
+  "tags": [
+    "character",
+    "enemy"
+  ],
+  "description": "Patrolling enemy with attack, hurt and death states.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "walker"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "24",
+      "options": [
+        "16",
+        "24",
+        "32",
+        "48",
+        "64"
+      ]
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "walker"
+    },
+    {
+      "key": "style",
+      "label": "Style (fill density)",
+      "default": "0.45",
+      "options": [
+        "0.38",
+        "0.45",
+        "0.52",
+        "0.6"
+      ]
+    },
+    {
+      "key": "palette",
+      "label": "Palette",
+      "default": "(default)",
+      "source": "Palette"
+    }
+  ],
+  "steps": [
+    {
+      "id": "sprite",
+      "type": "sprite",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "width": "{size}",
+        "height": "{size}",
+        "seed": "{seed}",
+        "density": "{style}",
+        "palette": "{palette}"
+      },
+      "states": [
+        {
+          "name": "idle",
+          "frames": 2
+        },
+        {
+          "name": "walk",
+          "frames": 4
+        },
+        {
+          "name": "attack",
+          "frames": 3
+        },
+        {
+          "name": "hurt",
+          "frames": 1
+        },
+        {
+          "name": "death",
+          "frames": 3
+        }
+      ]
+    },
+    {
+      "id": "char",
+      "type": "character",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "spriteStep": "sprite",
+        "kind": "Enemy",
+        "origin": "feet"
+      },
+      "boxes": [
+        {
+          "kind": "Hurt",
+          "rect": "body"
+        },
+        {
+          "kind": "Solid",
+          "rect": "feet",
+          "category": 2
+        },
+        {
+          "kind": "Hit",
+          "rect": "front",
+          "state": "attack",
+          "category": 2
+        }
+      ],
+      "properties": {
+        "hp": "2",
+        "damage": "1",
+        "patrol": "64",
+        "speed": "40"
+      }
+    }
+  ]
+}

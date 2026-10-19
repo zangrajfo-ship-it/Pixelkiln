@@ -23,7 +23,7 @@ public partial class AssetBrowser : UserControl
     static Project? P => App.Project;
     AssetEntry? Selected => (List.SelectedItem as AssetItem)?.Entry;
     /// <summary>Every selected asset, in list order (Ctrl/Shift+click selects several).</summary>
-    List<AssetEntry> SelectedAll => [.. List.Items.Cast<AssetItem>().Where(List.SelectedItems.Contains).Select(i => i.Entry)];
+    public List<AssetEntry> SelectedAll => [.. List.Items.Cast<AssetItem>().Where(List.SelectedItems.Contains).Select(i => i.Entry)];
 
     public AssetBrowser()
     {

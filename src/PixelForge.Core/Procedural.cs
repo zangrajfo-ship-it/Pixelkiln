@@ -185,7 +185,7 @@ public static class Procedural
             int run = 3 + r.Next(6);
             for (int i = 0; i < run && x < w; i++, x++)
                 for (int y = ground; y < h; y++) m[y * w + x] = true;
-            if (x > 4 && x < w - 4 && r.Chance(0.35)) x += 1 + r.Next(Math.Max(1, maxGap));   // a gap
+            if (maxGap > 0 && x > 4 && x < w - 4 && r.Chance(0.35)) x += 1 + r.Next(maxGap);   // a gap
             ground = Math.Clamp(ground + r.Next(3) - 1, h / 2, h - 2);
         }
         for (int k = 0; k < w / 8; k++)
@@ -194,6 +194,67 @@ public static class Procedural
             for (int i = 0; i < len; i++) m[py * w + px + i] = true;
         }
         return m;
+    }
+
+    /// <summary>Top-down rooms (true = solid): an outer wall and inner walls on a grid, each with a doorway, plus a few pillars.</summary>
+    public static bool[] Rooms(ulong seed, int w, int h, int roomSize = 8)
+    {
+        var r = new Rng(seed);
+        var m = new bool[w * h];
+        for (int x = 0; x < w; x++) m[x] = m[(h - 1) * w + x] = true;
+        for (int y = 0; y < h; y++) m[y * w] = m[y * w + w - 1] = true;
+        for (int wx = roomSize; wx < w - 2; wx += roomSize)
+        {
+            int door = 1 + r.Next(Math.Max(1, h - 3));
+            for (int y = 1; y < h - 1; y++) if (Math.Abs(y - door) > 1) m[y * w + wx] = true;
+        }
+        for (int wy = roomSize; wy < h - 2; wy += roomSize)
+            for (int x = 1; x < w - 1; x++)
+                if (x % roomSize != roomSize / 2 && x % roomSize != roomSize / 2 + 1) m[wy * w + x] = true;   // doorways in the middle of each room
+        for (int k = 0; k < w * h / 60; k++)
+        {
+            int x = 2 + r.Next(Math.Max(1, w - 4)), y = 2 + r.Next(Math.Max(1, h - 4));
+            if (x % roomSize > 1 && y % roomSize > 1) m[y * w + x] = true;
+        }
+        return m;
+    }
+
+    static readonly int[] Major = [0, 2, 4, 5, 7, 9, 11], Minor = [0, 2, 3, 5, 7, 8, 10], Pentatonic = [0, 2, 4, 7, 9];
+    static readonly int[][] Progressions = [[0, 4, 5, 3], [0, 5, 3, 4], [0, 3, 4, 4], [5, 3, 0, 4]];   // scale degrees per bar
+
+    /// <summary>
+    /// A short chiptune loop: chord roots on the triangle, an arpeggio on pulse 2, a melody that walks the scale on
+    /// pulse 1, and kick/snare/hat on noise. One pattern per bar; same seed, same song.
+    /// </summary>
+    public static Song Song(ulong seed, int bpm, string scale, int patterns)
+    {
+        var r = new Rng(seed);
+        int[] sc = scale switch { "minor" => Minor, "pentatonic" => Pentatonic, _ => Major };
+        int root = 57 + r.Next(5);   // A3..C#4
+        var prog = Progressions[r.Next(Progressions.Length)];
+        var s = new Song(16, empty: true) { Bpm = Math.Clamp(bpm, 40, 300) };
+        int Note(int degree, int octave) => root + octave * 12 + sc[((degree % sc.Length) + sc.Length) % sc.Length] + 12 * (int)Math.Floor(degree / (double)sc.Length);
+        int melody = 2;
+        for (int bar = 0; bar < Math.Clamp(patterns, 1, 16); bar++)
+        {
+            var pat = Pattern.Empty(16);
+            int chord = prog[bar % prog.Length] % sc.Length;
+            pat.SetNote((int)Channel.Triangle, 0, Note(chord, -1), 8);
+            pat.SetNote((int)Channel.Triangle, 8, Note(chord, -1), 8);
+            for (int st = 0; st < 16; st += 2) pat.SetNote((int)Channel.Pulse2, st, Note(chord + st / 2 % 3 * 2, 0), 1);
+            for (int st = 0; st < 16;)
+            {
+                int len = r.Chance(0.3) ? 4 : 2;
+                if (r.Chance(0.85)) pat.SetNote((int)Channel.Pulse1, st, Math.Clamp(Note(melody, 1), Core.Song.MinNote, Core.Song.MaxNote), Math.Min(len, 16 - st));
+                melody = Math.Clamp(melody + r.Next(5) - 2, -2, 9);
+                st += len;
+            }
+            foreach (int st in new[] { 0, 8 }) pat.SetNote((int)Channel.Noise, st, 40, 1);    // kick
+            foreach (int st in new[] { 4, 12 }) pat.SetNote((int)Channel.Noise, st, 60, 1);   // snare
+            s.Patterns.Add(pat);
+            s.Order.Add(bar);
+        }
+        return s;
     }
 
     /// <summary>Writes a layout into a map layer: with a terrain rule the edges are auto-tiled, otherwise one tile is used.</summary>

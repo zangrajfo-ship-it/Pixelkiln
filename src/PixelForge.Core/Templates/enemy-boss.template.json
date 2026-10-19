@@ -1,0 +1,134 @@
+{
+  "apiVersion": 1,
+  "id": "enemy-boss",
+  "name": "Boss",
+  "version": "1.0",
+  "kind": "Character",
+  "primary": "char",
+  "tags": [
+    "character",
+    "enemy"
+  ],
+  "description": "Large enemy with two attacks, phases and a long death.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "boss"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "64",
+      "options": [
+        "16",
+        "24",
+        "32",
+        "48",
+        "64"
+      ]
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "boss"
+    },
+    {
+      "key": "style",
+      "label": "Style (fill density)",
+      "default": "0.45",
+      "options": [
+        "0.38",
+        "0.45",
+        "0.52",
+        "0.6"
+      ]
+    },
+    {
+      "key": "palette",
+      "label": "Palette",
+      "default": "(default)",
+      "source": "Palette"
+    }
+  ],
+  "steps": [
+    {
+      "id": "sprite",
+      "type": "sprite",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "width": "{size}",
+        "height": "{size}",
+        "seed": "{seed}",
+        "density": "{style}",
+        "palette": "{palette}"
+      },
+      "states": [
+        {
+          "name": "idle",
+          "frames": 2
+        },
+        {
+          "name": "walk",
+          "frames": 4
+        },
+        {
+          "name": "attack",
+          "frames": 4
+        },
+        {
+          "name": "attack2",
+          "frames": 4
+        },
+        {
+          "name": "hurt",
+          "frames": 1
+        },
+        {
+          "name": "death",
+          "frames": 6
+        }
+      ]
+    },
+    {
+      "id": "char",
+      "type": "character",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "spriteStep": "sprite",
+        "kind": "Enemy",
+        "origin": "feet"
+      },
+      "boxes": [
+        {
+          "kind": "Hurt",
+          "rect": "body"
+        },
+        {
+          "kind": "Solid",
+          "rect": "feet",
+          "category": 2
+        },
+        {
+          "kind": "Hit",
+          "rect": "front",
+          "state": "attack",
+          "category": 2
+        },
+        {
+          "kind": "Hit",
+          "rect": "0 0.5 1 0.5",
+          "state": "attack2",
+          "category": 2
+        }
+      ],
+      "properties": {
+        "hp": "30",
+        "damage": "2",
+        "phases": "2"
+      }
+    }
+  ]
+}

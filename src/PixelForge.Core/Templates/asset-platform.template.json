@@ -1,0 +1,73 @@
+{
+  "apiVersion": 1,
+  "id": "asset-platform",
+  "name": "Moving platform",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "char",
+  "tags": [
+    "asset",
+    "platform"
+  ],
+  "description": "Solid platform; give it a movement track in the scene.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "platform"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "platform"
+    },
+    {
+      "key": "palette",
+      "label": "Palette",
+      "default": "(default)",
+      "source": "Palette"
+    }
+  ],
+  "steps": [
+    {
+      "id": "sprite",
+      "type": "sprite",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "width": "32",
+        "height": "8",
+        "seed": "{seed}",
+        "density": "0.6",
+        "palette": "{palette}"
+      },
+      "states": [
+        {
+          "name": "idle",
+          "frames": 1
+        }
+      ]
+    },
+    {
+      "id": "char",
+      "type": "character",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "spriteStep": "sprite",
+        "kind": "Item",
+        "origin": "feet"
+      },
+      "boxes": [
+        {
+          "kind": "Solid",
+          "rect": "full"
+        }
+      ],
+      "properties": {
+        "path": "0 0 64 0",
+        "speed": "30"
+      }
+    }
+  ]
+}
