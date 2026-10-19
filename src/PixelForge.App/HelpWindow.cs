@@ -35,6 +35,12 @@ static class HelpWindow
             ("Tileset: arrows / Shift+arrows", "Select tile / several tiles"),
             ("Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / fit"), ("Ctrl+G", "Grid"),
         ]),
+        ("Scene", [
+            ("V I A C", "Select, place object, draw area, set camera start"),
+            ("Arrows / Shift+arrows", "Move selection by 1 px / one tile"), ("Shift (drag)", "Ignore tile snapping"),
+            ("Del", "Delete selected object or area"), ("Space", "Play animations and movement tracks"),
+            ("Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / fit"),
+        ]),
         ("Music", [
             ("Space", "Play / stop song"), ("1 2 3 4", "Pulse 1, pulse 2, triangle, noise"),
             ("Piano roll: arrows", "Move cursor"), ("Enter", "Add / remove note"),

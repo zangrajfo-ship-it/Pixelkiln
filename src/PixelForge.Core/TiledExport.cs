@@ -36,6 +36,24 @@ public static class TiledExport
                     firstgid = 1, name = Path.GetFileNameWithoutExtension(tilesetImage), image = tilesetImage,
                     imagewidth = ts.Width, imageheight = ts.Height, tilewidth = m.TileSize, tileheight = m.TileSize,
                     columns = ts.Columns, tilecount = ts.Count, margin = 0, spacing = 0,
+                    // per-tile collision shapes, the way Tiled's collision editor stores them
+                    tiles = m.TileCollisions.OrderBy(kv => kv.Key).Select(kv => new
+                    {
+                        id = kv.Key,
+                        objectgroup = new
+                        {
+                            draworder = "index", name = "", opacity = 1, type = "objectgroup", visible = true, x = 0, y = 0,
+                            objects = new[]
+                            {
+                                new
+                                {
+                                    id = 1, name = "", type = kv.Value.OneWay ? "oneway" : "solid", rotation = 0, visible = true,
+                                    x = kv.Value.X, y = kv.Value.Y, width = kv.Value.W, height = kv.Value.H,
+                                    properties = new[] { new { name = "category", type = "int", value = kv.Value.Category } },
+                                },
+                            },
+                        },
+                    }),
                 },
             },
         }, new JsonSerializerOptions { WriteIndented = true });

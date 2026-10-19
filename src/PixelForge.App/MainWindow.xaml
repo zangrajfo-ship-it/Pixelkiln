@@ -25,6 +25,9 @@
                 <TabItem Header="Tilemap">
                     <local:TilemapEditor x:Name="MapEd" />
                 </TabItem>
+                <TabItem Header="Scene">
+                    <local:SceneEditor x:Name="SceneEd" />
+                </TabItem>
                 <TabItem Header="Music">
                     <local:MusicEditor x:Name="MusicEd" />
                 </TabItem>

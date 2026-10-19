@@ -42,6 +42,9 @@ public static class TilesetTools
         foreach (var l in map.Layers)
             for (int i = 0; i < l.Tiles.Length; i++)
                 if (l.Tiles[i] >= 0 && l.Tiles[i] < ts.Count) l.Tiles[i] = newIndex[remap[l.Tiles[i]]];
+        var collisions = map.TileCollisions.Where(kv => kv.Key < ts.Count && remap[kv.Key] == kv.Key).ToList();
+        map.TileCollisions.Clear();
+        foreach (var (tile, c) in collisions) map.TileCollisions[newIndex[tile]] = c;
         map.Tileset = new Tileset(px, w, h, ts.TileSize);
         map.TilesetAssetId = null;   // the map now carries its own, compacted tileset
         // terrain blocks rely on fixed positions; a compacted tileset breaks them, so they are dropped

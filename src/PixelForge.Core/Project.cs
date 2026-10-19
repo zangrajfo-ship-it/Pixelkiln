@@ -26,6 +26,11 @@ public sealed class ProjectSettings
     public int TileSize { get; set; } = 16;
     /// <summary>Collision categories: bit index (0..31) → name.</summary>
     public Dictionary<int, string> CollisionCategories { get; set; } = new() { [0] = "world", [1] = "player", [2] = "enemy", [3] = "pickup" };
+    /// <summary>Category bit → bit mask of categories it collides with (missing = collides with everything).</summary>
+    public Dictionary<int, uint> CollisionMasks { get; set; } = [];
+
+    public bool Collides(int a, int b) =>
+        (CollisionMasks.GetValueOrDefault(a, uint.MaxValue) & 1u << b) != 0 && (CollisionMasks.GetValueOrDefault(b, uint.MaxValue) & 1u << a) != 0;
 }
 
 /// <summary>
@@ -230,6 +235,7 @@ public sealed class Project
             {
                 AssetType.Tilemap => Tilemap.Load(path).TilesetAssetId is Guid g ? [g] : [],
                 AssetType.Character => Character.Load(path).SpriteAssetId is Guid c ? [c] : [],
+                AssetType.Scene => Scene.Load(path).ReferencedAssets(),
                 _ => [],
             };
         }

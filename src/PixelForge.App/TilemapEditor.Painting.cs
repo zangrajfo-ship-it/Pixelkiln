@@ -268,6 +268,67 @@ public partial class TilemapEditor
         TilesetGrid.Fill = ts.TileSize * s >= 4 ? Ui.GridBrush(ts.TileSize * s) : null;
         if (_tsSel.X + _tsSel.Width > ts.Columns || _tsSel.Y + _tsSel.Height > ts.Rows) _tsSel = new Int32Rect(0, 0, 1, 1);
         SetTilesetSelection(_tsSel);
+        DrawCollisionMarks();
+    }
+
+    // ---------- tile collisions ----------
+
+    /// <summary>Red boxes (solid) or blue tops (one-way) over the tiles that have collision.</summary>
+    void DrawCollisionMarks()
+    {
+        CollisionMarks.Children.Clear();
+        if (_map.Tileset is not { } ts) return;
+        int s = TilesetScale;
+        foreach (var (tile, c) in _map.TileCollisions.Where(kv => kv.Key < ts.Count))
+        {
+            var color = c.OneWay ? System.Windows.Media.Colors.DeepSkyBlue : System.Windows.Media.Colors.Red;
+            var r = new System.Windows.Shapes.Rectangle
+            {
+                Width = c.W * s, Height = c.H * s, StrokeThickness = 1,
+                Stroke = new System.Windows.Media.SolidColorBrush(color),
+                Fill = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x50, color.R, color.G, color.B)),
+            };
+            Canvas.SetLeft(r, (tile % ts.Columns * ts.TileSize + c.X) * s);
+            Canvas.SetTop(r, (tile / ts.Columns * ts.TileSize + c.Y) * s);
+            CollisionMarks.Children.Add(r);
+        }
+    }
+
+    IEnumerable<int> SelectedTiles()
+    {
+        if (_map.Tileset is not { } ts) yield break;
+        for (int j = 0; j < _tsSel.Height; j++)
+            for (int i = 0; i < _tsSel.Width; i++) yield return (_tsSel.Y + j) * ts.Columns + _tsSel.X + i;
+    }
+
+    /// <summary>Sets (or with null clears) the collision of every selected tileset tile.</summary>
+    void SetTileCollision(TileCollision? c)
+    {
+        if (_map.Tileset is null) { Ui.Error(new InvalidOperationException("Load a tileset first.")); return; }
+        Snapshot();
+        foreach (int t in SelectedTiles())
+            if (c is null) _map.TileCollisions.Remove(t);
+            else _map.TileCollisions[t] = c;
+        DrawCollisionMarks();
+    }
+
+    void CustomTileCollision()
+    {
+        if (_map.Tileset is null) { Ui.Error(new InvalidOperationException("Load a tileset first.")); return; }
+        int n = _map.TileSize;
+        var first = _map.TileCollisions.GetValueOrDefault(SelectedTiles().First()) ?? new TileCollision(0, 0, n, n);
+        string? text = Ui.Ask(this, "Tile collision", $"x y width height [oneway] [category 0-31], in pixels inside a {n}px tile",
+            $"{first.X} {first.Y} {first.W} {first.H}{(first.OneWay ? " oneway" : "")} {first.Category}");
+        if (text is null) return;
+        var p = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        bool oneWay = p.Contains("oneway", StringComparer.OrdinalIgnoreCase);
+        var nums = p.Where(x => !x.Equals("oneway", StringComparison.OrdinalIgnoreCase)).Select(x => int.TryParse(x, out int v) ? v : -1).ToArray();
+        if (nums.Length is < 4 or > 5 || nums.Any(v => v < 0) || nums[2] < 1 || nums[3] < 1 || nums[0] + nums[2] > n || nums[1] + nums[3] > n || nums.ElementAtOrDefault(4) > 31)
+        {
+            Ui.Error(new FormatException($"Use four whole numbers that fit in the {n}px tile, then optionally “oneway” and a category from 0 to 31."));
+            return;
+        }
+        SetTileCollision(new TileCollision(nums[0], nums[1], nums[2], nums[3], oneWay, nums.ElementAtOrDefault(4)));
     }
 
     (int X, int Y) TilesetCell(MouseEventArgs e, Tileset ts)

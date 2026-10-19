@@ -55,6 +55,7 @@
                       MouseLeftButtonDown="OnTilesetDown" MouseMove="OnTilesetMove" MouseLeftButtonUp="OnTilesetUp">
                     <Image x:Name="TilesetImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                     <Rectangle x:Name="TilesetGrid" IsHitTestVisible="False" />
+                    <Canvas x:Name="CollisionMarks" IsHitTestVisible="False" />
                     <Canvas IsHitTestVisible="False">
                         <Rectangle x:Name="SelectionRect" Stroke="Yellow" StrokeThickness="2" />
                     </Canvas>

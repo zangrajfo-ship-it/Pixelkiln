@@ -42,6 +42,9 @@ public sealed class MapObject
     public MapObject Clone() => (MapObject)MemberwiseClone();
 }
 
+/// <summary>Collision rectangle inside one tile (tile pixels). OneWay = only solid from above (platforms).</summary>
+public sealed record TileCollision(int X, int Y, int W, int H, bool OneWay = false, int Category = 0);
+
 /// <summary>Layers[0] is the bottom layer.</summary>
 public sealed class Tilemap
 {
@@ -59,6 +62,8 @@ public sealed class Tilemap
     public List<MapObject> Objects { get; } = [];
     /// <summary>Auto-tile terrains: top-left tile index of each 4×4 block (see <see cref="Autotile"/>).</summary>
     public List<TerrainRule> Terrains { get; } = [];
+    /// <summary>Collision per tile index (tiles without an entry are not solid).</summary>
+    public Dictionary<int, TileCollision> TileCollisions { get; } = [];
 
     public int NextObjectId => Objects.Count == 0 ? 1 : Objects.Max(o => o.Id) + 1;
 
@@ -130,6 +135,7 @@ public sealed class Tilemap
         foreach (var l in Layers) m.Layers.Add(new MapLayer { Name = l.Name, Visible = l.Visible, Tiles = (int[])l.Tiles.Clone() });
         m.Objects.AddRange(Objects.Select(o => o.Clone()));
         m.Terrains.AddRange(Terrains.Select(t => t.Clone()));
+        foreach (var kv in TileCollisions) m.TileCollisions[kv.Key] = kv.Value;
         return m;
     }
 
@@ -153,6 +159,7 @@ public sealed class Tilemap
             m.Objects.Add(c);
         }
         m.Terrains.AddRange(Terrains.Select(t => t.Clone()));
+        foreach (var kv in TileCollisions) m.TileCollisions[kv.Key] = kv.Value;
         return m;
     }
 
@@ -161,19 +168,23 @@ public sealed class Tilemap
     record LayerDto(string Name, bool Visible, int[] Tiles);
     record ObjectDto(int Id, string Name, string Type, int X, int Y, int W, int H);
     record RuleDto(int Base, TerrainMode Mode, int[]? Variants);
+    record CollisionDto(int Tile, int X, int Y, int W, int H, bool OneWay, int Category);
     // v2 added Objects and Terrains (block bases), v3 TilesetAssetId, v4 TerrainRules (mode + variants)
     // replacing Terrains; all optional so older files still load
     record MapDto(int Version, int Width, int Height, int TileSize, string? TilesetSource, int TilesetWidth, int TilesetHeight, string? TilesetPixels,
-        LayerDto[] Layers, ObjectDto[]? Objects = null, int[]? Terrains = null, Guid? TilesetAssetId = null, RuleDto[]? TerrainRules = null);
+        LayerDto[] Layers, ObjectDto[]? Objects = null, int[]? Terrains = null, Guid? TilesetAssetId = null, RuleDto[]? TerrainRules = null,
+        CollisionDto[]? TileCollisions = null);
 
-    public const int Version = 4;
+    // v5: TileCollisions
+    public const int Version = 5;
 
     public static string Serialize(Tilemap m) => JsonSerializer.Serialize(new MapDto(
         Version, m.Width, m.Height, m.TileSize, m.TilesetSource, m.Tileset?.Width ?? 0, m.Tileset?.Height ?? 0,
         m.Tileset is { } ts ? Convert.ToBase64String(MemoryMarshal.AsBytes(ts.Pixels.AsSpan())) : null,
         [.. m.Layers.Select(l => new LayerDto(l.Name, l.Visible, l.Tiles))],
         [.. m.Objects.Select(o => new ObjectDto(o.Id, o.Name, o.Type, o.X, o.Y, o.W, o.H))],
-        null, m.TilesetAssetId, [.. m.Terrains.Select(t => new RuleDto(t.Base, t.Mode, [.. t.Variants]))]));
+        null, m.TilesetAssetId, [.. m.Terrains.Select(t => new RuleDto(t.Base, t.Mode, [.. t.Variants]))],
+        [.. m.TileCollisions.OrderBy(kv => kv.Key).Select(kv => new CollisionDto(kv.Key, kv.Value.X, kv.Value.Y, kv.Value.W, kv.Value.H, kv.Value.OneWay, kv.Value.Category))]));
 
     public static Tilemap Deserialize(string json)
     {
@@ -197,6 +208,12 @@ public sealed class Tilemap
             m.Terrains.AddRange(rules.Select(r => new TerrainRule { Base = r.Base, Mode = Enum.IsDefined(r.Mode) ? r.Mode : TerrainMode.Blob16, Variants = [.. r.Variants ?? []] }));
         else
             m.Terrains.AddRange((d.Terrains ?? []).Select(b => new TerrainRule { Base = b }));   // v2/v3: 16-tile blocks
+        foreach (var c in d.TileCollisions ?? [])
+        {
+            if (c.W < 1 || c.H < 1 || c.X < 0 || c.Y < 0 || c.X + c.W > d.TileSize || c.Y + c.H > d.TileSize || c.Category is < 0 or > 31)
+                throw new InvalidDataException($"The collision of tile {c.Tile} does not fit in a {d.TileSize}px tile.");
+            m.TileCollisions[c.Tile] = new TileCollision(c.X, c.Y, c.W, c.H, c.OneWay, c.Category);
+        }
         return m;
     }
 
