@@ -109,3 +109,13 @@ Lastnik je dovolil izvedbo vseh faz brez ustavljanja. Po vsaki fazi: build, test
 - **Popravek med delom:** zaokroževanje telesa je skrivalo majhen pogrez, zato igralec ni ostal na tleh; telo je zdaj v realnih pikslih.
 - **Poenostavitev:** v predogledu sledi ne skalirajo in ne vrtijo (`ponytail:` v `SceneRenderer`); urejevalnik prizora to prikaže.
 - **Ni ročno preizkušeno:** igranje s tipkovnico in zvok.
+
+## Faza 7: izvozni cevovod (končana)
+- **Profili** v projektu (privzeta Godot 4 in Generic), okno Project → Export (Ctrl+Shift+E): urejanje profila, izbor sredstev, Check (poročilo brez zapisa), Export, Open folder; opozorilo za neshranjene spremembe (izvoz bere z diska).
+- **Preverjanje pred izvozom** ustavi izvoz z razlogom; prejšnji izvoz ostane.
+- **Godot 4:** `SpriteFrames`, `TileSet` s kolizijami po kategorijah, `TileMap`, scene likov in stopenj (podrobno v `formats.md`).
+- **Generic:** obstoječi javni formati (Aseprite JSON, TMJ, lik JSON, WAV) in novi `ime_scene.json`, `project.json`.
+- **Determinizem in brez delnih datotek:** staging mapa + zamenjava, zip s fiksnim časom; testa primerjata dva izvoza bajt za bajtom.
+- **Testi:** 121/121 (Export 5: Godot vsebina, Generic, determinizem in zamenjava mape, napake in varovanje prejšnjega izvoza, odvisnosti izbranih sredstev). Smoke izvozi projekt iz zlatih primerkov prek menija.
+- **Popravka med delom:** sprajt in lik z istim imenom sta dobila `hero_2`, čeprav se datoteke ne prekrivajo (zdaj skupine izhodov); pričakovanja testa za vrstni red kategorij.
+- **Ni preverjeno:** uvoz v pravi Godot (ni nameščen). Priporočam ročni preizkus: kopiraj `export/godot` v `res://assets` Godot 4.3+ projekta in odpri `level1.tscn`.

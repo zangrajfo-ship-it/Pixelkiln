@@ -9,12 +9,15 @@ public static class ImageIO
     public static BitmapSource ToBitmap(uint[] px, int w, int h) =>
         BitmapSource.Create(w, h, 96, 96, PixelFormats.Bgra32, null, px, w * 4);
 
-    public static void SavePng(string path, uint[] px, int w, int h)
+    public static void SavePng(string path, uint[] px, int w, int h) => File.WriteAllBytes(path, EncodePng(px, w, h));
+
+    public static byte[] EncodePng(uint[] px, int w, int h)
     {
         var enc = new PngBitmapEncoder();
         enc.Frames.Add(BitmapFrame.Create(ToBitmap(px, w, h)));
-        using var fs = File.Create(path);
-        enc.Save(fs);
+        using var ms = new MemoryStream();
+        enc.Save(ms);
+        return ms.ToArray();
     }
 
     public static (uint[] Pixels, int Width, int Height) LoadImage(string path) =>

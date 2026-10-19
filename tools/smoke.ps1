@@ -89,6 +89,34 @@ try {
             }
         }
     }
+    # export: Project > Export, run the default Godot profile on the fixture project
+    $menu = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
+    $projMenu = $menu.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | Where-Object { ($_.Current.Name -replace '_', '') -eq 'Project' } | Select-Object -First 1
+    $projMenu.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
+    Start-Sleep -Milliseconds 500
+    $exportItem = (Find-All $root ([System.Windows.Automation.ControlType]::MenuItem)) | Where-Object { ($_.Current.Name -replace '_', '') -like 'Export*' } | Select-Object -First 1
+    if (-not $exportItem) { $failures += 'Project > Export missing' }
+    else {
+        $exportItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep 2
+        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
+        $exp = $wins | Where-Object { $_.Current.Name -like 'Export*' } | Select-Object -First 1
+        if (-not $exp) { $failures += 'export window did not open' }
+        else {
+            $go = (Find-All $exp ([System.Windows.Automation.ControlType]::Button)) | Where-Object { $_.Current.Name -eq 'Export' } | Select-Object -First 1
+            $go.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+            Start-Sleep 3
+            $rep = (Find-All $exp ([System.Windows.Automation.ControlType]::Edit)) | Where-Object { $_.Current.Name -eq 'Export report' } | Select-Object -First 1
+            $text = $rep.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
+            $first = ($text -split "`n")[0]
+            Write-Host "export: $first"
+            if ($text -notlike 'Exported*') { $failures += "export failed: $text" }
+            if (-not (Test-Path (Join-Path $projectDir 'export\godot\project.json'))) { $failures += 'export folder missing project.json' }
+            $exp.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+            Start-Sleep -Milliseconds 500
+        }
+    }
     $p.CloseMainWindow() | Out-Null
     if (-not $p.WaitForExit(5000)) { $failures += 'app did not exit within 5 s after closing' }
 }

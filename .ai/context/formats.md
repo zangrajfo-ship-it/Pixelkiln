@@ -93,6 +93,25 @@ Nastavitve aplikacije (`Settings`); neveljavne vrednosti se omejijo, pokvarjena 
 
 ## Izvozi (javne pogodbe)
 - **Aseprite JSON (array)** iz `SpriteSheet.Json`: `frames[]` (`filename`, `frame`, `duration` …), `meta` (`image`, `size`, `frameTags[]`).
-- **Tiled TMJ** iz `TiledExport.Json`: `tilelayer` na plast (`gid` = indeks + 1, 0 prazno), `objectgroup` »Objects«, en tileset (`firstgid` 1).
+- **Tiled TMJ** iz `TiledExport.Json`: `tilelayer` na plast (`gid` = indeks + 1, 0 prazno), `objectgroup` »Objects«, en tileset (`firstgid` 1), od Faze 4 še `tiles[].objectgroup` s kolizijami ploščic.
 - **GIF89a** (`GifWriter`): ena globalna paleta, največ 255 barv + prosojna, zanka.
 - **WAV:** 16-bit PCM mono 44,1 kHz (`WavWriter`).
+
+## Izvozni cevovod (`Exporter`, Faza 7)
+Profili so v `.pfproj` (`Settings.ExportProfiles[]`): `Name`, `Target` (`Generic`, `Godot4`), `OutputFolder` (znotraj projekta, ne sme vsebovati sredstev), `ResFolder` (Godot: `res://<ResFolder>/…`), `Zip`, `Assets` (`null` = vse; sicer izbrana in vse, kar uporabljajo).
+
+Potek: preverjanje (manjkajoča in neznana sredstva, napake `SceneCheck`, neveljavna mapa), gradnja vseh datotek v pomnilniku, zapis v `<mapa>.staging` in zamenjava mape v enem koraku. Ob napaki prejšnji izvoz ostane. Enak vhod da enake bajte (urejene poti, brez časovnih žigov, zip s fiksnim časom). Vsak izvoz ima `export-report.txt` (datoteke, velikost, SHA-256) in `project.json` (ločljivost, ploščica, kategorije in maske trkov, predvajalni seznami, zanke glasbe, seznam izvoženih sredstev).
+
+Imena: mapa sredstva + varno ime (`[A-Za-z0-9_-]`); podvojena imena dobijo `_2`, a samo, če bi se izhodne datoteke res prekrivale.
+
+| Sredstvo | Generic | Godot 4 (format=3, cilj 4.3+) |
+|---|---|---|
+| Sprite | `ime.png` (list) + `ime.json` (Aseprite) | `ime.png` + `ime.tres` (`SpriteFrames`: animacija na oznako, `speed` = 1000 / najkrajša sličica, `duration` = večkratnik) |
+| Image | `ime.png` | `ime.png` |
+| Tilemap | `ime.tmj` + `ime_tiles.png` (+ `ime_terrain.json`) | `ime_tiles.png` + `ime_tileset.tres` (`TileSetAtlasSource`, poligoni trkov, `one_way`, fizikalna plast na kategorijo z masko) + `ime.tscn` (`TileMap` format 2, plasti, objekti kot `Marker2D`/`Area2D`) |
+| Character | `ime_character.json` | `ime_character.tscn` (`CharacterBody2D` za Player/Enemy, sicer `Area2D`; `AnimatedSprite2D` z izhodiščem, trdna škatla kot `CollisionShape2D`, ostale škatle in lastnosti kot metapodatki) |
+| Song, Sound, Audio, Mix | `ime.wav` | `ime.wav` (zanko mešanice je treba nastaviti v Godotovem uvozu; navedeno v poročilu) |
+| Scene | `ime_scene.json` (struktura prizora s potmi datotek) | `ime.tscn` (plasti po vrsti, `Parallax2D` za paralakso in ponavljanje, instance sprajtov in likov, sledi kot `AnimationPlayer` s položajem, merilom, rotacijo in prosojnostjo, območja kot `Area2D` v skupini po vrsti, `Camera2D` z mejami, `AudioStreamPlayer` za glasbo) |
+| Palette | kopija | kopija |
+
+Izvoz za Godot ni preverjen z dejanskim Godotom (ni nameščen); oblika sledi Godotovi besedilni shemi `format=3`.
