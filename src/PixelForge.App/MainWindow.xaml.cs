@@ -12,7 +12,10 @@ namespace PixelForge.App;
 public partial class MainWindow : Window
 {
     // order = autosave file index; new editors are appended, whatever their tab position
-    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd, AudioEd];
+    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd, AudioEd, PaintEd];
+
+    // modes added in code (they live inside a tab's ModeHost, not in the XAML)
+    readonly PaintEditor PaintEd = new();
 
     TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed || t.Content is ModeHost h && h.Contains(ed));
 
@@ -35,6 +38,8 @@ public partial class MainWindow : Window
             host.ModeChanged += BuildMenu;
             tab.Content = host;
         }
+        HostOf(SpriteEd).Add("Paint", PaintEd);
+        PaintEd.SendToPixel = (px, w, h) => { Reveal(SpriteEd); SpriteEd.LoadPixels(px, w, h); };
     }
 
     ModeHost HostOf(IEditor ed) => (ModeHost)TabOf(ed).Content;
@@ -217,6 +222,7 @@ public partial class MainWindow : Window
             AssetType.Character => CharEd,
             AssetType.Scene => SceneEd,
             AssetType.Mix => AudioEd,
+            AssetType.Paint => PaintEd,
             _ => null,
         };
         if (a.Type == AssetType.Audio)   // a WAV is material: it goes onto a track

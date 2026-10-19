@@ -47,6 +47,17 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
 
     // ---------- document ----------
 
+    /// <summary>A new unsaved sprite from pixels (Paint mode's "To pixel art"); asks about unsaved work first.</summary>
+    public void LoadPixels(uint[] px, int w, int h)
+    {
+        if (!ConfirmDiscard()) return;
+        var s = new Sprite(w, h);
+        Array.Copy(px, s.Cel(0, 0), px.Length);
+        LoadSprite(s, null);
+        _dirty = true;
+        UpdateTitle();
+    }
+
     void LoadSprite(Sprite s, string? path)
     {
         _sprite = s;
