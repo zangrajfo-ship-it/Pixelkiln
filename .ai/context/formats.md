@@ -1,6 +1,10 @@
 # Formati datotek
 
-Vsi formati so JSON (UTF-8). Slikovne pike so `uint` ARGB (`0xAARRGGBB`), vrstica za vrstico, kodirane v base64 kot little-endian bajti (= Bgra32). Zlati primerki: `tests/PixelForge.Core.Tests/Fixtures/`. Regresija: `FormatRegressionTests`.
+Vsi formati so JSON (UTF-8). Branje in pisanje gre skozi `DocumentFile`:
+- poškodovana datoteka sproži `InvalidDataException` z imenom datoteke;
+- datoteko novejše različice program zavrne;
+- shranjevanje je atomično (`.tmp` + `File.Replace`);
+- pred prvim prepisom starejše različice se naredi `<datoteka>.v<n>.bak`. Slikovne pike so `uint` ARGB (`0xAARRGGBB`), vrstica za vrstico, kodirane v base64 kot little-endian bajti (= Bgra32). Zlati primerki: `tests/PixelForge.Core.Tests/Fixtures/`. Regresija: `FormatRegressionTests`.
 
 ## `.pxf`: sprajt (`ProjectFile`)
 | Polje | Od | Opis |
@@ -16,13 +20,14 @@ Vsi formati so JSON (UTF-8). Slikovne pike so `uint` ARGB (`0xAARRGGBB`), vrstic
 ## `.pxm`: zemljevid (`Tilemap.Serialize`)
 | Polje | Od | Opis |
 |---|---|---|
-| `Version` | v1 | trenutno 2 |
+| `Version` | v1 | trenutno 3 |
 | `Width`, `Height`, `TileSize` | v1 | ploščice; 1–1024, velikost 1–256 |
 | `TilesetSource` | v1 | absolutna pot vira ali `null` (samo za »Reload«) |
 | `TilesetWidth`, `TilesetHeight`, `TilesetPixels` | v1 | vgrajena kopija tileseta (base64) ali `null` |
 | `Layers[]` | v1 | `Name`, `Visible`, `Tiles[]` (indeks ploščice, −1 prazno) |
 | `Objects[]` | v2 | `Id`, `Name`, `Type`, `X`, `Y`, `W`, `H` v pikah; `W=H=0` je točka |
 | `Terrains[]` | v2 | indeks zgornje leve ploščice bloka 4×4 (`Autotile`) |
+| `TilesetAssetId` | v3 | GUID sredstva tileseta v projektu ali `null`; vgrajene pike ostanejo kot rezerva |
 
 ## `.pxs`: pesem (`Song.Serialize`)
 | Polje | Od | Opis |
@@ -36,8 +41,17 @@ Vsi formati so JSON (UTF-8). Slikovne pike so `uint` ARGB (`0xAARRGGBB`), vrstic
 | `Instruments[4]` | v2 | `Duty`, `AttackMs`, `DecayMs`, `Sustain`, `ReleaseMs`, `Volume` |
 
 ## `.sfx`: zvočni učinek (`Sfx.Save`)
-Objekt `Sfx`, **brez polja `Version`** (velja kot v1). Polja: `Wave` (0 Square, 1 Saw, 2 Sine, 3 Noise), `Freq`, `Slide`, `DeltaSlide`, `VibratoDepth`, `VibratoSpeed`, `Duty`, `PitchJump`, `JumpTime`, `Attack`, `Sustain`, `Decay`, `LowPass`, `Volume`. Zapiše se tudi izračunani `Duration`, ki se pri branju ne uporabi. Vse vrednosti se ob branju omejijo (`Sfx.Sanitized`).
-**Načrt Faze 1:** dodati `Version` (odsotnost = v1).
+v1: objekt `Sfx` brez polja `Version`. v2 (trenutno): enaka polja + `"Version": 2` na začetku, brez `Duration`. Polja: `Wave` (0 Square, 1 Saw, 2 Sine, 3 Noise), `Freq`, `Slide`, `DeltaSlide`, `VibratoDepth`, `VibratoSpeed`, `Duty`, `PitchJump`, `JumpTime`, `Attack`, `Sustain`, `Decay`, `LowPass`, `Volume`. Vse vrednosti se ob branju omejijo (`Sfx.Sanitized`).
+
+## `.pfproj`: projekt (`Project`)
+| Polje | Od | Opis |
+|---|---|---|
+| `Version` | v1 | shema manifesta |
+| `Id`, `Name` | v1 | GUID projekta, ime |
+| `Settings` | v1 | `TargetWidth`, `TargetHeight`, `TileSize`, `CollisionCategories{bit → ime}` |
+| `Assets[]` | v1 | `Id` (GUID, stabilen), `Type` (besedilo enuma `AssetType`), `Path` (relativna, ne sme iz mape), `Tags[]`, `Favorite` |
+
+Odstranjena sredstva gredo v `.trash/`. Mape `.history`, `.trash` in `export` niso sredstva.
 
 ## `settings.json` (`%AppData%\PixelForge`)
 Nastavitve aplikacije (`Settings`); neveljavne vrednosti se omejijo, pokvarjena datoteka da privzete vrednosti.

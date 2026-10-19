@@ -80,6 +80,6 @@ public sealed class Settings
     {
         path ??= DefaultPath;
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, Serialize());
+        DocumentFile.WriteAtomic(path, Serialize());
     }
 }
