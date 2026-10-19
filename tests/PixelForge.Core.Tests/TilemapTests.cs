@@ -126,12 +126,14 @@ public class TilemapUpgradeTests
         var m = new Tilemap(2, 2, 8);
         m.Objects.Add(new MapObject { Id = 3, Name = "Coin", Type = "pickup", X = 4, Y = 4 });
         m.Objects.Add(new MapObject { Id = 4, Name = "Wall", X = 0, Y = 0, W = 16, H = 8 });
-        m.Terrains.Add(5);
+        m.Terrains.Add(new TerrainRule { Base = 5, Mode = TerrainMode.Blob47, Variants = [1, 2] });
         var t = Tilemap.Deserialize(Tilemap.Serialize(m));
         Assert.Equal(["Coin", "Wall"], t.Objects.Select(o => o.Name));
         Assert.True(t.Objects[0].IsPoint);
         Assert.Equal((16, 8), (t.Objects[1].W, t.Objects[1].H));
-        Assert.Equal([5], t.Terrains);
+        Assert.Equal(5, t.Terrains.Single().Base);
+        Assert.Equal(TerrainMode.Blob47, t.Terrains[0].Mode);
+        Assert.Equal([1, 2], t.Terrains[0].Variants);
         Assert.Equal(5, t.NextObjectId);
 
         var v1 = """{"Version":1,"Width":1,"Height":1,"TileSize":8,"TilesetSource":null,"TilesetWidth":0,"TilesetHeight":0,"TilesetPixels":null,"Layers":[{"Name":"L","Visible":true,"Tiles":[-1]}]}""";

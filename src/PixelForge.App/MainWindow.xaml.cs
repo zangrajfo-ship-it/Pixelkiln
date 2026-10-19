@@ -11,7 +11,10 @@ namespace PixelForge.App;
 
 public partial class MainWindow : Window
 {
-    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd];
+    // order = autosave file index; new editors are appended, whatever their tab position
+    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd];
+
+    TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed);
     IEditor? Current => (Tabs?.SelectedItem as TabItem)?.Content as IEditor;   // SelectedContent lags behind SelectionChanged
 
     readonly DispatcherTimer _autosave = new();
@@ -20,6 +23,11 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         MapEd.SpriteImage = () => SpriteEd.CurrentImage;
+        CharEd.IsSpriteOpenDirty = path => SpriteEd.IsDirty && string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase);
+        CharEd.SpriteFileChanged = path =>
+        {
+            if (string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase) && !SpriteEd.IsDirty) SpriteEd.OpenPath(path, confirmed: true);
+        };
         Ui.NameSymbolButtons(this);
         _autosave.Tick += (_, _) => Autosave();
         Assets.OpenRequested += OpenAsset;
@@ -92,6 +100,13 @@ public partial class MainWindow : Window
             Ui.Item("_Close project", null, ProjectCommands.Close, open),
             new Separator(),
             Ui.Item("C_heck project…", null, () => { if (App.Project is { } p) HealthWindow.Show(this, p); }, open),
+            Ui.Item("_Palette studio…", null, () =>
+            {
+                if (App.Project is { } p)
+                    PaletteStudio.Show(this, p,
+                        canTouch: path => !(SpriteEd.IsDirty && string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase)),
+                        changed: path => { if (string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase)) SpriteEd.OpenPath(path, confirmed: true); });
+            }, open),
             browser);
     }
 
@@ -145,6 +160,7 @@ public partial class MainWindow : Window
             AssetType.Tilemap => MapEd,
             AssetType.Song => MusicEd,
             AssetType.Sound => SfxEd,
+            AssetType.Character => CharEd,
             _ => null,
         };
         if (a.Type == AssetType.Palette)
@@ -154,7 +170,7 @@ public partial class MainWindow : Window
             return;
         }
         if (target is null) { Ui.Error(new NotSupportedException($"{a.Type} assets open in their own studio.")); return; }
-        Tabs.SelectedItem = Tabs.Items.Cast<TabItem>().First(t => t.Content == target);
+        Tabs.SelectedItem = TabOf(target);
         target.OpenPath(path);
     }
 
@@ -215,7 +231,7 @@ public partial class MainWindow : Window
     {
         var found = Enumerable.Range(0, Editors.Length).Where(i => File.Exists(AutosaveFile(i))).ToList();
         if (found.Count == 0) return;
-        string names = string.Join(", ", found.Select(i => ((TabItem)Tabs.Items[i]).Header));
+        string names = string.Join(", ", found.Select(i => TabOf(Editors[i]).Header));
         var r = MessageBox.Show(this, $"PixelForge did not close normally last time.\n\nRestore the unsaved work? ({names})",
             "Restore unsaved work", MessageBoxButton.YesNo, MessageBoxImage.Question);
         if (r == MessageBoxResult.Yes)

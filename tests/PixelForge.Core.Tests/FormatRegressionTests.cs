@@ -54,7 +54,8 @@ public class FormatRegressionTests
         Assert.Equal(2, m.Layers.Count);
         Assert.Equal(["Player", "Wall"], m.Objects.Select(o => o.Name));
         Assert.True(m.Objects[0].IsPoint);
-        Assert.Equal([0], m.Terrains);
+        Assert.Equal([0], m.Terrains.Select(t => t.Base));
+        Assert.Equal(TerrainMode.Blob16, m.Terrains[0].Mode);
         Assert.Equal(1, m.Layers[1].Tiles[0]);
     }
 
@@ -122,7 +123,7 @@ public class FormatRegressionTests
         m.AddLayer(1, "Deco").Tiles[0] = 1;
         m.Objects.Add(new MapObject { Id = 1, Name = "Player", Type = "spawn", X = 1, Y = 1 });
         m.Objects.Add(new MapObject { Id = 2, Name = "Wall", Type = "solid", X = 0, Y = 0, W = 6, H = 2 });
-        m.Terrains.Add(0);
+        m.Terrains.Add(new TerrainRule { Base = 0 });
         Tilemap.Save(m, Path.Combine(dir, "map.v2.pxm"));
 
         var song = new Song { Bpm = 150 };

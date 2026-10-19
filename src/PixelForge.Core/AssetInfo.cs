@@ -19,6 +19,7 @@ public static class AssetInfo
                 AssetType.Song => Song(Core.Song.Load(path)),
                 AssetType.Sound => $"Sound effect, {Sfx.Load(path).Duration:0.00} s",
                 AssetType.Palette => $"{PaletteIO.Load(path).Count} colors",
+                AssetType.Character => Character(Core.Character.Load(path)),
                 _ => type.ToString(),
             };
         }
@@ -41,6 +42,9 @@ public static class AssetInfo
         double seconds = s.Order.Count * s.Steps * s.StepSeconds;
         return $"{s.Bpm} BPM, {s.Patterns.Count} pattern{(s.Patterns.Count == 1 ? "" : "s")}, {(int)seconds / 60}:{(int)seconds % 60:00}";
     }
+
+    static string Character(Character c) =>
+        $"{c.Kind}, {c.Animations.Count} state{(c.Animations.Count == 1 ? "" : "s")}, {c.Boxes.Count} box{(c.Boxes.Count == 1 ? "" : "es")}";
 
     /// <summary>Nearest-neighbour downscale so the longer side is at most <paramref name="max"/> (never upscales).</summary>
     public static (uint[] Pixels, int Width, int Height) Thumbnail(uint[] px, int w, int h, int max)

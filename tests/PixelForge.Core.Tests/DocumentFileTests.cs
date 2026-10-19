@@ -78,13 +78,13 @@ public sealed class DocumentFileTests : IDisposable
     }
 
     [Fact]
-    public void Map_v2_upgrades_to_v3_keeping_everything()
+    public void Map_v2_upgrades_to_current_keeping_everything()
     {
         string file = Path.Combine(_dir, "m.pxm");
         File.Copy(Fixture("map.v2.pxm"), file);
         Tilemap.Save(Tilemap.Load(file), file);
         var m = Tilemap.Load(file);
-        Assert.Equal(3, DocumentFile.PeekVersion(File.ReadAllText(file)));
+        Assert.Equal(Tilemap.Version, DocumentFile.PeekVersion(File.ReadAllText(file)));
         Assert.Equal(["Player", "Wall"], m.Objects.Select(o => o.Name));
         Assert.Null(m.TilesetAssetId);
         Assert.True(File.Exists(file + ".v2.bak"));

@@ -229,6 +229,7 @@ public sealed class Project
             return a.Type switch
             {
                 AssetType.Tilemap => Tilemap.Load(path).TilesetAssetId is Guid g ? [g] : [],
+                AssetType.Character => Character.Load(path).SpriteAssetId is Guid c ? [c] : [],
                 _ => [],
             };
         }

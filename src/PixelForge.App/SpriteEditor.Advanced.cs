@@ -56,6 +56,32 @@ public partial class SpriteEditor
         catch (Exception ex) { Ui.Error(ex); }
     }
 
+    /// <summary>Five shades of the left color (darker ones shift toward blue, lighter toward yellow) added to the palette.</summary>
+    void AddRamp()
+    {
+        Snapshot();
+        foreach (var c in PaletteTools.Ramp(_primary)) if (!_sprite.Palette.Contains(c)) _sprite.Palette.Add(c);
+        RefreshPalette();
+    }
+
+    void SnapToPalette()
+    {
+        CommitFloat();
+        Snapshot();
+        int n = PaletteTools.SnapToPalette(_sprite, _sprite.Palette);
+        Render();
+        RefreshFrames();
+        Status.Text = n == 0 ? "Every pixel already uses a palette color." : $"Moved {n} pixel(s) to the nearest palette color (Ctrl+Z undoes).";
+    }
+
+    void ShowOffPalette()
+    {
+        var off = PaletteTools.OutOfPalette(_sprite, _sprite.Palette);
+        MessageBox.Show(Window.GetWindow(this), off.Count == 0 ? "All colors are in the palette."
+            : $"{off.Count} color(s) outside the palette, {off.Values.Sum()} pixel(s):\n" + string.Join("\n", off.OrderByDescending(kv => kv.Value).Take(15).Select(kv => $"{Ui.ColorName(kv.Key)}: {kv.Value} px")),
+            "Palette check");
+    }
+
     void Scale(double factor)
     {
         CommitFloat();
