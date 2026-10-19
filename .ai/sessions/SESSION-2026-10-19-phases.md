@@ -172,6 +172,22 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Okno Template Studio** (Ctrl+T): iskanje, filtri, predogled (izdelan v začasnem projektu), različice, obrazec parametrov, ustvarjanje v ozadju, Save selected assets as template (z odvisnostmi), uvoz in izvoz paketa, brisanje v `.trash`.
 - **Liki in prizori** imajo zdaj sliko tudi v brskalniku sredstev (lik prek sprajta, prizor upodobljen).
 - **Popravki med delom:** kopije odvisnosti niso šle v »Starting point«; neobvezni sklici stopnje (junak, kovanci, glasba) so napačno vlekli vse v izhodišče.
-- **Testi:** 162/162 (Template 11: vse vgrajene kot komplet in izhodišče brez napak, ponovljivost, lik s paleto iz projekta, shranjena predloga in preusmeritev, paketi in zavrnitve, 6 vrst neveljavnih manifestov). Smoke ustvari lik iz predloge.
+- **Testi:** 156/156 (Template 11: vse vgrajene kot komplet in izhodišče brez napak, ponovljivost, lik s paleto iz projekta, shranjena predloga in preusmeritev, paketi in zavrnitve, 6 vrst neveljavnih manifestov). Smoke ustvari lik iz predloge.
 - **Ni ročno preizkušeno:** obrazec parametrov s tipkovnico, uvoz in izvoz paketa v oknu.
 - **Predloge za UI zaslone, materiale in luči** pridejo s fazami 15, 16 in 18.
+
+## Faza 13: Digital Painting Studio (končana)
+- **Način Paint v zavihku Sprite** (Ctrl+2), prvi dodatni način v `ModeHost`.
+- **`PaintDoc` (`.pxpaint` v1):** platno do 8192×8192, ploščice 256×256 samo tam, kjer je barva; plasti z mešalnimi načini (Normal, Multiply, Screen, Overlay, Add, Darken, Lighten, sestavljanje po W3C), prosojnost, maske, zaklepanje prosojnosti; zip s PNG ploščicami, atomično shranjevanje.
+- **Pogon čopičev** (`PaintStroke`):
+  - orodja čopič, svinček (trd rob brez glajenja), radirka, airbrush (pretok, nabira se tudi na mestu), razmazovanje, kapalka, gradient;
+  - medpomnilnik pokritosti poteze: prekrivanje ne preseže prosojnosti;
+  - stabilizator (povprečje točk), zrno, kvadratna konica;
+  - pritisk pisala za velikost in prosojnost, nasprotni konec pisala je radirka; dogodki miške, ki jih WPF ustvari iz pisala, se ne upoštevajo dvakrat.
+- **Undo po ploščicah** (`PaintUndo`): poteza hrani samo dotaknjene ploščice, spremembe plasti samo nastavitve; proračun pomnilnika.
+- **Izris:** po vsakem premiku se sestavi in prikaže samo spremenjeni pravokotnik.
+- **Ostalo:** uvoz slike kot plasti, izvoz PNG, »To pixel art« (pomanjšanje s povprečenjem po območju v Pixel način), ravnila, vodila in referenčna slika, kopiranje sloga (čopič in barve), vrsta sredstva `Paint` s sliko v brskalniku (gradi se po ploščicah).
+- **Testi:** 162/162 (Paint 5 in obremenitveni: mešalni načini, prosojnost brez nalaganja in airbrush, radirka, zaklepanje, maska in undo/redo čez več ploščic, datoteka, pritisk, gladilnik, gradient, pomanjšanje; poteza 64 px čez 4096² v mejah). Smoke preklopi v Paint in preveri menije in naslov.
+- **Popravki med delom:** zaklepanje prosojnosti je v prazne piksle pisalo nevidno barvo; drsniki so ob nalaganju XAML sprožili dogodek pred obstojem oznak (aplikacija se ni zagnala); prileganje pogledu pred postavitvijo je dalo 6 %.
+- **Ni ročno preizkušeno:** risanje z miško in pisalom (pritisk), občutek tekočnosti na 4096² v aplikaciji. Jedro je izmerjeno s testom; smoke ne more vleči miške, ne da bi premikal uporabnikov kazalec.
+- **Odstopanje od načrta:** nagib pisala se še ne uporablja (WPF ga sporoča le pri nekaterih gonilnikih).

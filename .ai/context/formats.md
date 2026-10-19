@@ -118,3 +118,6 @@ Izvoz za Godot ni preverjen z dejanskim Godotom (ni nameščen); oblika sledi Go
 
 ## `template.json` in `.pxtplpack` (predloge, Faza 12)
 `apiVersion` (1), `id`, `name`, `version` (1.0 ali 1.2.3), `kind` (Character, Level, Scene, Asset, Music, Pack), `primary` (ID koraka), `steps[]`, `tags[]`, `description`, `parameters[]` (`key`, `label`, `default`, `options[]` ali `source` = vrsta sredstva iz projekta). Vrste korakov in nastavitve: `docs/templates.md`. Mapa predloge: `<id>@<različica>/`. Paket `.pxtplpack` je zip takih map, največ 64 MB in 2000 datotek, brez poti iz paketa.
+
+## `.pxpaint`: slika za digitalno slikanje (`PaintDoc`, Faza 13)
+Zip: `manifest.json` (`Version` 1, `Width`, `Height` do 8192, `Layers[]`: `Id`, `Name`, `Visible`, `Opacity`, `Blend` = Normal, Multiply, Screen, Overlay, Add, Darken, Lighten, `AlphaLocked`, `HasMask`) in ploščice 256×256 kot PNG: `layers/<i>/<tx>_<ty>.png` (ARGB, prazne ploščice se ne zapišejo) in `layers/<i>/mask_<tx>_<ty>.png` (vrednost maske v alfa kanalu; manjkajoča ploščica maske pomeni vidno). Shranjevanje prek `.tmp`. Novejša različica se zavrne z razlogom.
