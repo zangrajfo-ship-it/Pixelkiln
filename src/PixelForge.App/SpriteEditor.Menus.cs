@@ -50,6 +50,7 @@ public partial class SpriteEditor : IEditor
                 Ui.Item("25 %", null, () => Scale(0.25))),
             Ui.Item("Canvas si_ze…", null, Do(OnCanvasSize)),
             Ui.Item("Crop to _selection", null, Do(OnCrop)),
+            Ui.Item("_Generate sprite from seed…", null, GenerateSprite),
             new Separator(),
             Ui.Menu("Pa_lette",
                 Ui.Item("_Load… (.hex, .gpl)", null, Do(OnLoadPalette)),

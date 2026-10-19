@@ -119,3 +119,11 @@ Lastnik je dovolil izvedbo vseh faz brez ustavljanja. Po vsaki fazi: build, test
 - **Testi:** 121/121 (Export 5: Godot vsebina, Generic, determinizem in zamenjava mape, napake in varovanje prejšnjega izvoza, odvisnosti izbranih sredstev). Smoke izvozi projekt iz zlatih primerkov prek menija.
 - **Popravka med delom:** sprajt in lik z istim imenom sta dobila `hero_2`, čeprav se datoteke ne prekrivajo (zdaj skupine izhodov); pričakovanja testa za vrstni red kategorij.
 - **Ni preverjeno:** uvoz v pravi Godot (ni nameščen). Priporočam ročni preizkus: kopiraj `export/godot` v `res://assets` Godot 4.3+ projekta in odpri `level1.tscn`.
+
+## Faza 8: zgodovina različic in generatorji (končana)
+- **`VersionStore`** po ADR-0003: `.history/objects/<sha256>` (gzip, ena kopija na vsebino), `.history/index.json`, meje na sredstvo in skupna velikost (privzeto 50 in 500 MB, nastavljivo v oknu zgodovine in v `.pfproj`). Prečiščevanje briše najstarejše vnose in nato objekte brez reference. Branje preveri zgoščenko; pokvarjen indeks izgubi samo zgodovino.
+- **Beleženje:** vsako odpiranje in shranjevanje sredstva v projektu (`App.AddRecent` → `RecordVersion`), Palette studio pred in po spremembi. Enaka vsebina ne doda različice.
+- **Okno zgodovine** (brskalnik → History…, Project → History, Ctrl+H): seznam različic, primerjava ene z dejansko datoteko ali dveh med sabo, slike prej, potem in razlika (magenta) za sprajte, slike in mape, spremenjena polja za vse JSON formate, obnova (trenutna datoteka gre najprej v zgodovino; odprti zavihek se ponovno naloži, z vprašanjem ob neshranjenih spremembah).
+- **Generatorji s semenom** (`Rng` SplitMix64; seme je število ali beseda): sprajt (zrcaljen, iz palete, obroba), ploščice (Noise, Bricks, Grass, Stones, brezšivne, različice), postavitev mape (jama s celičnim avtomatom, platforme s prepadi in lebdečimi ploščadmi; z izbranim terenom se robovi samodejno zapolnijo). Meniji: Sprite → Edit → Generate sprite, Tilemap → Tileset → Generate tileset, Edit → Generate layout. Vse z undo.
+- **Testi:** 126/126 (History 3: beleženje, deduplikacija, obnova, ponovno nalaganje, meje, pokvarjen objekt, razlike; Procedural 2: ponovljivost in oblika). Smoke odpre zgodovino in preveri `.history/index.json`.
+- **Ni ročno preizkušeno:** videz generatorjev (kakovost je okus; logika in ponovljivost sta testirani).

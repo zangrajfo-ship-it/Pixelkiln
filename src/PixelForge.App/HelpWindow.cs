@@ -14,6 +14,8 @@ static class HelpWindow
             ("Ctrl+Z / Ctrl+Y", "Undo / redo"), ("Ctrl+, ", "Preferences"),
             ("Ctrl+Shift+P", "Command palette: find and run any command or open any asset"),
             ("Ctrl+Shift+B", "Show / hide the asset browser"),
+            ("Ctrl+H", "History of the selected asset: compare versions, restore"),
+            ("Ctrl+Shift+E", "Export (profiles, Godot 4, generic)"),
             ("Asset browser: Enter / F2 / Del / Ctrl+D / Space", "Open, rename, remove, favorite, preview"),
             ("Alt", "Menu"), ("Tab / Shift+Tab", "Move between controls"),
         ]),

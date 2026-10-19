@@ -64,6 +64,23 @@ public partial class SpriteEditor
         RefreshPalette();
     }
 
+    /// <summary>Seeded, mirrored sprite from the palette, drawn into the current cel (undoable).</summary>
+    void GenerateSprite()
+    {
+        if (Ui.AskFields(this, "Generate sprite", ("_Seed (number or word)", Random.Shared.Next(100000).ToString(), null), ("_Density", "0.45", ["0.3", "0.38", "0.45", "0.52", "0.6"])) is not { } f) return;
+        try
+        {
+            var px = Procedural.Sprite(Rng.Seed(f[0]), _sprite.Width, _sprite.Height, _sprite.Palette, double.Parse(f[1], System.Globalization.CultureInfo.InvariantCulture));
+            CommitFloat();
+            Snapshot();
+            Array.Copy(px, _sprite.Cel(_layer, _frame), px.Length);
+            Render();
+            RefreshFrames();
+            Status.Text = $"Generated from seed “{f[0]}” (same seed, size and palette give the same sprite).";
+        }
+        catch (ArgumentException ex) { Ui.Error(ex); }
+    }
+
     void SnapToPalette()
     {
         CommitFloat();

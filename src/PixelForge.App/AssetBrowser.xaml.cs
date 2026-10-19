@@ -133,6 +133,7 @@ public partial class AssetBrowser : UserControl
             case Key.F2: Rename(); break;
             case Key.Delete: Remove(); break;
             case Key.D when ctrl: ToggleFavorite(); break;
+            case Key.H when ctrl: ShowHistory(); break;
             case Key.Space: Preview(); break;
             default: return;
         }
@@ -226,6 +227,13 @@ public partial class AssetBrowser : UserControl
         App.NotifyProjectChanged();
         if (skipped.Count > 0)
             MessageBox.Show(Window.GetWindow(this), $"Added {added}. Not added:\n" + string.Join("\n", skipped), "Import", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    void OnHistory(object sender, RoutedEventArgs e) => ShowHistory();
+
+    public void ShowHistory()
+    {
+        if (P is { } p && Selected is { } a) HistoryWindow.Show(Window.GetWindow(this), p, a);
     }
 
     void OnCheck(object sender, RoutedEventArgs e)

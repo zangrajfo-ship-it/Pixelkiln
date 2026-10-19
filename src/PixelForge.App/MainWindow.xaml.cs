@@ -33,6 +33,7 @@ public partial class MainWindow : Window
         Assets.OpenRequested += OpenAsset;
         Assets.FileMoved += (from, to) => { foreach (var ed in Editors) ed.OnFileMoved(from, to); };
         App.ProjectChanged += UpdateProjectTitle;
+        App.AssetRestored += ReloadRestored;
         App.SettingsChanged += ApplySettings;
         ApplySettings();
         // fill the menu before the first layout pass; an empty Fluent Menu filled later can stay zero-sized
@@ -101,6 +102,7 @@ public partial class MainWindow : Window
             new Separator(),
             Ui.Item("C_heck project…", null, () => { if (App.Project is { } p) HealthWindow.Show(this, p); }, open),
             Ui.Item("Project _settings and collisions…", null, () => { if (App.Project is { } p) ProjectSettingsWindow.Show(this, p); }, open),
+            Ui.Item("_History of selected asset…", "Ctrl+H", Assets.ShowHistory, open),
             Ui.Item("_Export…", "Ctrl+Shift+E", () =>
             {
                 if (App.Project is { } p)
@@ -150,6 +152,18 @@ public partial class MainWindow : Window
             else App.SetProject(Project.CreateFromFolder(arg, Path.GetFileName(Path.GetFullPath(arg).TrimEnd(Path.DirectorySeparatorChar))));
         }
         catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException) { Ui.Error(ex); }
+    }
+
+    /// <summary>
+    /// A restored version replaces the file on disk; the tab showing it reloads. With unsaved edits it asks first,
+    /// because saving them would overwrite the restored file (both stay in the history either way).
+    /// </summary>
+    void ReloadRestored(string path)
+    {
+        foreach (var ed in Editors.Where(ed => string.Equals(ed.CurrentPath, path, StringComparison.OrdinalIgnoreCase)))
+            if (!ed.IsDirty || MessageBox.Show(this, $"“{System.IO.Path.GetFileName(path)}” has unsaved changes. Discard them and show the restored version?",
+                    "Version restored", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                ed.OpenPath(path, confirmed: true);
     }
 
     void UpdateProjectTitle() => BuildMenu();   // Close project / Check project enable with a project
@@ -276,6 +290,7 @@ public partial class MainWindow : Window
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         if (e.Key == Key.P && ctrl && shift) { ShowCommandPalette(); e.Handled = true; return; }
         if (e.Key == Key.B && ctrl && shift) { SetAssetsVisible(!AssetsVisible); e.Handled = true; return; }
+        if (e.Key == Key.H && ctrl && !shift && App.Project is not null) { Assets.ShowHistory(); e.Handled = true; return; }
         if (e.Key == Key.E && ctrl && shift && App.Project is { } project)
         {
             ExportWindow.Show(this, project, [.. Editors.Where(ed => ed.IsDirty).Select(ed => ed.CurrentPath ?? "untitled")]);

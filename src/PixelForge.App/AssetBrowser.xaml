@@ -70,6 +70,7 @@
                         <MenuItem Header="D_uplicate" Click="OnDuplicate" />
                         <MenuItem Header="_Favorite" InputGestureText="Ctrl+D" Click="OnFavorite" />
                         <MenuItem Header="_Tags…" Click="OnTags" />
+                        <MenuItem Header="_History…" InputGestureText="Ctrl+H" Click="OnHistory" />
                         <Separator />
                         <MenuItem Header="Remove from project" InputGestureText="Del" Click="OnRemove" />
                     </ContextMenu>
