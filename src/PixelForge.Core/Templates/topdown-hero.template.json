@@ -1,0 +1,127 @@
+{
+  "apiVersion": 1,
+  "id": "topdown-hero",
+  "name": "Top-down hero",
+  "version": "1.0",
+  "kind": "Character",
+  "primary": "char",
+  "tags": [
+    "character",
+    "player",
+    "top-down"
+  ],
+  "description": "Player seen from above: walking in four directions, attack and hurt.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "hero"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "32",
+      "options": [
+        "16",
+        "24",
+        "32",
+        "48",
+        "64"
+      ]
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "hero"
+    },
+    {
+      "key": "style",
+      "label": "Style (fill density)",
+      "default": "0.45",
+      "options": [
+        "0.38",
+        "0.45",
+        "0.52",
+        "0.6"
+      ]
+    },
+    {
+      "key": "palette",
+      "label": "Palette",
+      "default": "(default)",
+      "source": "Palette"
+    }
+  ],
+  "steps": [
+    {
+      "id": "sprite",
+      "type": "sprite",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "width": "{size}",
+        "height": "{size}",
+        "seed": "{seed}",
+        "density": "{style}",
+        "palette": "{palette}"
+      },
+      "states": [
+        {
+          "name": "idle",
+          "frames": 2
+        },
+        {
+          "name": "walk_down",
+          "frames": 4
+        },
+        {
+          "name": "walk_up",
+          "frames": 4
+        },
+        {
+          "name": "walk_side",
+          "frames": 4
+        },
+        {
+          "name": "attack",
+          "frames": 3
+        },
+        {
+          "name": "hurt",
+          "frames": 1
+        }
+      ]
+    },
+    {
+      "id": "char",
+      "type": "character",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "spriteStep": "sprite",
+        "kind": "Player",
+        "origin": "feet"
+      },
+      "boxes": [
+        {
+          "kind": "Hurt",
+          "rect": "body"
+        },
+        {
+          "kind": "Solid",
+          "rect": "0.25 0.5 0.5 0.5",
+          "category": 1
+        },
+        {
+          "kind": "Hit",
+          "rect": "front",
+          "state": "attack"
+        }
+      ],
+      "properties": {
+        "speed": "80",
+        "hp": "5"
+      }
+    }
+  ]
+}

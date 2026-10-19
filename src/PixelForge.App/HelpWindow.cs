@@ -15,6 +15,7 @@ static class HelpWindow
             ("Ctrl+Shift+P", "Command palette: find and run any command or open any asset"),
             ("Ctrl+Shift+B", "Show / hide the asset browser"),
             ("Ctrl+H", "History of the selected asset: compare versions, restore"),
+            ("Ctrl+T", "Template Studio: new characters, levels, items and music from templates"),
             ("Ctrl+1 … Ctrl+9", "Editing mode of the current tab (when it has several)"),
             ("Ctrl+Alt+C / Ctrl+Alt+V", "Copy / paste style (palette and colors, object or area settings, character kind and properties)"),
             ("Rulers: click / right-click", "Add a guide / remove the nearest guide"),

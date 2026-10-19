@@ -1,0 +1,56 @@
+{
+  "apiVersion": 1,
+  "id": "pack-icons",
+  "name": "Item icons",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "items",
+  "tags": [
+    "asset",
+    "icon"
+  ],
+  "description": "Potion, scroll, ring, bag, map and bomb icons.",
+  "parameters": [
+    {
+      "key": "names",
+      "label": "Names (commas)",
+      "default": "potion, scroll, ring, bag, map, bomb"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "16",
+      "options": [
+        "8",
+        "12",
+        "16",
+        "24",
+        "32"
+      ]
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "pack-icons"
+    },
+    {
+      "key": "palette",
+      "label": "Palette",
+      "default": "(default)",
+      "source": "Palette"
+    }
+  ],
+  "steps": [
+    {
+      "id": "items",
+      "type": "items",
+      "core": true,
+      "settings": {
+        "names": "{names}",
+        "size": "{size}",
+        "seed": "{seed}",
+        "palette": "{palette}"
+      }
+    }
+  ]
+}

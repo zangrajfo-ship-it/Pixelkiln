@@ -109,7 +109,7 @@ try {
     }
     # command palette: commands of every tab and of the sample plugin are listed
     $palItem = Find-MenuItem $root 'Options' 'Command palette*'
-    $palItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+    if ($palItem) { $palItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() } else { $failures += 'Options > Command palette not found' }
     Start-Sleep 2
     $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
     $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
@@ -137,11 +137,36 @@ try {
         $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
         $levels = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @($root) |
             ForEach-Object { Find-All $_ ([System.Windows.Automation.ControlType]::MenuItem) } | Where-Object { $_.Current.Name -eq 'Levels' } | Select-Object -First 1
-        $levels.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        if ($levels) { $levels.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() } else { $failures += 'Workspace > Levels not found' }
         Start-Sleep -Milliseconds 700
         $sel = (Find-All $root ([System.Windows.Automation.ControlType]::TabItem)) | Where-Object { $_.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Current.IsSelected } | Select-Object -First 1
         Write-Host "workspace Levels -> tab $($sel.Current.Name)"
         if ($sel.Current.Name -ne 'Scene') { $failures += 'workspace Levels did not select the Scene tab' }
+    }
+    # templates: Project > New from template, create the first template (starting point), new assets appear
+    $tplItem = Find-MenuItem $root 'Project' 'New from template*'
+    if (-not $tplItem) { $failures += 'Project > New from template missing' }
+    else {
+        $before = (Find-All $list ([System.Windows.Automation.ControlType]::ListItem)).Count
+        $tplItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep 3
+        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
+        $studio = $wins | Where-Object { $_.Current.Name -eq 'Template Studio' } | Select-Object -First 1
+        if (-not $studio) { $failures += 'Template Studio did not open' }
+        else {
+            $tpls = (Find-All $studio ([System.Windows.Automation.ControlType]::ListItem)) | Where-Object { $_.Current.Name -like '*BuiltIn' }
+            Write-Host "templates listed: $($tpls.Count)"
+            if ($tpls.Count -lt 5) { $failures += "Template Studio lists only $($tpls.Count) built-in templates" }   # virtualized: only visible rows are counted
+            $go = (Find-All $studio ([System.Windows.Automation.ControlType]::Button)) | Where-Object { $_.Current.Name -eq 'Create' } | Select-Object -First 1
+            if ($go) { $go.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() } else { $failures += 'Template Studio has no Create button' }
+            Start-Sleep 4
+            $studio.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+            Start-Sleep -Milliseconds 800
+            $after = (Find-All $list ([System.Windows.Automation.ControlType]::ListItem)).Count
+            Write-Host "assets after template: $after (before $before)"
+            if ($after -le $before) { $failures += 'creating from a template added no assets' }
+        }
     }
     # history: select the first asset, Project > History of selected asset
     $first = (Find-All $list ([System.Windows.Automation.ControlType]::ListItem))[0]

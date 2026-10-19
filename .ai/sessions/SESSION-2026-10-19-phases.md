@@ -163,3 +163,15 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Testi:** 144/144 (novi: transformirani izris, register in zamenjava povsod, paketne operacije, preklic izvoza, profili v nastavitvah). Obremenitveni testi tečejo zaporedno (vzporedno so dajali lažne napake). Smoke preveri še delovni profil.
 - **Ni ročno preizkušeno:** vlečenje in pripenjanje na vodila z miško, paketne operacije v brskalniku, kopiranje sloga s tipkovnico.
 - **Opomba:** profil Painting do Faze 13 odpre prvi način (Pixel).
+
+## Faza 12: Template Studio (končana)
+- **Format predlog** (`Templates.cs`): strogo preverjen JSON kot pri vtičnikih (neznani ključi, koraki, parametri in sklici so napake z razlogom); viri Built-in (vgrajeni viri v Core), Project in User; različice v mapah `<id>@<različica>`.
+- **`TemplateEngine`:** parametri, »Starting point« (jedro in obvezne odvisnosti) ali »Full kit«; generatorji s semenom (sprajt s stanji, predmeti, lik z deleži škatel, tileset ali obstoječa slika iz projekta, mapa Platforms, Cave, Rooms ali Flat, stopnja, pesem); kopije shranjenih predlog s preusmeritvijo referenc prek `AssetKinds.Remap`.
+- **`LevelBuilder`:** spawn, checkpointi enakomerno od leve proti desni, nevarnosti v prepadih ali na prostih celicah, zbirateljski predmeti; **`Procedural.Rooms`** in **`Procedural.Song`** (bas, arpeggio, melodija, bobni).
+- **22 vgrajenih predlog** (liki, stopnje, predmeti, kompleti, glasba); slike vseh preverjene (`WriteTemplatePreviews`).
+- **Okno Template Studio** (Ctrl+T): iskanje, filtri, predogled (izdelan v začasnem projektu), različice, obrazec parametrov, ustvarjanje v ozadju, Save selected assets as template (z odvisnostmi), uvoz in izvoz paketa, brisanje v `.trash`.
+- **Liki in prizori** imajo zdaj sliko tudi v brskalniku sredstev (lik prek sprajta, prizor upodobljen).
+- **Popravki med delom:** kopije odvisnosti niso šle v »Starting point«; neobvezni sklici stopnje (junak, kovanci, glasba) so napačno vlekli vse v izhodišče.
+- **Testi:** 162/162 (Template 11: vse vgrajene kot komplet in izhodišče brez napak, ponovljivost, lik s paleto iz projekta, shranjena predloga in preusmeritev, paketi in zavrnitve, 6 vrst neveljavnih manifestov). Smoke ustvari lik iz predloge.
+- **Ni ročno preizkušeno:** obrazec parametrov s tipkovnico, uvoz in izvoz paketa v oknu.
+- **Predloge za UI zaslone, materiale in luči** pridejo s fazami 15, 16 in 18.

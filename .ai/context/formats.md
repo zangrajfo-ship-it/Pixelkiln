@@ -115,3 +115,6 @@ Imena: mapa sredstva + varno ime (`[A-Za-z0-9_-]`); podvojena imena dobijo `_2`,
 | Palette | kopija | kopija |
 
 Izvoz za Godot ni preverjen z dejanskim Godotom (ni nameščen); oblika sledi Godotovi besedilni shemi `format=3`.
+
+## `template.json` in `.pxtplpack` (predloge, Faza 12)
+`apiVersion` (1), `id`, `name`, `version` (1.0 ali 1.2.3), `kind` (Character, Level, Scene, Asset, Music, Pack), `primary` (ID koraka), `steps[]`, `tags[]`, `description`, `parameters[]` (`key`, `label`, `default`, `options[]` ali `source` = vrsta sredstva iz projekta). Vrste korakov in nastavitve: `docs/templates.md`. Mapa predloge: `<id>@<različica>/`. Paket `.pxtplpack` je zip takih map, največ 64 MB in 2000 datotek, brez poti iz paketa.

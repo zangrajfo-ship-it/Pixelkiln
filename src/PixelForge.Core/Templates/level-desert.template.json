@@ -1,0 +1,174 @@
+{
+  "apiVersion": 1,
+  "id": "level-desert",
+  "name": "Desert (platformer)",
+  "version": "1.0",
+  "kind": "Level",
+  "primary": "level",
+  "tags": [
+    "level",
+    "platformer",
+    "desert"
+  ],
+  "description": "Flat sandy dunes, few gaps.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "desert"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "desert"
+    },
+    {
+      "key": "difficulty",
+      "label": "Difficulty (1–5)",
+      "default": "2",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5"
+      ]
+    },
+    {
+      "key": "width",
+      "label": "Width (tiles)",
+      "default": "60",
+      "options": [
+        "30",
+        "60",
+        "120",
+        "200"
+      ]
+    },
+    {
+      "key": "tileset",
+      "label": "Tileset",
+      "default": "(generate)",
+      "source": "Image"
+    }
+  ],
+  "steps": [
+    {
+      "id": "tiles",
+      "type": "tileset",
+      "name": "{name} tiles",
+      "core": true,
+      "settings": {
+        "tileSize": "16",
+        "pattern": "Noise",
+        "baseColor": "D8B060",
+        "variants": "4",
+        "seed": "{seed}",
+        "asset": "{tileset}"
+      }
+    },
+    {
+      "id": "map",
+      "type": "tilemap",
+      "name": "{name} map",
+      "core": true,
+      "settings": {
+        "width": "{width}",
+        "height": "17",
+        "tilesetStep": "tiles",
+        "layout": "Flat",
+        "fill": "0.45",
+        "seed": "{seed}",
+        "difficulty": "{difficulty}"
+      }
+    },
+    {
+      "id": "hero-sprite",
+      "type": "sprite",
+      "name": "{name} hero",
+      "settings": {
+        "width": "16",
+        "height": "16",
+        "seed": "{seed}"
+      },
+      "states": [
+        {
+          "name": "idle",
+          "frames": 2
+        },
+        {
+          "name": "run",
+          "frames": 4
+        },
+        {
+          "name": "jump",
+          "frames": 1
+        }
+      ]
+    },
+    {
+      "id": "hero",
+      "type": "character",
+      "name": "{name} hero",
+      "settings": {
+        "spriteStep": "hero-sprite",
+        "kind": "Player",
+        "origin": "feet"
+      },
+      "boxes": [
+        {
+          "kind": "Hurt",
+          "rect": "body"
+        },
+        {
+          "kind": "Solid",
+          "rect": "feet",
+          "category": 1
+        }
+      ],
+      "properties": {
+        "speed": "90",
+        "jump": "230"
+      }
+    },
+    {
+      "id": "coins",
+      "type": "items",
+      "name": "coin",
+      "settings": {
+        "names": "{name} coin",
+        "size": "8",
+        "seed": "{seed}"
+      }
+    },
+    {
+      "id": "music",
+      "type": "song",
+      "name": "{name} music",
+      "settings": {
+        "seed": "{seed}",
+        "bpm": "128",
+        "scale": "major",
+        "patterns": "4"
+      }
+    },
+    {
+      "id": "level",
+      "type": "level",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "mapStep": "map",
+        "playerStep": "hero",
+        "collectibleStep": "coins",
+        "musicStep": "music",
+        "genre": "platformer",
+        "checkpoints": "{difficulty}",
+        "hazards": "{difficulty}",
+        "collectibles": "10",
+        "seed": "{seed}",
+        "background": "F6D8A0"
+      }
+    }
+  ]
+}

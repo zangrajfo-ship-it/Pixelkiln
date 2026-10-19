@@ -1,0 +1,86 @@
+{
+  "apiVersion": 1,
+  "id": "asset-door",
+  "name": "Door",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "char",
+  "tags": [
+    "asset",
+    "door"
+  ],
+  "description": "Door with closed and open states and a trigger.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "door"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "door"
+    },
+    {
+      "key": "palette",
+      "label": "Palette",
+      "default": "(default)",
+      "source": "Palette"
+    }
+  ],
+  "steps": [
+    {
+      "id": "sprite",
+      "type": "sprite",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "width": "16",
+        "height": "32",
+        "seed": "{seed}",
+        "density": "0.6",
+        "palette": "{palette}"
+      },
+      "states": [
+        {
+          "name": "closed",
+          "frames": 1
+        },
+        {
+          "name": "opening",
+          "frames": 3
+        },
+        {
+          "name": "open",
+          "frames": 1
+        }
+      ]
+    },
+    {
+      "id": "char",
+      "type": "character",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "spriteStep": "sprite",
+        "kind": "Item",
+        "origin": "feet"
+      },
+      "boxes": [
+        {
+          "kind": "Trigger",
+          "rect": "full"
+        },
+        {
+          "kind": "Solid",
+          "rect": "full",
+          "state": "closed"
+        }
+      ],
+      "properties": {
+        "locked": "false",
+        "key": ""
+      }
+    }
+  ]
+}

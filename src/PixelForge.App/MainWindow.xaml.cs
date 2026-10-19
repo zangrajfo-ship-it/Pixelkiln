@@ -128,6 +128,7 @@ public partial class MainWindow : Window
             Ui.Item("Make project from _folder…", null, () => ProjectCommands.FromFolder(this)),
             Ui.Item("_Close project", null, ProjectCommands.Close, open),
             new Separator(),
+            Ui.Item("New from _template…", "Ctrl+T", ShowTemplateStudio, open),
             Ui.Item("C_heck project…", null, () => { if (App.Project is { } p) HealthWindow.Show(this, p); }, open),
             Ui.Item("Project _settings and collisions…", null, () => { if (App.Project is { } p) ProjectSettingsWindow.Show(this, p); }, open),
             Ui.Item("_History of selected asset…", "Ctrl+H", Assets.ShowHistory, open),
@@ -192,6 +193,11 @@ public partial class MainWindow : Window
             if (!ed.IsDirty || MessageBox.Show(this, $"“{System.IO.Path.GetFileName(path)}” has unsaved changes. Discard them and show the restored version?",
                     "Version restored", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 ed.OpenPath(path, confirmed: true);
+    }
+
+    void ShowTemplateStudio()
+    {
+        if (App.Project is { } p) TemplateStudio.Show(this, p, Assets.SelectedAll, OpenAsset);
     }
 
     void UpdateProjectTitle() => BuildMenu();   // Close project / Check project enable with a project
@@ -302,6 +308,7 @@ public partial class MainWindow : Window
         if (e.Key == Key.P && ctrl && shift) { ShowCommandPalette(); e.Handled = true; return; }
         if (e.Key == Key.B && ctrl && shift) { SetAssetsVisible(!AssetsVisible); e.Handled = true; return; }
         if (e.Key == Key.H && ctrl && !shift && App.Project is not null) { Assets.ShowHistory(); e.Handled = true; return; }
+        if (e.Key == Key.T && ctrl && !shift && App.Project is not null) { ShowTemplateStudio(); e.Handled = true; return; }
         if (e.Key == Key.E && ctrl && shift && App.Project is { } project)
         {
             ExportWindow.Show(this, project, [.. Editors.Where(ed => ed.IsDirty).Select(ed => ed.CurrentPath ?? "untitled")]);
