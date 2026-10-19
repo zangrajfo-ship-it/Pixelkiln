@@ -130,8 +130,10 @@ public sealed class Song
     // v1 stored notes only, under "Patterns"; v2 uses "PatternData" + "Instruments"
     record SongDto(int Version, int Bpm, int Steps, int[] Order, int[][][]? Patterns = null, PatternDto[]? PatternData = null, Instrument[]? Instruments = null);
 
+    public const int Version = 2;
+
     public static string Serialize(Song s) => JsonSerializer.Serialize(new SongDto(
-        2, s.Bpm, s.Steps, [.. s.Order],
+        Version, s.Bpm, s.Steps, [.. s.Order],
         PatternData: [.. s.Patterns.Select(p => new PatternDto(p.Notes, p.Volumes))],
         Instruments: s.Instruments));
 
@@ -167,6 +169,6 @@ public sealed class Song
         Volume = Math.Clamp(i.Volume, 0, 1),
     };
 
-    public static void Save(Song s, string path) => File.WriteAllText(path, Serialize(s));
-    public static Song Load(string path) => Deserialize(File.ReadAllText(path));
+    public static void Save(Song s, string path) => DocumentFile.Save(path, Serialize(s), Version);
+    public static Song Load(string path) => DocumentFile.Load(path, "song", Version, Deserialize);
 }

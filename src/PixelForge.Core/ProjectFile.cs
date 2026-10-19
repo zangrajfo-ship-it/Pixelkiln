@@ -13,9 +13,11 @@ public static class ProjectFile
 
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
 
-    public static void Save(Sprite s, string path) => File.WriteAllText(path, Serialize(s));
+    public const int Version = 2;
 
-    public static Sprite Load(string path) => Deserialize(File.ReadAllText(path));
+    public static void Save(Sprite s, string path) => DocumentFile.Save(path, Serialize(s), Version);
+
+    public static Sprite Load(string path) => DocumentFile.Load(path, "sprite", Version, Deserialize);
 
     public static string Serialize(Sprite s) => JsonSerializer.Serialize(new SpriteDto(
         2, s.Width, s.Height, [.. s.Palette], [.. s.Frames.Select(f => f.DurationMs)],

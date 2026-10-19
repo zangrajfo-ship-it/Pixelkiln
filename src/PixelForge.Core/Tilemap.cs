@@ -51,6 +51,8 @@ public sealed class Tilemap
     public int Height { get; }
     public int TileSize { get; }
     public Tileset? Tileset { get; set; }
+    /// <summary>Project asset the tileset comes from (ADR-0001); the pixels above stay as a copy for files used without a project.</summary>
+    public Guid? TilesetAssetId { get; set; }
     /// <summary>Where the tileset was loaded from (for "reload"); pixels are stored in the map anyway.</summary>
     public string? TilesetSource { get; set; }
     public List<MapLayer> Layers { get; } = [];
@@ -124,7 +126,7 @@ public sealed class Tilemap
 
     public Tilemap Clone()
     {
-        var m = new Tilemap(Width, Height, TileSize, empty: true) { Tileset = Tileset, TilesetSource = TilesetSource };
+        var m = new Tilemap(Width, Height, TileSize, empty: true) { Tileset = Tileset, TilesetSource = TilesetSource, TilesetAssetId = TilesetAssetId };
         foreach (var l in Layers) m.Layers.Add(new MapLayer { Name = l.Name, Visible = l.Visible, Tiles = (int[])l.Tiles.Clone() });
         m.Objects.AddRange(Objects.Select(o => o.Clone()));
         m.Terrains.AddRange(Terrains);
@@ -134,7 +136,7 @@ public sealed class Tilemap
     /// <summary>New map size in tiles; content moves by (ox, oy) tiles and is clipped. Objects move along.</summary>
     public Tilemap Resized(int w, int h, int ox, int oy)
     {
-        var m = new Tilemap(w, h, TileSize, empty: true) { Tileset = Tileset, TilesetSource = TilesetSource };
+        var m = new Tilemap(w, h, TileSize, empty: true) { Tileset = Tileset, TilesetSource = TilesetSource, TilesetAssetId = TilesetAssetId };
         foreach (var l in Layers)
         {
             var nl = m.AddLayer(m.Layers.Count, l.Name);
@@ -158,21 +160,23 @@ public sealed class Tilemap
 
     record LayerDto(string Name, bool Visible, int[] Tiles);
     record ObjectDto(int Id, string Name, string Type, int X, int Y, int W, int H);
-    // v2 added Objects and Terrains; both are optional so v1 files still load
+    // v2 added Objects and Terrains, v3 TilesetAssetId; all optional so older files still load
     record MapDto(int Version, int Width, int Height, int TileSize, string? TilesetSource, int TilesetWidth, int TilesetHeight, string? TilesetPixels,
-        LayerDto[] Layers, ObjectDto[]? Objects = null, int[]? Terrains = null);
+        LayerDto[] Layers, ObjectDto[]? Objects = null, int[]? Terrains = null, Guid? TilesetAssetId = null);
+
+    public const int Version = 3;
 
     public static string Serialize(Tilemap m) => JsonSerializer.Serialize(new MapDto(
-        2, m.Width, m.Height, m.TileSize, m.TilesetSource, m.Tileset?.Width ?? 0, m.Tileset?.Height ?? 0,
+        Version, m.Width, m.Height, m.TileSize, m.TilesetSource, m.Tileset?.Width ?? 0, m.Tileset?.Height ?? 0,
         m.Tileset is { } ts ? Convert.ToBase64String(MemoryMarshal.AsBytes(ts.Pixels.AsSpan())) : null,
         [.. m.Layers.Select(l => new LayerDto(l.Name, l.Visible, l.Tiles))],
         [.. m.Objects.Select(o => new ObjectDto(o.Id, o.Name, o.Type, o.X, o.Y, o.W, o.H))],
-        [.. m.Terrains]));
+        [.. m.Terrains], m.TilesetAssetId));
 
     public static Tilemap Deserialize(string json)
     {
         var d = JsonSerializer.Deserialize<MapDto>(json) ?? throw new InvalidDataException("Empty map file.");
-        var m = new Tilemap(d.Width, d.Height, d.TileSize, empty: true) { TilesetSource = d.TilesetSource };
+        var m = new Tilemap(d.Width, d.Height, d.TileSize, empty: true) { TilesetSource = d.TilesetSource, TilesetAssetId = d.TilesetAssetId };
         if (d.TilesetPixels is not null)
         {
             var px = MemoryMarshal.Cast<byte, uint>(Convert.FromBase64String(d.TilesetPixels)).ToArray();
@@ -191,6 +195,6 @@ public sealed class Tilemap
         return m;
     }
 
-    public static void Save(Tilemap m, string path) => File.WriteAllText(path, Serialize(m));
-    public static Tilemap Load(string path) => Deserialize(File.ReadAllText(path));
+    public static void Save(Tilemap m, string path) => DocumentFile.Save(path, Serialize(m), Version);
+    public static Tilemap Load(string path) => DocumentFile.Load(path, "map", Version, Deserialize);
 }

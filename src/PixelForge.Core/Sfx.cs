@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace PixelForge.Core;
 
@@ -30,6 +32,7 @@ public sealed class Sfx
     public double LowPass { get; set; } = 1;
     public double Volume { get; set; } = 0.5;
 
+    [JsonIgnore]
     public double Duration => Attack + Sustain + Decay;
 
     public Sfx Clone() => (Sfx)MemberwiseClone();
@@ -123,9 +126,20 @@ public sealed class Sfx
         LowPass = Math.Clamp(s.LowPass, 0.01, 1), Volume = Math.Clamp(s.Volume, 0, 1),
     };
 
-    public static void Save(Sfx s, string path) =>
-        File.WriteAllText(path, JsonSerializer.Serialize(s, new JsonSerializerOptions { WriteIndented = true }));
+    /// <summary>v1 had no Version field; v2 adds it (DocumentFile treats a missing field as 1).</summary>
+    public const int Version = 2;
 
-    public static Sfx Load(string path) =>
-        Sanitized(JsonSerializer.Deserialize<Sfx>(File.ReadAllText(path)) ?? throw new InvalidDataException("Empty sound file."));
+    public static string Serialize(Sfx s)
+    {
+        var node = JsonSerializer.SerializeToNode(s)!.AsObject();
+        node.Insert(0, "Version", Version);
+        return node.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    public static Sfx Deserialize(string json) =>
+        Sanitized(JsonSerializer.Deserialize<Sfx>(json) ?? throw new InvalidDataException("Empty sound file."));
+
+    public static void Save(Sfx s, string path) => DocumentFile.Save(path, Serialize(s), Version);
+
+    public static Sfx Load(string path) => DocumentFile.Load(path, "sound", Version, Deserialize);
 }

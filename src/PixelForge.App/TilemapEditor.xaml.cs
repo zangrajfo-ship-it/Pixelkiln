@@ -131,18 +131,11 @@ public partial class TilemapEditor : UserControl
         Render();
     }
 
-    static (uint[] Pixels, int Width, int Height) ReadImage(string path)
-    {
-        if (!path.EndsWith(".pxf", StringComparison.OrdinalIgnoreCase)) return ImageIO.LoadImage(path);
-        var s = ProjectFile.Load(path);
-        return (Compositor.Flatten(s, 0), s.Width, s.Height);
-    }
-
     void OnLoadTileset(object sender, RoutedEventArgs e)
     {
         var dlg = new OpenFileDialog { Filter = "Tileset (*.png;*.pxf;*.gif;*.bmp)|*.png;*.pxf;*.gif;*.bmp|All files|*.*" };
         if (dlg.ShowDialog() != true) return;
-        try { var (px, w, h) = ReadImage(dlg.FileName); SetTileset(px, w, h, dlg.FileName); }
+        try { var (px, w, h) = AssetLoader.LoadImage(dlg.FileName); SetTileset(px, w, h, dlg.FileName); }
         catch (Exception ex) { Ui.Error(ex); }
     }
 
@@ -156,7 +149,7 @@ public partial class TilemapEditor : UserControl
     void OnReloadTileset(object sender, RoutedEventArgs e)
     {
         if (_map.TilesetSource is not string src) { Ui.Error(new InvalidOperationException("This tileset was not loaded from a file.")); return; }
-        try { var (px, w, h) = ReadImage(src); SetTileset(px, w, h, src); }
+        try { var (px, w, h) = AssetLoader.LoadImage(src); SetTileset(px, w, h, src); }
         catch (Exception ex) { Ui.Error(ex); }
     }
 
