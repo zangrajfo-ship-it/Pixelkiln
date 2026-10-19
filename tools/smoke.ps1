@@ -53,7 +53,7 @@ try {
     if ($count -ne $expectedAssets) { $failures += "asset browser shows $count assets, expected $expectedAssets" }
     if (-not (Test-Path (Join-Path $projectDir 'game.pfproj'))) { $failures += 'project file was not created from the folder' }
     $tabs = Find-All $root ([System.Windows.Automation.ControlType]::TabItem)
-    if ($tabs.Count -ne 4) { $failures += "expected 4 tabs, found $($tabs.Count)" }
+    if ($tabs.Count -lt 5) { $failures += "expected at least 5 tabs, found $($tabs.Count)" }
     foreach ($t in $tabs) {
         $name = $t.Current.Name
         $t.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()

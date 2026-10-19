@@ -45,3 +45,27 @@ Lastnik je dovolil izvedbo vseh faz brez ustavljanja. Po vsaki fazi: build, test
   - preimenovanje ohrani ID in reference (test);
   - iskanje je odzivno;
   - ponovno odpiranje ohrani projekt (zadnji projekt, manifest se shrani ob vsaki spremembi).
+
+## Faza 3: grafika in animacije (končana)
+- **Character Studio** (zavihek Character, `.pxchar` v1):
+  - lik na sprajtu iz projekta;
+  - stanja povezana z oznakami sprajta (časi in onion skin ostanejo v Sprite);
+  - vrsta, smer, izhodišče (Alt+klik);
+  - škatle Hurt/Hit/Solid/Trigger po stanju in sličici, s kolizijsko kategorijo;
+  - lastnosti `key = value`;
+  - predogled s hitrostjo in prehodom v drugo stanje;
+  - predloga standardnih stanj (doda manjkajoče oznake v sprajt, s potrditvijo);
+  - izvoz JSON + list.
+- **Animation Studio:** `KeyframeTrack` (položaj, merilo, rotacija, prosojnost; Linear, EaseIn, EaseOut, EaseInOut, Step; zanka). Uporabljajo ga instance v prizorih (Faza 4), kot je predlagano v Fazi 0.
+- **Tileset generator:**
+  - autotile 47 (robovi + notranji vogali) poleg 16;
+  - naključne variante polne ploščice (stabilne po celici);
+  - `.pxm` v4 (`TerrainRules`; v2/v3 `Terrains` se preberejo kot Blob16);
+  - iskanje in odstranjevanje podvojenih ploščic s preslikavo mape;
+  - predogled ponavljanja 4×4;
+  - predloga 16/47;
+  - izvoz pravil JSON.
+- **Palette studio** (Project): preverjanje sprajtov proti paleti, zamenjava ali poravnava na paleto za več sprajtov, predogled pred in po, razveljavitev zadnje uporabe. V Sprite še senčilna lestvica, poravnava na paleto, barve izven palete.
+- **Testi:** 100/100 (Character 2, Keyframe 1, Palette 1, Tileset 2, Autotile47 3, CharacterExport 1); smoke OK s 5 zavihki.
+- **Ni ročno preizkušeno:** risanje škatel in predloga stanj v Character Studiu, Palette studio na pravih sprajtih (logika je pokrita s testi Core).
+- **Odloženo:** ločeni deli telesa (potreben skeletni model).

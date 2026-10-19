@@ -14,6 +14,7 @@ public static class AssetLoader
             case AssetType.Song: Song.Load(path); break;
             case AssetType.Sound: Sfx.Load(path); break;
             case AssetType.Palette: PaletteIO.Load(path); break;
+            case AssetType.Character: Character.Load(path); break;
         }
     }
 

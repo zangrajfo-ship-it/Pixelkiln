@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using PixelForge.Core;
 
 namespace PixelForge.App;
 
@@ -36,7 +37,13 @@ public partial class TilemapEditor : IEditor
             new Separator(),
             Ui.Item("_Add terrain from selection", null, Do(OnAddTerrain)),
             Ui.Item("Re_move terrain", null, Do(OnRemoveTerrain)),
-            Ui.Item("Save terrain _template…", null, Do(OnTerrainTemplate))),
+            Ui.Item("Set terrain _variants from selection", null, SetTerrainVariants),
+            Ui.Item("Save 16-tile _template…", null, () => SaveTemplate(TerrainMode.Blob16)),
+            Ui.Item("Save 47-tile te_mplate…", null, () => SaveTemplate(TerrainMode.Blob47)),
+            Ui.Item("E_xport terrain rules (JSON)…", null, ExportTerrainRules),
+            new Separator(),
+            Ui.Item("Find _duplicate tiles…", null, FindDuplicateTiles),
+            Ui.Item("_Preview selection repeated", null, PreviewRepeat)),
         Ui.Menu("_View",
             Ui.Item("Zoom _in", "Ctrl+=", () => ZoomStep(+1)),
             Ui.Item("Zoom _out", "Ctrl+-", () => ZoomStep(-1)),

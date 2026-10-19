@@ -58,7 +58,7 @@ public sealed class Tilemap
     public List<MapLayer> Layers { get; } = [];
     public List<MapObject> Objects { get; } = [];
     /// <summary>Auto-tile terrains: top-left tile index of each 4×4 block (see <see cref="Autotile"/>).</summary>
-    public List<int> Terrains { get; } = [];
+    public List<TerrainRule> Terrains { get; } = [];
 
     public int NextObjectId => Objects.Count == 0 ? 1 : Objects.Max(o => o.Id) + 1;
 
@@ -129,7 +129,7 @@ public sealed class Tilemap
         var m = new Tilemap(Width, Height, TileSize, empty: true) { Tileset = Tileset, TilesetSource = TilesetSource, TilesetAssetId = TilesetAssetId };
         foreach (var l in Layers) m.Layers.Add(new MapLayer { Name = l.Name, Visible = l.Visible, Tiles = (int[])l.Tiles.Clone() });
         m.Objects.AddRange(Objects.Select(o => o.Clone()));
-        m.Terrains.AddRange(Terrains);
+        m.Terrains.AddRange(Terrains.Select(t => t.Clone()));
         return m;
     }
 
@@ -152,7 +152,7 @@ public sealed class Tilemap
             c.Y += oy * TileSize;
             m.Objects.Add(c);
         }
-        m.Terrains.AddRange(Terrains);
+        m.Terrains.AddRange(Terrains.Select(t => t.Clone()));
         return m;
     }
 
@@ -160,18 +160,20 @@ public sealed class Tilemap
 
     record LayerDto(string Name, bool Visible, int[] Tiles);
     record ObjectDto(int Id, string Name, string Type, int X, int Y, int W, int H);
-    // v2 added Objects and Terrains, v3 TilesetAssetId; all optional so older files still load
+    record RuleDto(int Base, TerrainMode Mode, int[]? Variants);
+    // v2 added Objects and Terrains (block bases), v3 TilesetAssetId, v4 TerrainRules (mode + variants)
+    // replacing Terrains; all optional so older files still load
     record MapDto(int Version, int Width, int Height, int TileSize, string? TilesetSource, int TilesetWidth, int TilesetHeight, string? TilesetPixels,
-        LayerDto[] Layers, ObjectDto[]? Objects = null, int[]? Terrains = null, Guid? TilesetAssetId = null);
+        LayerDto[] Layers, ObjectDto[]? Objects = null, int[]? Terrains = null, Guid? TilesetAssetId = null, RuleDto[]? TerrainRules = null);
 
-    public const int Version = 3;
+    public const int Version = 4;
 
     public static string Serialize(Tilemap m) => JsonSerializer.Serialize(new MapDto(
         Version, m.Width, m.Height, m.TileSize, m.TilesetSource, m.Tileset?.Width ?? 0, m.Tileset?.Height ?? 0,
         m.Tileset is { } ts ? Convert.ToBase64String(MemoryMarshal.AsBytes(ts.Pixels.AsSpan())) : null,
         [.. m.Layers.Select(l => new LayerDto(l.Name, l.Visible, l.Tiles))],
         [.. m.Objects.Select(o => new ObjectDto(o.Id, o.Name, o.Type, o.X, o.Y, o.W, o.H))],
-        [.. m.Terrains], m.TilesetAssetId));
+        null, m.TilesetAssetId, [.. m.Terrains.Select(t => new RuleDto(t.Base, t.Mode, [.. t.Variants]))]));
 
     public static Tilemap Deserialize(string json)
     {
@@ -191,7 +193,10 @@ public sealed class Tilemap
         if (m.Layers.Count == 0) throw new InvalidDataException("Map has no layers.");
         foreach (var o in d.Objects ?? [])
             m.Objects.Add(new MapObject { Id = o.Id, Name = o.Name ?? "", Type = o.Type ?? "", X = o.X, Y = o.Y, W = Math.Max(0, o.W), H = Math.Max(0, o.H) });
-        m.Terrains.AddRange(d.Terrains ?? []);
+        if (d.TerrainRules is { } rules)
+            m.Terrains.AddRange(rules.Select(r => new TerrainRule { Base = r.Base, Mode = Enum.IsDefined(r.Mode) ? r.Mode : TerrainMode.Blob16, Variants = [.. r.Variants ?? []] }));
+        else
+            m.Terrains.AddRange((d.Terrains ?? []).Select(b => new TerrainRule { Base = b }));   // v2/v3: 16-tile blocks
         return m;
     }
 

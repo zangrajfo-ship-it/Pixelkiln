@@ -83,7 +83,7 @@ public partial class TilemapEditor
         var tiles = _map.Layers[_layer].Tiles;
         if (tool == AutoBtn)
         {
-            if (CurrentTerrain is not int terrain || _map.Tileset is null)
+            if (CurrentTerrain is not { } terrain || _map.Tileset is null)
             {
                 Ui.Error(new InvalidOperationException("Add a terrain first: select a 4×4 block in the tileset and press + next to Terrain."));
                 return;
@@ -154,7 +154,7 @@ public partial class TilemapEditor
         {
             Tools.Line(tiles, _map.Width, _map.Height, _lastX, _lastY, x, y, Tilemap.Empty);
         }
-        else if (_strokeTool == AutoBtn && CurrentTerrain is int terrain)
+        else if (_strokeTool == AutoBtn && CurrentTerrain is { } terrain)
         {
             foreach (var (lx, ly) in Tools.LinePoints(_lastX, _lastY, x, y))
                 Autotile.Apply(_map, _map.Layers[_layer], terrain, lx, ly, _strokeOn);
@@ -337,29 +337,52 @@ public partial class TilemapEditor
 
     // ---------- terrains ----------
 
-    int? CurrentTerrain => TerrainBox.SelectedIndex >= 0 && TerrainBox.SelectedIndex < _map.Terrains.Count ? _map.Terrains[TerrainBox.SelectedIndex] : null;
+    TerrainRule? CurrentTerrain => TerrainBox.SelectedIndex >= 0 && TerrainBox.SelectedIndex < _map.Terrains.Count ? _map.Terrains[TerrainBox.SelectedIndex] : null;
 
     void RefreshTerrains(int? select = null)
     {
         int keep = select ?? TerrainBox.SelectedIndex;
         TerrainBox.Items.Clear();
-        for (int i = 0; i < _map.Terrains.Count; i++) TerrainBox.Items.Add($"{i + 1}: from tile #{_map.Terrains[i]}");
+        for (int i = 0; i < _map.Terrains.Count; i++)
+        {
+            var r = _map.Terrains[i];
+            TerrainBox.Items.Add($"{i + 1}: {(r.Mode == TerrainMode.Blob47 ? "47" : "16")} tiles from #{r.Base}" + (r.Variants.Count > 0 ? $", {r.Variants.Count} variants" : ""));
+        }
         TerrainBox.SelectedIndex = _map.Terrains.Count == 0 ? -1 : Math.Clamp(keep < 0 ? 0 : keep, 0, _map.Terrains.Count - 1);
     }
 
+    /// <summary>
+    /// New terrain from the tileset selection: an 8×6 (or bigger) selection makes a 47-tile terrain with corners,
+    /// anything smaller a 16-tile one (4×4). Its top-left tile is the block's start.
+    /// </summary>
     void OnAddTerrain(object sender, RoutedEventArgs e)
     {
         if (_map.Tileset is not { } ts) { Ui.Error(new InvalidOperationException("Load a tileset first.")); return; }
-        int terrainBase = _tsSel.Y * ts.Columns + _tsSel.X;
-        try { Autotile.Validate(ts, terrainBase); }
+        var rule = new TerrainRule
+        {
+            Base = _tsSel.Y * ts.Columns + _tsSel.X,
+            Mode = _tsSel.Width >= 8 && _tsSel.Height >= 6 ? TerrainMode.Blob47 : TerrainMode.Blob16,
+        };
+        try { Autotile.Validate(ts, rule); }
         catch (InvalidOperationException ex) { Ui.Error(ex); return; }
-        if (!_map.Terrains.Contains(terrainBase))
+        int existing = _map.Terrains.FindIndex(t => t.Base == rule.Base && t.Mode == rule.Mode);
+        if (existing < 0)
         {
             Snapshot();
-            _map.Terrains.Add(terrainBase);
+            _map.Terrains.Add(rule);
+            existing = _map.Terrains.Count - 1;
         }
-        RefreshTerrains(_map.Terrains.IndexOf(terrainBase));
+        RefreshTerrains(existing);
         SetTool(AutoBtn);
+    }
+
+    /// <summary>The tiles selected in the tileset become random variants of the chosen terrain's full tile.</summary>
+    void SetTerrainVariants()
+    {
+        if (CurrentTerrain is not { } rule || _map.Tileset is not { } ts) { Ui.Error(new InvalidOperationException("Choose a terrain first.")); return; }
+        Snapshot();
+        rule.Variants = [.. _stamp.Where(t => t >= 0 && t < ts.Count && !Autotile.IsTerrain(ts, new TerrainRule { Base = rule.Base, Mode = rule.Mode }, t)).Distinct()];
+        RefreshTerrains();
     }
 
     void OnRemoveTerrain(object sender, RoutedEventArgs e)
@@ -370,11 +393,57 @@ public partial class TilemapEditor
         RefreshTerrains();
     }
 
-    void OnTerrainTemplate(object sender, RoutedEventArgs e)
+    void OnTerrainTemplate(object sender, RoutedEventArgs e) => SaveTemplate(CurrentTerrain?.Mode ?? TerrainMode.Blob16);
+
+    void SaveTemplate(TerrainMode mode)
     {
-        var dlg = new SaveFileDialog { Filter = "PNG image (*.png)|*.png", FileName = $"terrain-template-{_map.TileSize}px.png" };
+        string kind = mode == TerrainMode.Blob47 ? "47" : "16";
+        var dlg = new SaveFileDialog { Filter = "PNG image (*.png)|*.png", FileName = $"terrain-{kind}-template-{_map.TileSize}px.png" };
         if (dlg.ShowDialog() != true) return;
-        try { ImageIO.SavePng(dlg.FileName, Autotile.Template(_map.TileSize), _map.TileSize * 4, _map.TileSize * 4); }
+        var (w, h) = Autotile.TemplateSize(_map.TileSize, mode);
+        try { ImageIO.SavePng(dlg.FileName, Autotile.Template(_map.TileSize, mode), w, h); }
         catch (Exception ex) { Ui.Error(ex); }
+    }
+
+    // ---------- tileset generator ----------
+
+    void FindDuplicateTiles()
+    {
+        if (_map.Tileset is not { } ts) { Ui.Error(new InvalidOperationException("Load a tileset first.")); return; }
+        var groups = TilesetTools.Duplicates(ts);
+        if (groups.Count == 0) { MessageBox.Show(Window.GetWindow(this), "No duplicate tiles.", "Duplicate tiles"); return; }
+        int extra = groups.Sum(g => g.Count - 1);
+        string list = string.Join("\n", groups.Take(12).Select(g => "• " + string.Join(" = ", g.Select(i => $"#{i}"))));
+        if (MessageBox.Show(Window.GetWindow(this),
+                $"{extra} tile(s) are copies of other tiles:\n{list}{(groups.Count > 12 ? "\n…" : "")}\n\nRemove the copies? The map is updated to use the kept tiles; terrains are cleared because tile positions change. Undo with Ctrl+Z.",
+                "Duplicate tiles", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        Snapshot();
+        TilesetTools.RemoveDuplicates(_map);
+        RefreshAll();
+    }
+
+    /// <summary>Shows the tileset selection repeated 4×4, to spot seams in repeating patterns.</summary>
+    void PreviewRepeat()
+    {
+        if (_map.Tileset is not { } ts) return;
+        var (px, w, h) = TilesetTools.Repeat(ts, _tsSel.X, _tsSel.Y, _tsSel.Width, _tsSel.Height, 4);
+        double scale = Math.Clamp(512.0 / Math.Max(w, h), 1, 8);
+        var img = new Image { Source = ImageIO.ToBitmap(px, w, h), Width = w * scale, Height = h * scale, Stretch = System.Windows.Media.Stretch.Fill };
+        System.Windows.Media.RenderOptions.SetBitmapScalingMode(img, System.Windows.Media.BitmapScalingMode.NearestNeighbor);
+        System.Windows.Automation.AutomationProperties.SetName(img, "Selected tiles repeated four times in each direction");
+        new Window
+        {
+            Title = "Repeat preview", SizeToContent = SizeToContent.WidthAndHeight, Owner = Window.GetWindow(this),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = new Border { Padding = new Thickness(8), Child = img },
+        }.Show();
+    }
+
+    void ExportTerrainRules()
+    {
+        if (_map.Terrains.Count == 0) { Ui.Error(new InvalidOperationException("This map has no terrains.")); return; }
+        var dlg = new SaveFileDialog { Filter = "Terrain rules (*.json)|*.json", FileName = BaseName + "-terrains.json" };
+        if (dlg.ShowDialog() != true) return;
+        try { DocumentFile.WriteAtomic(dlg.FileName, TerrainExport.Json(_map)); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { Ui.Error(ex); }
     }
 }

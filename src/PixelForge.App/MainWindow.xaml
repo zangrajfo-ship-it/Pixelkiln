@@ -19,6 +19,9 @@
                 <TabItem Header="Sprite">
                     <local:SpriteEditor x:Name="SpriteEd" />
                 </TabItem>
+                <TabItem Header="Character">
+                    <local:CharacterEditor x:Name="CharEd" />
+                </TabItem>
                 <TabItem Header="Tilemap">
                     <local:TilemapEditor x:Name="MapEd" />
                 </TabItem>
