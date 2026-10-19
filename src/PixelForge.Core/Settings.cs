@@ -29,6 +29,8 @@ public sealed class Settings
     /// <summary>0 = off.</summary>
     public int AutosaveMinutes { get; set; } = 2;
     public List<string> RecentFiles { get; set; } = [];
+    /// <summary>Command palette titles, most recent first (shown on top when the palette opens).</summary>
+    public List<string> RecentCommands { get; set; } = [];
     /// <summary>Project reopened at start-up (null = none).</summary>
     public string? LastProject { get; set; }
 
@@ -37,6 +39,13 @@ public sealed class Settings
         ? home
         : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PixelForge");
     public static string DefaultPath => Path.Combine(Folder, "settings.json");
+
+    public void AddRecentCommand(string title)
+    {
+        RecentCommands.Remove(title);
+        RecentCommands.Insert(0, title);
+        if (RecentCommands.Count > MaxRecent) RecentCommands.RemoveRange(MaxRecent, RecentCommands.Count - MaxRecent);
+    }
 
     /// <summary>Most recent first, no duplicates (case-insensitive), capped.</summary>
     public void AddRecent(string path)
@@ -66,6 +75,7 @@ public sealed class Settings
         AutosaveMinutes = Math.Clamp(AutosaveMinutes, 0, 60),
         LastProject = LastProject,
         RecentFiles = [.. (RecentFiles ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxRecent)],
+        RecentCommands = [.. (RecentCommands ?? []).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().Take(MaxRecent)],
     };
 
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true };

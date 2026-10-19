@@ -33,6 +33,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         StartupPath = e.Args.FirstOrDefault();
+        LoadPlugins();
         ApplyTheme();   // after App.xaml resources are loaded, before the main window opens
         base.OnStartup(e);
     }
@@ -62,6 +63,22 @@ public partial class App : Application
             }
             catch (InvalidOperationException) { return; }   // outside the project folder or not an asset type: just a loose file
         RecordVersion(path);
+    }
+
+    /// <summary>Data plugins from the plugins folder next to the settings, loaded at start and on Reload.</summary>
+    public static List<Plugin> Plugins { get; private set; } = [];
+    public static List<RejectedPlugin> RejectedPlugins { get; private set; } = [];
+
+    public static void RememberCommand(string title)
+    {
+        Settings.AddRecentCommand(title);
+        SaveSettings();
+    }
+
+    public static void LoadPlugins()
+    {
+        try { (Plugins, RejectedPlugins) = PluginLoader.LoadAll(PluginLoader.DefaultFolder); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { (Plugins, RejectedPlugins) = ([], [new(PluginLoader.DefaultFolder, ex.Message)]); }
     }
 
     /// <summary>Keeps the file's current content in the project's .history (opened and saved files pass through here).</summary>

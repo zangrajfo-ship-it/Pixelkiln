@@ -1,6 +1,6 @@
 # ADR-0002: Vtičniki so samo podatki
 
-**Status:** sprejeto (odločitev lastnika, 19. 10. 2026)
+**Status:** sprejeto (odločitev lastnika, 19. 10. 2026), izvedeno v Fazi 9 (`PluginLoader`, `docs/plugins.md`)
 
 ## Kontekst
 .NET (Core in novejši) nima več izolacije kode znotraj procesa (AppDomain, CAS). Vtičnik v obliki DLL bi dobil vse pravice aplikacije in uporabnika. Ločen proces bi bil varen, a precej dela za osebno orodje.

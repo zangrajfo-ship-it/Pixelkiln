@@ -127,3 +127,11 @@ Lastnik je dovolil izvedbo vseh faz brez ustavljanja. Po vsaki fazi: build, test
 - **Generatorji s semenom** (`Rng` SplitMix64; seme je število ali beseda): sprajt (zrcaljen, iz palete, obroba), ploščice (Noise, Bricks, Grass, Stones, brezšivne, različice), postavitev mape (jama s celičnim avtomatom, platforme s prepadi in lebdečimi ploščadmi; z izbranim terenom se robovi samodejno zapolnijo). Meniji: Sprite → Edit → Generate sprite, Tilemap → Tileset → Generate tileset, Edit → Generate layout. Vse z undo.
 - **Testi:** 126/126 (History 3: beleženje, deduplikacija, obnova, ponovno nalaganje, meje, pokvarjen objekt, razlike; Procedural 2: ponovljivost in oblika). Smoke odpre zgodovino in preveri `.history/index.json`.
 - **Ni ročno preizkušeno:** videz generatorjev (kakovost je okus; logika in ponovljivost sta testirani).
+
+## Faza 9: paleta ukazov in deklarativni vtičniki (končana)
+- **Paleta ukazov** vsebuje ukaze vseh zavihkov z enotnimi naslovi (»Sprite › Edit › Flip horizontally«; ukaz najprej preklopi zavihek), skupne menije, zavihke, sredstva in prispevke vtičnikov. Nazadnje uporabljeni ukazi so na vrhu (`Settings.RecentCommands`).
+- **Popravek dostopnosti:** vrstice palete so bralnikom zaslona sporočale »System.Windows.Controls.DockPanel«; ime je zdaj na samem elementu seznama (ugotovil smoke test).
+- **Vtičniki** po ADR-0002: `PluginLoader` (strogo preverjanje sheme, neznani ključi so napaka, `apiVersion` = 1, `id` = ime mape, omejitev 1 MB, podvojeni `id`), prispevki: palete, prednastavitve generatorjev, izvozni profili, makri (preverjeni naslovi, brez gnezdenja). Okno Options → Plugins (naloženi, zavrnjeni z razlogom, namestitev iz mape, ponovno nalaganje, odpiranje mape).
+- **Vzorec:** `samples/plugins/retro-pack` (16-barvna paleta, trije generatorji, Godot profil, makro). **Dokumentacija:** `docs/plugins.md`.
+- **Testi:** 128/128 (Plugin 2: vzorec z vsemi prispevki in namestitvijo, osem vrst zavrnitev). Smoke namesti vzorec v začasni dom in v paleti najde makro, ukaz drugega zavihka in generator.
+- **Smoke skripta:** pomožna funkcija `Find-MenuItem` s ponovnimi poskusi (meniji se odpirajo asinhrono).
