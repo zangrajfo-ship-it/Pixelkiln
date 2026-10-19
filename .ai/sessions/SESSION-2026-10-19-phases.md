@@ -69,3 +69,22 @@ Lastnik je dovolil izvedbo vseh faz brez ustavljanja. Po vsaki fazi: build, test
 - **Testi:** 100/100 (Character 2, Keyframe 1, Palette 1, Tileset 2, Autotile47 3, CharacterExport 1); smoke OK s 5 zavihki.
 - **Ni ročno preizkušeno:** risanje škatel in predloga stanj v Character Studiu, Palette studio na pravih sprajtih (logika je pokrita s testi Core).
 - **Odloženo:** ločeni deli telesa (potreben skeletni model).
+
+## Faza 4: kolizije, prizori in stopnje (končana)
+- **Kolizije:**
+  - `.pxm` v5: kolizija po ploščici tileseta (pravokotnik, enosmerna platforma, kategorija);
+  - Tilemap → Tileset: polna, enosmerna, poljubna škatla, brisanje; oznake na tilesetu (rdeča polna, modra enosmerna);
+  - Project → Project settings: ločljivost igre, velikost ploščice, imena kategorij 0–7 in simetrična matrika trkov (`CollisionMasks`);
+  - izvoz Tiled TMJ doda `tiles[].objectgroup` (oblika, kot jo zapiše Tilednov urejevalnik kolizij); obstoječa polja nespremenjena.
+- **Scene & Level Studio** (zavihek Scene, `.pxscene` v1):
+  - plasti Tilemap, Image (paralaksa, odmik, ponavljanje), Objects; vrstni red, skrivanje, brisanje;
+  - postavljanje sprajtov in likov (izhodišče lika, animacija, zrcaljenje, Z, lastnosti), poravnava na ploščice (Shift izklopi);
+  - gibalne sledi (`KeyframeTrack`) za premikajoče se objekte, predvajanje animacij na platnu;
+  - območja Trigger, Checkpoint, Spawn, Camera, Kill; začetek kamere v velikosti igre;
+  - ime stopnje, vrstni red, glasba, ozadje, velikost (objekti ostanejo);
+  - Check scene (`SceneCheck`): manjkajoča sredstva, objekti zunaj prizora, brez spawna ali igralca, spawn/checkpoint v trdni ploščici, trdna škatla lika v steni;
+  - povratne reference: prizor je med uporabniki svojih sredstev.
+- **Testi:** 107/107 (Scene 3, Collision 2, SceneAssets 2); smoke OK s 6 zavihki.
+- **Ni ročno preizkušeno:** delo z miško na platnu prizora, okno nastavitev projekta (logika trkov je pokrita s testi Core).
+- **Odstopanje:** zlatih primerkov `.pxm` v4/v5 ni (tudi Faza 3 ga ni dodala); regresijo pokrivata krožni test in test različice. Dodam v Fazi 10.
+- **Odloženo v Fazo 6:** predogled igre (F5) iz prizora.

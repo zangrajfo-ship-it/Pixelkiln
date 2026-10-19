@@ -12,7 +12,7 @@ namespace PixelForge.App;
 public partial class MainWindow : Window
 {
     // order = autosave file index; new editors are appended, whatever their tab position
-    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd];
+    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd];
 
     TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed);
     IEditor? Current => (Tabs?.SelectedItem as TabItem)?.Content as IEditor;   // SelectedContent lags behind SelectionChanged
@@ -100,6 +100,7 @@ public partial class MainWindow : Window
             Ui.Item("_Close project", null, ProjectCommands.Close, open),
             new Separator(),
             Ui.Item("C_heck project…", null, () => { if (App.Project is { } p) HealthWindow.Show(this, p); }, open),
+            Ui.Item("Project _settings and collisions…", null, () => { if (App.Project is { } p) ProjectSettingsWindow.Show(this, p); }, open),
             Ui.Item("_Palette studio…", null, () =>
             {
                 if (App.Project is { } p)
@@ -161,6 +162,7 @@ public partial class MainWindow : Window
             AssetType.Song => MusicEd,
             AssetType.Sound => SfxEd,
             AssetType.Character => CharEd,
+            AssetType.Scene => SceneEd,
             _ => null,
         };
         if (a.Type == AssetType.Palette)

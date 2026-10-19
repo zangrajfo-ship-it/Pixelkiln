@@ -22,7 +22,7 @@ Slikovne pike so `uint` ARGB (`0xAARRGGBB`), vrstica za vrstico, kodirane v base
 ## `.pxm`: zemljevid (`Tilemap.Serialize`)
 | Polje | Od | Opis |
 |---|---|---|
-| `Version` | v1 | trenutno 3 |
+| `Version` | v1 | trenutno 5 |
 | `Width`, `Height`, `TileSize` | v1 | ploščice; 1–1024, velikost 1–256 |
 | `TilesetSource` | v1 | absolutna pot vira ali `null` (samo za »Reload«) |
 | `TilesetWidth`, `TilesetHeight`, `TilesetPixels` | v1 | vgrajena kopija tileseta (base64) ali `null` |
@@ -30,6 +30,25 @@ Slikovne pike so `uint` ARGB (`0xAARRGGBB`), vrstica za vrstico, kodirane v base
 | `Objects[]` | v2 | `Id`, `Name`, `Type`, `X`, `Y`, `W`, `H` v pikah; `W=H=0` je točka |
 | `Terrains[]` | v2 | indeks zgornje leve ploščice bloka 4×4 (`Autotile`) |
 | `TilesetAssetId` | v3 | GUID sredstva tileseta v projektu ali `null`; vgrajene pike ostanejo kot rezerva |
+| `TerrainRules[]` | v4 | `Base`, `Mode` (`Blob16`/`Blob47`), `Variants[]` (naključne različice polne ploščice); v2/v3 `Terrains` se prebere kot Blob16 |
+| `TileCollisions[]` | v5 | `Tile`, `X`, `Y`, `W`, `H` (v ploščici), `OneWay`, `Category` (0–31); pravokotnik mora biti znotraj ploščice |
+
+## `.pxchar`: lik (`Character`)
+v1. `Kind` (Player, Enemy, Npc, Item), `SpriteAssetId`, `Animations{stanje → oznaka sprajta}`, `OriginX/Y`, `Facing`, `Boxes[]` (`Kind` Hurt/Hit/Solid/Trigger, `State`, `Frame` ali `null` za vse, `X`, `Y`, `W`, `H`, `Category`), `Properties{}`. Enumi kot besedilo.
+
+## `.pxscene`: prizor (`Scene`)
+| Polje | Od | Opis |
+|---|---|---|
+| `Version` | v1 | trenutno 1 |
+| `Width`, `Height`, `Background` | v1 | velikost v pikah (16–65536), barva ARGB |
+| `Level`, `Order` | v1 | ime stopnje in vrstni red v igri |
+| `CameraX`, `CameraY` | v1 | začetek kamere (velikost pogleda = `TargetWidth/Height` projekta) |
+| `MusicAssetId` | v1 | pesem ali `null` |
+| `Layers[]` | v1 | `Id`, `Name`, `Kind` (Tilemap, Image, Instances), `AssetId`, `ParallaxX/Y`, `OffsetX/Y`, `RepeatX`, `Visible`; prva je zadaj, vsaj ena |
+| `Instances[]` | v1 | `Id`, `Name`, `AssetId` (sprajt ali lik), `LayerId`, `X`, `Y` (izhodišče), `Animation`, `FlipX`, `Z`, `Track` (`KeyframeTrack`: `Keys[]` čas, položaj, merilo, rotacija, prosojnost, `Easing`; `Loop`), `Properties{}` |
+| `Areas[]` | v1 | `Id`, `Kind` (Trigger, Checkpoint, Spawn, Camera, Kill), `Name`, `X`, `Y`, `W`, `H` (≥ 1), `Properties{}` |
+
+Podvojeni ID-ji in prizor brez plasti se zavrnejo. Reference so samo ID-ji sredstev, zato preimenovanje in premik ne pokvarita prizora.
 
 ## `.pxs`: pesem (`Song.Serialize`)
 | Polje | Od | Opis |
@@ -50,7 +69,7 @@ v1: objekt `Sfx` brez polja `Version`. v2 (trenutno): enaka polja + `"Version": 
 |---|---|---|
 | `Version` | v1 | shema manifesta |
 | `Id`, `Name` | v1 | GUID projekta, ime |
-| `Settings` | v1 | `TargetWidth`, `TargetHeight`, `TileSize`, `CollisionCategories{bit → ime}` |
+| `Settings` | v1 | `TargetWidth`, `TargetHeight`, `TileSize`, `CollisionCategories{bit → ime}`, `CollisionMasks{bit → maska}` (manjka = trči z vsem; trk velja, ko ga dovolita obe strani) |
 | `Assets[]` | v1 | `Id` (GUID, stabilen), `Type` (besedilo enuma `AssetType`), `Path` (relativna, ne sme iz mape), `Tags[]`, `Favorite` |
 
 Odstranjena sredstva gredo v `.trash/`. Mape `.history`, `.trash` in `export` niso sredstva.
