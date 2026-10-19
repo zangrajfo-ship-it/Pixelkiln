@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "Kind": "Player",
+  "SpriteAssetId": "11111111-1111-1111-1111-111111111111",
+  "Animations": {
+    "idle": "idle",
+    "run": "walk"
+  },
+  "OriginX": 4,
+  "OriginY": 8,
+  "Facing": "Left",
+  "Boxes": [
+    {
+      "Kind": "Solid",
+      "State": null,
+      "Frame": null,
+      "X": 2,
+      "Y": 0,
+      "W": 4,
+      "H": 8,
+      "Category": 1
+    },
+    {
+      "Kind": "Hit",
+      "State": "run",
+      "Frame": 1,
+      "X": 6,
+      "Y": 2,
+      "W": 3,
+      "H": 3,
+      "Category": 0
+    }
+  ],
+  "Properties": {
+    "speed": "120"
+  }
+}

@@ -13,7 +13,7 @@ public partial class TilemapEditor : UserControl
     static readonly int[] ZoomLevels = [1, 2, 3, 4, 6, 8];
 
     Tilemap _map = new(20, 15, 16);
-    readonly History<Tilemap> _history = new(m => m.Clone(), App.Settings.UndoLimit);
+    readonly History<Tilemap> _history = new(m => m.Clone(), App.Settings.UndoLimit, m => 4L * m.Width * m.Height * m.Layers.Count);
     int _layer, _zoom = 2;
     string? _path;
     bool _dirty;

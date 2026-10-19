@@ -135,3 +135,17 @@ Lastnik je dovolil izvedbo vseh faz brez ustavljanja. Po vsaki fazi: build, test
 - **Vzorec:** `samples/plugins/retro-pack` (16-barvna paleta, trije generatorji, Godot profil, makro). **Dokumentacija:** `docs/plugins.md`.
 - **Testi:** 128/128 (Plugin 2: vzorec z vsemi prispevki in namestitvijo, osem vrst zavrnitev). Smoke namesti vzorec v začasni dom in v paleti najde makro, ukaz drugega zavihka in generator.
 - **Smoke skripta:** pomožna funkcija `Find-MenuItem` s ponovnimi poskusi (meniji se odpirajo asinhrono).
+
+## Faza 10: stabilizacija in dokumentacija (končana)
+- **Zlati primerki** za formate iz Faz 3–5 (`Fixtures/current`: `.pxm` v5, `.pxchar` v1, `.pxscene` v1, `.pxmix` v1) s testi branja; zapiše jih `WriteCurrentFixtures` (samo namerno). Odstopanje iz Faze 4 je s tem zaprto. Smoke kopira samo zgornjo raven primerkov.
+- **Obremenitveni testi** (`Category=Load`): sprajt 1024² s štirimi plastmi, undo velikega sprajta, projekt s 5000 sredstvi (nalaganje < 1 s, iskanje < 100 ms), pogled igre s 500 objekti.
+- **Najdeno in popravljeno:**
+  - undo je hranil cele kopije brez omejitve pomnilnika (sprajt 512×512 z 32 sličicami = 32 MB na korak); `History` ima zdaj proračun (512 MB za sprajte in mape, najnovejši korak vedno ostane);
+  - pogled igre s 500 objekti je trajal 157 ms na sličico (preverjanje časa datoteke in sestavljanje sličice za vsak objekt); zdaj spomin na sličico in izpust objektov zunaj pogleda, pod 100 ms.
+- **Dokumentacija:** `README.md`, `current.md` (končno stanje), opomba o odstopanjih v `target.md`, statusa ADR-0002 in ADR-0003.
+- **Končno preverjanje:** Debug in Release build brez opozoril, 137/137 testov, smoke OK (7 zavihkov, predogled igre, paleta ukazov z vtičnikom, zgodovina, izvoz). Koda nima omrežnih klicev, nalaganja kode ali uporabniških identitet.
+
+## Odprto po vseh fazah
+- Izvoz Godot 4 ni preizkušen v pravem Godotu (ni nameščen).
+- Ročno nepreizkušeno: delo z miško v urejevalnikih prizora, likov in časovnici zvoka, poslušanje, igranje predogleda s tipkovnico.
+- Odloženo: ločeni deli telesa likov (skeletni model), skaliranje in vrtenje sledi v predogledu igre, zlivanje korakov undo pri drsnikih.

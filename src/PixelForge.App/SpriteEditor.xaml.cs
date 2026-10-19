@@ -13,7 +13,7 @@ public partial class SpriteEditor : UserControl
     static readonly int[] ZoomLevels = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64];
 
     Sprite _sprite = new(App.Settings.DefaultSpriteWidth, App.Settings.DefaultSpriteHeight);
-    readonly History<Sprite> _history = new(s => s.Clone(), App.Settings.UndoLimit);
+    readonly History<Sprite> _history = new(s => s.Clone(), App.Settings.UndoLimit, s => 4L * s.Width * s.Height * s.Layers.Count * s.Frames.Count);
     int _layer, _frame, _zoom = 16;
     uint _primary = 0xFF000000, _secondary = 0;
     bool _editSecondary;   // which color the picker edits

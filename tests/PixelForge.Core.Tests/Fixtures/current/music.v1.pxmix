@@ -1,0 +1,36 @@
+{
+  "Version": 1,
+  "MasterVolume": 0.8,
+  "LoopStartMs": 500,
+  "LoopEndMs": 2500,
+  "Tracks": [
+    {
+      "Id": "bbde8133-aad4-4b2c-9f22-fb214e3eff84",
+      "Name": "Music",
+      "Volume": 1,
+      "Mute": false,
+      "Solo": false,
+      "Clips": [
+        {
+          "Id": "26253630-bc3b-4180-b949-ee846fe5011a",
+          "AssetId": "44444444-4444-4444-4444-444444444444",
+          "StartMs": 250,
+          "OffsetMs": 100,
+          "LengthMs": 900,
+          "Gain": 0.7,
+          "FadeInMs": 20,
+          "FadeOutMs": 50,
+          "Repeat": 3
+        }
+      ]
+    },
+    {
+      "Id": "323619a8-0063-409f-9e60-fd69a7e4a97c",
+      "Name": "Effects",
+      "Volume": 1,
+      "Mute": true,
+      "Solo": false,
+      "Clips": []
+    }
+  ]
+}

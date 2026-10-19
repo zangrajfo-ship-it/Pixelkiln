@@ -7,6 +7,10 @@ public static class SceneRenderer
     {
         var o = new uint[w * h];
         Array.Fill(o, s.Background | 0xFF000000);
+        // per-frame memo: many objects share an asset; a file-time check and a flatten per object would cost a frame
+        var looks = new Dictionary<(Guid, string?), InstanceLook?>();
+        var flat = new Dictionary<(Sprite, int), uint[]>();
+        InstanceLook? Look(SceneInstance i) => looks.TryGetValue((i.AssetId, i.Animation), out var l) ? l : looks[(i.AssetId, i.Animation)] = a.Look(i);
         foreach (var l in s.Layers.Where(l => l.Visible))
         {
             int lx = l.OffsetX - (int)Math.Round(camX * l.ParallaxX), ly = l.OffsetY - (int)Math.Round(camY * l.ParallaxY);
@@ -23,13 +27,15 @@ public static class SceneRenderer
                 case SceneLayerKind.Instances:
                     foreach (var i in s.InstancesOf(l.Id).OrderBy(i => i.Z))
                     {
-                        if (a.Look(i) is not { } look) continue;
+                        if (Look(i) is not { } look) continue;
                         // ponytail: tracks move and fade objects here; scale and rotation are shown only in the editor
                         var pose = i.Track?.Sample(timeMs) ?? new Keyframe(0);
-                        int f = SceneAssets.FrameAt(look.Sprite, look.From, look.To, timeMs);
                         int ox = i.FlipX ? look.Sprite.Width - look.OriginX : look.OriginX;
-                        Blit(o, w, h, Compositor.Flatten(look.Sprite, f), look.Sprite.Width, look.Sprite.Height,
-                            (int)Math.Round(i.X + pose.X) - ox + lx - l.OffsetX, (int)Math.Round(i.Y + pose.Y) - look.OriginY + ly - l.OffsetY, i.FlipX, pose.Opacity);
+                        int dx = (int)Math.Round(i.X + pose.X) - ox + lx - l.OffsetX, dy = (int)Math.Round(i.Y + pose.Y) - look.OriginY + ly - l.OffsetY;
+                        if (dx >= w || dy >= h || dx + look.Sprite.Width <= 0 || dy + look.Sprite.Height <= 0) continue;   // off screen
+                        int f = SceneAssets.FrameAt(look.Sprite, look.From, look.To, timeMs);
+                        if (!flat.TryGetValue((look.Sprite, f), out var px)) flat[(look.Sprite, f)] = px = Compositor.Flatten(look.Sprite, f);
+                        Blit(o, w, h, px, look.Sprite.Width, look.Sprite.Height, dx, dy, i.FlipX, pose.Opacity);
                     }
                     break;
             }
@@ -39,7 +45,7 @@ public static class SceneRenderer
         foreach (var c in colliders ?? []) Outline(o, w, h, c.X - camX, c.Y - camY, c.W, c.H, c.OneWay ? 0xFF33AAFF : 0xFFFF3333);
         foreach (var ar in s.Areas) Outline(o, w, h, ar.X - camX, ar.Y - camY, ar.W, ar.H, AreaColor(ar.Kind));
         foreach (var i in s.Instances)
-            if (a.Look(i) is { Character: { } ch } look)
+            if (Look(i) is { Character: { } ch } look)
                 foreach (var b in ch.BoxesAt(i.Animation ?? ch.Animations.Keys.FirstOrDefault(), 0))
                 {
                     int bx = i.FlipX ? look.OriginX - b.X - b.W : b.X - look.OriginX;

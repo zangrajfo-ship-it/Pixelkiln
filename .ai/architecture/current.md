@@ -1,64 +1,50 @@
-# Trenutna arhitektura (stanje 19. 10. 2026, commit 9144477 + Faza 0)
+# Trenutna arhitektura (stanje po Fazi 10, 19. 10. 2026)
 
-Diagram vsebuje samo dejanske tipe iz `src/`. Puščica pomeni »uporablja«.
+Diagram vsebuje samo dejanske tipe iz `src/`. Puščica pomeni »uporablja«. Starejše stanje (pred Fazo 1) je v zgodovini gita.
 
 ```mermaid
 graph LR
   subgraph App[PixelForge.App - WPF]
-    MainWindow -->|IEditor| SpriteEditor
-    MainWindow -->|IEditor| TilemapEditor
-    MainWindow -->|IEditor| MusicEditor
-    MainWindow -->|IEditor| SfxEditor
-    MainWindow --> HelpWindow
-    MainWindow --> PreferencesWindow
-    MainWindow --> AudioOut
-    SpriteEditor --> ColorPicker
-    SpriteEditor --> PreviewWindow
-    MusicEditor --> StepGrid
-    MusicEditor --> AudioOut
-    SfxEditor --> AudioOut
-    Ui[Ui helpers]
+    MainWindow -->|IEditor| SpriteEditor & CharacterEditor & TilemapEditor & SceneEditor & AudioStudio & MusicEditor & SfxEditor
+    MainWindow --> AssetBrowser & CommandPalette & PluginsWindow & ExportWindow & HistoryWindow & HealthWindow & ProjectSettingsWindow & PaletteStudio
+    SceneEditor --> GamePreview
+    AudioStudio & GamePreview & MusicEditor & SfxEditor & AssetBrowser --> AudioOut
   end
   subgraph Core[PixelForge.Core]
-    Sprite --- Layer & Frame & FrameTag
-    Compositor --> Sprite
-    Tools
-    PixelOps --> Sprite
-    Selection --> Tools
-    ProjectFile --> Sprite
-    SpriteSheet --> Compositor
-    GifWriter
-    PaletteIO
-    ColorUtil
-    ImageIO
-    Tilemap --- Tileset & MapLayer & MapObject
-    Autotile --> Tilemap
-    TiledExport --> Tilemap
-    Song --- Pattern & Instrument
-    SongStream --> Song
-    Synth --> SongStream
-    WavWriter
-    Sfx
-    Settings
+    Project --- AssetEntry & ProjectSettings
+    DocumentFile
+    Sprite & Tilemap & Song & Sfx & Character & Scene & Mix
+    AssetLoader & AssetInfo
+    SceneAssets & SceneCheck & SceneRenderer & Sandbox
+    AudioLibrary --> WavReader & Synth & AudioEdit
+    Exporter --> GodotExport & TiledExport & SpriteSheet & CharacterExport
+    VersionStore & VersionDiff
+    Procedural --> Rng
+    PluginLoader
     History
   end
-  SpriteEditor --> Sprite & Compositor & Tools & PixelOps & Selection & ProjectFile & SpriteSheet & GifWriter & PaletteIO & ImageIO & History
-  TilemapEditor --> Tilemap & Autotile & TiledExport & Tools & ImageIO & History
-  MusicEditor --> Song & SongStream & Synth & WavWriter & History
-  SfxEditor --> Sfx & WavWriter
-  MainWindow --> Settings
-  PreferencesWindow --> Settings
-  ColorPicker --> ColorUtil
-  AudioOut --> SongStream
+  MainWindow --> Project & PluginLoader
+  AssetBrowser --> Project & AssetInfo & VersionStore
+  SceneEditor --> Scene & SceneAssets & SceneCheck
+  GamePreview --> Sandbox & AudioLibrary
+  AudioStudio --> Mix & AudioLibrary
+  ExportWindow --> Exporter
+  HistoryWindow --> VersionStore & VersionDiff
+  SpriteEditor & TilemapEditor --> Procedural
+  Sprite & Tilemap & Song & Sfx & Character & Scene & Mix & Project --> DocumentFile
 ```
 
 ## Ključne lastnosti
-- **En dokument na zavihek.** Projekta in referenc med datotekami ni; tileset je v `.pxm` kopiran.
-- **Undo:** `History<T>` hrani cele kopije dokumenta (meja `Settings.UndoLimit`).
-- **Zvok:** en `AudioOut` (NAudio `WaveOutEvent`) meša pesem (`SongStream`) in kratke zvoke.
-- **Nastavitve:** statični `App.Settings`, sprememba sproži `App.SettingsChanged`.
-- **Samodejno shranjevanje:** `MainWindow` vsakih N minut piše `%AppData%\PixelForge\autosave\<indeks><končnica>`. Ob zagonu ponudi obnovitev.
-- **Bližnjice:** `MainWindow.OnPreviewKeyDown` → `IEditor.HandleKey`, razen kadar tipko potrebuje kontrolnik (`ControlOwnsKey`).
+- **Projekt** (`.pfproj`, ADR-0001): sredstva s stalnimi GUID, relativne poti, reference med sredstvi samo prek ID. Brez projekta zavihki delujejo kot samostojni urejevalniki datotek.
+- **Formati:** vsak ima `Version`, migracijo in zlati primerek (`tests/.../Fixtures`, `Fixtures/current`). Shranjevanje je atomično (`DocumentFile`), ob migraciji `.v<n>.bak`.
+- **Undo:** `History<T>` hrani kopije; za sprajte in mape velja še pomnilniški proračun (privzeto 512 MB, najnovejši korak ostane).
+- **Zgodovina različic** (ADR-0003): `.history` v projektu, beleži se ob odpiranju in shranjevanju.
+- **Zvok:** en `AudioOut` (NAudio) meša pesem, kratke zvoke in posnetek z zanko in položajem (Audio studio, predogled igre).
+- **Predogled igre:** `Sandbox` dela na kopiji prizora; `SceneRenderer` riše v ločljivosti igre.
+- **Izvoz:** `Exporter` gradi datoteke v pomnilniku, zamenja izhodno mapo v enem koraku; profila Generic in Godot 4.
+- **Vtičniki** (ADR-0002): samo podatki, strogo preverjeni; ukazi v paleti ukazov.
+- **Nastavitve in samodejno shranjevanje:** `%AppData%\PixelForge` ali `PIXELFORGE_HOME`.
 
-## Znan tehnični dolg
-Glej poročilo Faze 0 v `../sessions/SESSION-2026-10-19-phase0.md`.
+## Preverjanje
+- `dotnet test`: enotski, regresijski (zlati primerki) in obremenitveni testi (`Category=Load`).
+- `tools/smoke.ps1`: zažene aplikacijo v ločenem domu, obišče vse zavihke, odpre predogled igre, paleto ukazov, zgodovino in izvozi projekt.

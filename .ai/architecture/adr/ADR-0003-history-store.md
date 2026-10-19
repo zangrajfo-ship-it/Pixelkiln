@@ -1,6 +1,6 @@
 # ADR-0003: Zgodovina različic v mapi `.history`
 
-**Status:** sprejeto (odločitev lastnika, 19. 10. 2026), izvedba v Fazi 8
+**Status:** sprejeto (odločitev lastnika, 19. 10. 2026), izvedeno v Fazi 8 (`VersionStore`; meje v `.pfproj`: `HistoryMaxVersions`, `HistoryMaxMegabytes`)
 
 ## Kontekst
 Uporabnik želi primerjati in obnavljati starejše različice sredstev, brez git-a in brez nenadzorovane porabe prostora.
