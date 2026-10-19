@@ -36,6 +36,14 @@ static class HelpWindow
             ("Space", "Play animation (the chosen tag only)"), ("← →", "Previous / next frame"),
             ("Palette: Enter / Shift+Enter / Del", "Use as left / right color, remove"),
         ]),
+        ("Sprite › Paint (Ctrl+2)", [
+            ("B N E A S I G", "Brush, pencil, eraser, airbrush, smudge, picker, gradient"),
+            ("Alt+click", "Pick a colour"), ("X", "Swap primary and secondary colour"),
+            ("[ / ]", "Smaller / larger brush"), ("M", "Paint on the layer mask (brush hides, eraser reveals)"),
+            ("Space+drag, middle drag", "Pan"), ("Ctrl+wheel, Ctrl+= / Ctrl+-", "Zoom"),
+            ("Pen", "Pressure sets size and/or opacity; the pen's eraser end erases"),
+            ("Ctrl+Shift+N / Ctrl+E", "New layer / export PNG"),
+        ]),
         ("Tilemap", [
             ("B E G I", "Paint, erase, fill, pick"), ("A", "Auto-tile terrain"), ("O", "Objects"),
             ("Shift (objects)", "Snap to tiles"), ("Del", "Delete selected object"),
