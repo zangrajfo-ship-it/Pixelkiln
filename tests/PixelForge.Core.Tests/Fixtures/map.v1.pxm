@@ -1,0 +1,24 @@
+{
+  "Version": 1,
+  "Width": 3,
+  "Height": 2,
+  "TileSize": 2,
+  "TilesetSource": null,
+  "TilesetWidth": 4,
+  "TilesetHeight": 2,
+  "TilesetPixels": "AAD//wAA////AAD//wAA/wAA//8AAP///wAA//8AAP8=",
+  "Layers": [
+    {
+      "Name": "Ground",
+      "Visible": true,
+      "Tiles": [
+        0,
+        1,
+        -1,
+        -1,
+        1,
+        0
+      ]
+    }
+  ]
+}
