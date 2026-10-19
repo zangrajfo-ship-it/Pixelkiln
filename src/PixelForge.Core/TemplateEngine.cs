@@ -217,7 +217,7 @@ public static class TemplateEngine
         {
             string asset = S("asset", "(generate)");
             if (asset is not ("" or "(generate)"))
-                return p.Assets.FirstOrDefault(x => x.Type is AssetType.Image or AssetType.Sprite && (x.Path == asset || x.Name == asset))
+                return p.Assets.FirstOrDefault(x => AssetLoader.IsPicture(x.Type) && (x.Path == asset || x.Name == asset))
                        ?? throw new InvalidDataException($"Tileset “{asset}” is not in the project.");
             if (!ColorUtil.TryParseHex(S("baseColor", "4A7A3A").TrimStart('#'), out uint baseColor)) throw new InvalidDataException($"Step “{_s.Id}”: baseColor must be RRGGBB.");
             var (px, w, h) = Procedural.Tiles(Seed(), I("tileSize", 16, 4, 128), PaletteTools.Ramp(baseColor | 0xFF000000),

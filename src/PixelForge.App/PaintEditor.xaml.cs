@@ -125,6 +125,7 @@ public partial class PaintEditor : UserControl, IEditor, IStyleSource, IToolSele
         CanvasHost.LayoutTransform = new ScaleTransform(_zoom, _zoom);
         RenderOptions.SetBitmapScalingMode(CanvasImage, _zoom >= 2 ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
         ZoomText.Text = $"{_zoom * 100:0} %";
+        Checker.Fill = Ui.CheckerBrush(_zoom);
         BrushRing.StrokeThickness = BrushRingDark.StrokeThickness = GradientLine.StrokeThickness = 1 / _zoom;
         _aids.Layout(_doc.Width, _doc.Height, 1, 1 / _zoom);
     }

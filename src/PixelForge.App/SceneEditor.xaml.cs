@@ -483,7 +483,7 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
             RepeatXBox.IsChecked = layer.RepeatX;
             RepeatXBox.IsEnabled = layer.Kind == SceneLayerKind.Image;
             LayerVisibleBox.IsChecked = layer.Visible;
-            var type = layer.Kind == SceneLayerKind.Tilemap ? new[] { AssetType.Tilemap } : [AssetType.Image, AssetType.Sprite];
+            var type = layer.Kind == SceneLayerKind.Tilemap ? new[] { AssetType.Tilemap } : [AssetType.Image, AssetType.Sprite, AssetType.Paint, AssetType.Vector];
             LayerAssetBox.IsEnabled = layer.Kind != SceneLayerKind.Instances;
             LayerAssetBox.ItemsSource = layer.Kind == SceneLayerKind.Instances ? null
                 : App.Project?.Assets.Where(a => type.Contains(a.Type)).OrderBy(a => a.Path).Select(a => new ComboBoxItem { Content = a.Path, Tag = a.Id }).ToList();
