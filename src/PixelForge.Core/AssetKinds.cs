@@ -62,6 +62,10 @@ public static class AssetKinds
         new(AssetType.Audio, [".wav"], p => WavReader.Load(p), p => $"WAV, {WavReader.Load(p).Length / (double)Synth.SampleRate:0.00} s"),
         new(AssetType.Paint, [".pxpaint"], p => PaintDoc.Load(p), p => PaintDoc.Load(p) is var d ? $"Painting {d.Width}×{d.Height} px, {Plural(d.Layers.Count, "layer")}" : "",
             (p, _) => PaintDoc.Load(p).Preview(512)),
+        new(AssetType.Vector, [".pxvec"], p => VectorDoc.Load(p), p => VectorDoc.Load(p) is var d ? $"Vector {d.Width:0.##}×{d.Height:0.##}, {Plural(d.Shapes.Count, "shape")}" : "",
+            (p, _) => VectorDoc.Load(p) is var d && Math.Max(d.Width, d.Height) is var longest && longest > 0
+                ? ((int)Math.Max(1, d.Width * 256 / longest), (int)Math.Max(1, d.Height * 256 / longest)) is var (w, h) ? (VectorGeometry.Rasterize(d, w, h), w, h) : null
+                : null),
         new(AssetType.Mix, [".pxmix"], p => Mix.Load(p), p => DescribeMix(Mix.Load(p)), null,
             p => Mix.Load(p).ReferencedAssets(),
             (p, map) =>

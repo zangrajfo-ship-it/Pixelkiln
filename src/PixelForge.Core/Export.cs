@@ -176,7 +176,7 @@ public static class Exporter
                 // assets only clash when their output files can (hero.pxf and hero.pxchar can share "hero")
                 string group = a.Type switch
                 {
-                    AssetType.Sprite or AssetType.Image => "picture", AssetType.Tilemap or AssetType.Scene => "scene", AssetType.Character => "character",
+                    AssetType.Sprite or AssetType.Image or AssetType.Paint or AssetType.Vector => "picture", AssetType.Tilemap or AssetType.Scene => "scene", AssetType.Character => "character",
                     AssetType.Palette => "palette", _ => "audio",
                 };
                 string name = stem;
@@ -212,10 +212,17 @@ public static class Exporter
                     else Add(b + ".json", SpriteSheet.Json(s, sheet, FileName(b + ".png"), a.Name));
                     break;
                 }
-                case AssetType.Image:
+                case AssetType.Image or AssetType.Paint:
                 {
                     var (px, w, h) = AssetLoader.LoadImage(path);
                     Add(b + ".png", ImageIO.EncodePng(px, w, h));
+                    break;
+                }
+                case AssetType.Vector:
+                {
+                    var (px, w, h) = AssetLoader.LoadImage(path);
+                    Add(b + ".png", ImageIO.EncodePng(px, w, h));
+                    Add(b + ".svg", Svg.Export(VectorDoc.Load(path)));   // engines that import SVG get the scalable original too
                     break;
                 }
                 case AssetType.Tilemap:
@@ -288,7 +295,7 @@ public static class Exporter
         {
             string? File(Guid? id) => id is Guid g && p.Find(g) is { } e ? Rel(b, _base[g] + e.Type switch
             {
-                AssetType.Sprite => ".json", AssetType.Image => ".png", AssetType.Tilemap => ".tmj", AssetType.Character => "_character.json", _ => ".wav",
+                AssetType.Sprite => ".json", AssetType.Image or AssetType.Paint or AssetType.Vector => ".png", AssetType.Tilemap => ".tmj", AssetType.Character => "_character.json", _ => ".wav",
             }) : null;
             return JsonSerializer.Serialize(new
             {

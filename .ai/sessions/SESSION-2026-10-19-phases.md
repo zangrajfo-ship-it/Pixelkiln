@@ -191,3 +191,15 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Popravki med delom:** zaklepanje prosojnosti je v prazne piksle pisalo nevidno barvo; drsniki so ob nalaganju XAML sprožili dogodek pred obstojem oznak (aplikacija se ni zagnala); prileganje pogledu pred postavitvijo je dalo 6 %.
 - **Ni ročno preizkušeno:** risanje z miško in pisalom (pritisk), občutek tekočnosti na 4096² v aplikaciji. Jedro je izmerjeno s testom; smoke ne more vleči miške, ne da bi premikal uporabnikov kazalec.
 - **Odstopanje od načrta:** nagib pisala se še ne uporablja (WPF ga sporoča le pri nekaterih gonilnikih).
+
+## Faza 14: Vector Studio (končana)
+- **Način Vector v zavihku Sprite** (Ctrl+3).
+- **`VectorDoc` (`.pxvec` v1):** poti iz Bezierjevih vozlišč z ročicami in več obrisi (luknje, even-odd), pravokotniki z zaobljenimi robovi, elipse, skupine; polnila in obrobe enobarvna, linearna ali radialna, prosojnost.
+- **`VectorGeometry`:** pretvorba v WPF geometrijo in nazaj (kvadratne krivulje v kubične, loki v daljice), logične operacije z `Geometry.Combine` (unija, presek, razlika, izključitev), poravnava in razporejanje, premik in skaliranje (z gradienti), mnogokotniki in zvezde, rasterizacija na STA niti (gladki ali ostri robovi za pixel art).
+- **`Svg`:** uvoz podmnožice s poročilom o izpuščenem (brez DTD in zunanjih entitet), izvoz.
+- **Urejevalnik:** izbor z okvirjem in Shift, premik in skaliranje z ročicami (Shift ohrani razmerje), vozlišča (vlečenje, ročice zrcaljene ali z Alt ločene, dvoklik gladko ali ostro, brisanje), pero (klik ogel, vlečenje krivulja, zapiranje na prvi točki), pravokotnik, elipsa, mnogokotnik ali zvezda, črta (Shift 45°), polnila in obrobe, prosojnost, spredaj ali zadaj, združevanje in razdruževanje, pretvorba v pot, podvajanje, ravnila in vodila (pripenjanje pri premikanju), kopiranje sloga.
+- **Izvoz:** SVG, PNG v več velikostih (posamezne datoteke ali en list), »To pixel art« v Pixel način; v izvoznem cevovodu PNG in SVG.
+- **Slike povsod:** `AssetLoader.LoadImage` bere tudi `.pxpaint` in `.pxvec`, zato delujejo kot sloj slike v prizoru, tileset in pri izvozu (Godot in Generic).
+- **Testi:** 169/169 (Vector 7: krožno shranjevanje, logične operacije po ploščini, poravnava, razporejanje, premik, skaliranje, SVG uvoz s transformacijami, gradienti, slogom in zavrnitvami, izvoz in ponovni uvoz, rasterizacija, risbe in slike v prizoru in izvozu). Smoke preveri način Vector.
+- **Popravki med delom:** SVG transformacije se niso zapekle v točke; »ostri robovi« so imeli polprosojne piksle (RenderTargetBitmap ne upošteva EdgeMode, zdaj prag); preslikava generičnega izvoza prizora bi slikam iz Paint in Vector dala končnico `.wav`; šahovnica prosojnosti se je večala s povečavo (tudi v Paint).
+- **Ni ročno preizkušeno:** risanje s peresom in urejanje vozlišč z miško, ročice skaliranja.

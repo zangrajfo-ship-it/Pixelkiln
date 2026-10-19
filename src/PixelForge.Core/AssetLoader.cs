@@ -6,12 +6,31 @@ public static class AssetLoader
     /// <summary>Loads the file to prove it is readable; throws a readable exception if not.</summary>
     public static void Probe(AssetType type, string path) => AssetKinds.Of(type).Probe(path);
 
-    /// <summary>A picture of an image or sprite file (sprite: first frame, all visible layers).</summary>
+    /// <summary>Asset types that can stand in for a picture (tilesets, scene image layers, exports).</summary>
+    public static bool IsPicture(AssetType t) => t is AssetType.Image or AssetType.Sprite or AssetType.Paint or AssetType.Vector;
+
+    /// <summary>
+    /// A picture of an image, sprite (first frame, all visible layers), painting (all visible layers) or vector drawing
+    /// (art board at 1 pixel per unit).
+    /// </summary>
     public static (uint[] Pixels, int Width, int Height) LoadImage(string path)
     {
-        if (!path.EndsWith(".pxf", StringComparison.OrdinalIgnoreCase)) return ImageIO.LoadImage(path);
-        var s = ProjectFile.Load(path);
-        return (Compositor.Flatten(s, 0), s.Width, s.Height);
+        switch (System.IO.Path.GetExtension(path).ToLowerInvariant())
+        {
+            case ".pxf":
+                var s = ProjectFile.Load(path);
+                return (Compositor.Flatten(s, 0), s.Width, s.Height);
+            case ".pxpaint":
+                var d = PaintDoc.Load(path);
+                return (d.Flatten(), d.Width, d.Height);
+            case ".pxvec":
+                var v = VectorDoc.Load(path);
+                int w = Math.Max(1, (int)Math.Ceiling(v.Width)), h = Math.Max(1, (int)Math.Ceiling(v.Height));
+                if ((long)w * h > 64L * 1024 * 1024) throw new InvalidDataException("The drawing is too large to use as a picture.");
+                return (VectorGeometry.Rasterize(v, w, h), w, h);
+            default:
+                return ImageIO.LoadImage(path);
+        }
     }
 
     /// <summary>

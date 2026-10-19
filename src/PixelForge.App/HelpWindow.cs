@@ -44,6 +44,14 @@ static class HelpWindow
             ("Pen", "Pressure sets size and/or opacity; the pen's eraser end erases"),
             ("Ctrl+Shift+N / Ctrl+E", "New layer / export PNG"),
         ]),
+        ("Sprite › Vector (Ctrl+3)", [
+            ("V A P R E Y L", "Select, nodes, pen, rectangle, ellipse, polygon, line"),
+            ("Shift+click / drag on empty space", "Add to selection / select with a box"),
+            ("Handles (Shift: keep ratio)", "Scale the selection"), ("Arrows / Shift+arrows", "Move by 1 / 10"),
+            ("Pen: click / drag / Enter", "Corner point / curve point / finish (click the first point to close)"),
+            ("Nodes: double-click / Alt+drag handle / Del", "Smooth or corner / move one handle / delete point"),
+            ("Ctrl+G / Ctrl+Shift+G / Ctrl+D", "Group / ungroup / duplicate"), ("Ctrl+Shift+] / [", "Bring to front / send to back"),
+        ]),
         ("Tilemap", [
             ("B E G I", "Paint, erase, fill, pick"), ("A", "Auto-tile terrain"), ("O", "Objects"),
             ("Shift (objects)", "Snap to tiles"), ("Del", "Delete selected object"),

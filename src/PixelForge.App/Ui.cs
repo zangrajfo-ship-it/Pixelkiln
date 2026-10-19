@@ -172,10 +172,11 @@ static class Ui
     }
 
     /// <summary>Transparency checkerboard from the preferences.</summary>
-    public static Brush CheckerBrush()
+    /// <summary>Transparency checkerboard; scale = the canvas zoom when the brush sits inside a zoomed canvas, so squares keep their screen size.</summary>
+    public static Brush CheckerBrush(double scale = 1)
     {
         var s = App.Settings;
-        double n = s.CheckerSize, d = n * 2;
+        double n = s.CheckerSize / scale, d = n * 2;
         var b = new DrawingBrush
         {
             TileMode = TileMode.Tile, Viewport = new Rect(0, 0, d, d), ViewportUnits = BrushMappingMode.Absolute,

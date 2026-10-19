@@ -121,3 +121,10 @@ Izvoz za Godot ni preverjen z dejanskim Godotom (ni nameščen); oblika sledi Go
 
 ## `.pxpaint`: slika za digitalno slikanje (`PaintDoc`, Faza 13)
 Zip: `manifest.json` (`Version` 1, `Width`, `Height` do 8192, `Layers[]`: `Id`, `Name`, `Visible`, `Opacity`, `Blend` = Normal, Multiply, Screen, Overlay, Add, Darken, Lighten, `AlphaLocked`, `HasMask`) in ploščice 256×256 kot PNG: `layers/<i>/<tx>_<ty>.png` (ARGB, prazne ploščice se ne zapišejo) in `layers/<i>/mask_<tx>_<ty>.png` (vrednost maske v alfa kanalu; manjkajoča ploščica maske pomeni vidno). Shranjevanje prek `.tmp`. Novejša različica se zavrne z razlogom.
+
+## `.pxvec`: vektorska risba (`VectorDoc`, Faza 14)
+JSON prek `DocumentFile`: `Version` 1, `Width`, `Height` (umetniška površina), `Shapes[]`. Oblika: `Id`, `Name`, `Kind` (Path, Rect, Ellipse, Group), `Contours[]` (`Nodes[]` z `X`, `Y`, `InX`, `InY`, `OutX`, `OutY`; `Closed`), `EvenOdd`, `X`, `Y`, `W`, `H`, `Radius` (Rect, Ellipse), `Fill` in `Stroke` (`Kind` Solid, Linear ali Radial, `Color`, `Stops[]` z `Offset` in `Color`, `X1`, `Y1`, `X2`, `Y2`, `R` v koordinatah risbe), `StrokeWidth`, `Opacity`, `Children[]` (Group). Podvojeni ID-ji, negativna debelina in prosojnost zunaj 0–1 se zavrnejo.
+
+**SVG:** uvoz podmnožice (path, rect, circle, ellipse, line, polyline, polygon, g in a s transformacijami, fill, stroke, opacity, fill-rule, linearni in radialni gradienti z `href`; brez DTD). Loki postanejo kratke daljice, nepodprti elementi so v poročilu. Izvoz zapiše poti, pravokotnike, elipse, skupine in gradiente v `defs`.
+
+**Slika:** slike, sprajti, `.pxpaint` in `.pxvec` se lahko uporabljajo povsod, kjer je potrebna slika (sloj slike v prizoru, tileset, izvoz PNG; vektor še SVG).
