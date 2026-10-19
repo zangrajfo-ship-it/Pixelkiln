@@ -39,6 +39,7 @@ static class HelpWindow
             ("V I A C", "Select, place object, draw area, set camera start"),
             ("Arrows / Shift+arrows", "Move selection by 1 px / one tile"), ("Shift (drag)", "Ignore tile snapping"),
             ("Del", "Delete selected object or area"), ("Space", "Play animations and movement tracks"),
+            ("F5", "Game preview: ←→ move, Space jump, R reset, H hitboxes, M mute, P pause"),
             ("Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / fit"),
         ]),
         ("Audio", [

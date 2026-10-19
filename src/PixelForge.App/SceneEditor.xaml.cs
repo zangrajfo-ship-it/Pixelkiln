@@ -704,6 +704,16 @@ public partial class SceneEditor : UserControl, IEditor
         Rebuild();
     }
 
+    void OnGamePreview(object sender, RoutedEventArgs e) => GamePreviewNow();
+
+    /// <summary>Plays the scene as it is now (unsaved edits included) in its own window.</summary>
+    void GamePreviewNow()
+    {
+        if (App.Project is not { } p) { Ui.Error(new InvalidOperationException("Open a project first.")); return; }
+        StopPlay();
+        GamePreview.Show(Window.GetWindow(this), _scene, p);
+    }
+
     void OnCheck(object? sender, RoutedEventArgs? e)
     {
         if (App.Project is not { } p) { Ui.Error(new InvalidOperationException("Open a project first.")); return; }
@@ -829,7 +839,8 @@ public partial class SceneEditor : UserControl, IEditor
             Ui.Item("_Fit to window", "Ctrl+0", ZoomFit),
             Ui.Toggle("_Snap to tiles", null, SnapToggle),
             new Separator(),
-            Ui.Item("_Play animations here", "Space", () => OnPlay(null, null))),
+            Ui.Item("_Play animations here", "Space", () => OnPlay(null, null)),
+            Ui.Item("_Game preview…", "F5", GamePreviewNow)),
     ];
 
     public void HandleKey(KeyEventArgs e)
@@ -859,6 +870,7 @@ public partial class SceneEditor : UserControl, IEditor
             case Key.Up: Nudge(0, -step); break;
             case Key.Down: Nudge(0, step); break;
             case Key.Space: OnPlay(null, null); break;
+            case Key.F5: GamePreviewNow(); break;
             default: e.Handled = false; break;
         }
     }

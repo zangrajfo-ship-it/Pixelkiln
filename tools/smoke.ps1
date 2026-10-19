@@ -66,6 +66,29 @@ try {
         Write-Host ("{0,-8} menus: {1}" -f $name, ($items -join ', '))
         if ($ShotDir) { New-Item -ItemType Directory -Force $ShotDir | Out-Null; Save-Shot $p.MainWindowHandle (Join-Path $ShotDir "$name.png") }
     }
+    # game preview opens from the Scene tab, renders and closes
+    $sceneTab = $tabs | Where-Object { $_.Current.Name -eq 'Scene' } | Select-Object -First 1
+    if ($sceneTab) {
+        $sceneTab.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+        Start-Sleep -Milliseconds 500
+        $btn = (Find-All $root ([System.Windows.Automation.ControlType]::Button)) | Where-Object { $_.Current.Name -like '*Game preview' } | Select-Object -First 1
+        if (-not $btn) { $failures += 'Game preview button missing' }
+        else {
+            $btn.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+            Start-Sleep 2
+            $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+            # an owned window shows up under the desktop or under its owner, depending on Windows version
+            $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
+            $preview = $wins | Where-Object { $_.Current.Name -like 'Game preview*' } | Select-Object -First 1
+            if (-not $preview) { Write-Host ("windows: " + (($wins | ForEach-Object { $_.Current.Name }) -join ' | ')) }
+            if (-not $preview) { $failures += 'game preview window did not open' }
+            else {
+                Write-Host "game preview: $($preview.Current.Name)"
+                $preview.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+                Start-Sleep -Milliseconds 500
+            }
+        }
+    }
     $p.CloseMainWindow() | Out-Null
     if (-not $p.WaitForExit(5000)) { $failures += 'app did not exit within 5 s after closing' }
 }

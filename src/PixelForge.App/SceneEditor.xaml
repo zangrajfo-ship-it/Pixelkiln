@@ -26,6 +26,7 @@
                 <Separator />
                 <CheckBox x:Name="SnapToggle" Content="Snap" IsChecked="True" ToolTip="Snap to the project's tile size (Shift while dragging = free)" />
                 <ToggleButton x:Name="PlayBtn" Content="▶ Play" Click="OnPlay" ToolTip="Animate sprites and movement tracks (Space)" />
+                <Button Content="▶ Game preview" Click="OnGamePreview" ToolTip="Play the scene with the player character (F5)" />
                 <Button Content="Check scene…" Click="OnCheck" ToolTip="Missing assets, objects outside, spawn points inside walls, overlaps" />
             </ToolBar>
         </ToolBarTray>

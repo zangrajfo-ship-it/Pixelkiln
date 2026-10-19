@@ -99,3 +99,13 @@ Lastnik je dovolil izvedbo vseh faz brez ustavljanja. Po vsaki fazi: build, test
 - **Viri:** `WavReader` zapre datoteko z `using`; predvajanje se ustavi ob menjavi zavihka.
 - **Testi:** 112/112 (Audio 5: WAV krožno in stereo/22 kHz, urejanje, mešanje z mute/solo/zanko, mešanica v sebi, predvajalni seznam v projektu); smoke OK s 7 zavihki.
 - **Ni ročno preizkušeno:** delo z miško na časovnici in poslušanje (zvok v smoke testu ni preverljiv).
+
+## Faza 6: Game Preview & Sandbox (končana)
+- **`SceneRenderer`** (Core): programski izris prizora skozi kamero v ločljivosti igre; paralaksa, ponavljanje slik, Z-vrstni red, animacije sprajtov, gibalne sledi (premik in prosojnost), zrcaljenje; prikaz hitboxov (trdne in enosmerne ploščice, območja, škatle likov).
+- **`Sandbox`** (Core): dela na kopiji prizora, vir ostane nespremenjen (test). Igralec je prvi lik vrste Player, začne na Spawn območju; gravitacija, hoja, skok (lastnosti lika `speed`, `jump`, `gravity`), trdne in enosmerne ploščice, checkpoint, Kill območje in padec iz prizora vrneta na checkpoint, Trigger sproži dogodek, kamera sledi in ostane v prizoru ali v Camera območju. Brez igralca puščice premikajo kamero.
+- **Okno predogleda** (Scene → Game preview, F5): ločljivost iz nastavitev projekta, celoštevilsko povečanje, glasba prizora (zanka iz mešanice), zvok sprožilca (lastnost `sound` = pot sredstva), R ponastavi, H hitboxi, M utišaj, P premor, Esc zapre. Stanje se sproti izpisuje (dostopnost: polite live region).
+- **Ponastavitev** vrne stanje ob odprtju predogleda (kopija ob zagonu), tudi če se prizor medtem ureja.
+- **Testi:** 116/116 (Sandbox 4: pristanek in hoja, checkpoint, Kill in ponastavitev, Spawn in enosmerne platforme, izris s paralakso in mešanjem). Smoke odpre in zapre predogled.
+- **Popravek med delom:** zaokroževanje telesa je skrivalo majhen pogrez, zato igralec ni ostal na tleh; telo je zdaj v realnih pikslih.
+- **Poenostavitev:** v predogledu sledi ne skalirajo in ne vrtijo (`ponytail:` v `SceneRenderer`); urejevalnik prizora to prikaže.
+- **Ni ročno preizkušeno:** igranje s tipkovnico in zvok.
