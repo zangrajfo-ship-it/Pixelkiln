@@ -88,3 +88,14 @@ Lastnik je dovolil izvedbo vseh faz brez ustavljanja. Po vsaki fazi: build, test
 - **Ni ročno preizkušeno:** delo z miško na platnu prizora, okno nastavitev projekta (logika trkov je pokrita s testi Core).
 - **Odstopanje:** zlatih primerkov `.pxm` v4/v5 ni (tudi Faza 3 ga ni dodala); regresijo pokrivata krožni test in test različice. Dodam v Fazi 10.
 - **Odloženo v Fazo 6:** predogled igre (F5) iz prizora.
+
+## Faza 5: Audio Studio (končana)
+- **Knjižnica:** vsa zvočna sredstva projekta (pesmi, zvoki, WAV, mešanice); nova tipa sredstev `Audio` (`.wav`) in `Mix` (`.pxmix` v1). Predogled tudi v brskalniku sredstev.
+- **Mešalnik** (zavihek Audio): sledi z glasnostjo, mute, solo; posnetki z rezom (preskoči, obdrži), ojačitvijo, fade in/out, ponovitvami; »Join to previous« s prečnim pojemanjem; razdelitev pri predvajalni glavi; valovna oblika na posnetku; pripenjanje na robove.
+- **Zanke:** območje zanke v mešanici (za glasbo v igri), predvajanje z zanko.
+- **Predvajalni seznami:** v nastavitvah projekta (vrstni red, zanka, naključni vrstni red v igri), predvajanje seznama.
+- **Sinhroniziran predogled:** predvajalna glava sledi dejanskemu položaju v `AudioOut` (nova pot `PlayClip`/`ClipPosition`), skok med predvajanjem.
+- **Izvoz WAV:** prek `.tmp`, dolžina natančna, opozorilo ob prekoračitvi vrha.
+- **Viri:** `WavReader` zapre datoteko z `using`; predvajanje se ustavi ob menjavi zavihka.
+- **Testi:** 112/112 (Audio 5: WAV krožno in stereo/22 kHz, urejanje, mešanje z mute/solo/zanko, mešanica v sebi, predvajalni seznam v projektu); smoke OK s 7 zavihki.
+- **Ni ročno preizkušeno:** delo z miško na časovnici in poslušanje (zvok v smoke testu ni preverljiv).

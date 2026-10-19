@@ -28,6 +28,9 @@
                 <TabItem Header="Scene">
                     <local:SceneEditor x:Name="SceneEd" />
                 </TabItem>
+                <TabItem Header="Audio">
+                    <local:AudioStudio x:Name="AudioEd" />
+                </TabItem>
                 <TabItem Header="Music">
                     <local:MusicEditor x:Name="MusicEd" />
                 </TabItem>

@@ -21,6 +21,8 @@ public static class AssetInfo
                 AssetType.Palette => $"{PaletteIO.Load(path).Count} colors",
                 AssetType.Character => Character(Core.Character.Load(path)),
                 AssetType.Scene => Scene(Core.Scene.Load(path)),
+                AssetType.Audio => $"WAV, {WavReader.Load(path).Length / (double)Synth.SampleRate:0.00} s",
+                AssetType.Mix => Mix(Core.Mix.Load(path)),
                 _ => type.ToString(),
             };
         }
@@ -43,6 +45,9 @@ public static class AssetInfo
         double seconds = s.Order.Count * s.Steps * s.StepSeconds;
         return $"{s.Bpm} BPM, {s.Patterns.Count} pattern{(s.Patterns.Count == 1 ? "" : "s")}, {(int)seconds / 60}:{(int)seconds % 60:00}";
     }
+
+    static string Mix(Mix m) =>
+        $"Mix, {m.Tracks.Count} tracks, {m.Tracks.Sum(t => t.Clips.Count)} clips{(m.LoopStartMs is int a ? $", loop {a / 1000.0:0.##}–{m.LoopEndMs / 1000.0:0.##} s" : "")}";
 
     static string Scene(Scene s) =>
         $"Scene {s.Width}×{s.Height} px{(s.Level.Length > 0 ? $", level {s.Level} #{s.Order}" : "")}, {s.Layers.Count} layers, {s.Instances.Count} instances, {s.Areas.Count} areas";

@@ -64,12 +64,26 @@ Podvojeni ID-ji in prizor brez plasti se zavrnejo. Reference so samo ID-ji sreds
 ## `.sfx`: zvočni učinek (`Sfx.Save`)
 v1: objekt `Sfx` brez polja `Version`. v2 (trenutno): enaka polja + `"Version": 2` na začetku, brez `Duration`. Polja: `Wave` (0 Square, 1 Saw, 2 Sine, 3 Noise), `Freq`, `Slide`, `DeltaSlide`, `VibratoDepth`, `VibratoSpeed`, `Duty`, `PitchJump`, `JumpTime`, `Attack`, `Sustain`, `Decay`, `LowPass`, `Volume`. Vse vrednosti se ob branju omejijo (`Sfx.Sanitized`).
 
+## `.pxmix`: zvočna mešanica (`Mix`)
+| Polje | Od | Opis |
+|---|---|---|
+| `Version` | v1 | trenutno 1 |
+| `MasterVolume` | v1 | 0–4 |
+| `LoopStartMs`, `LoopEndMs` | v1 | zanka za glasbo v igri; oba `null` ali konec > začetek |
+| `Tracks[]` | v1 | `Id`, `Name`, `Volume` (0–4), `Mute`, `Solo`, `Clips[]` |
+| `Clips[]` | v1 | `Id`, `AssetId` (Song, Sound, Audio, Mix), `StartMs`, `OffsetMs` + `LengthMs` (rez; `null` = do konca), `Gain` (0–8), `FadeInMs`, `FadeOutMs`, `Repeat` (1–1000) |
+
+Rez, pojemanje in združevanje so nedestruktivni: vir ostane nespremenjen. Mešanica, ki vsebuje samo sebe, se zavrne ob predvajanju.
+
+## `.wav` (sredstvo `Audio`)
+Bere se PCM 8/16/24/32 in float 32, poljubno število kanalov (povprečje v mono), pretvorba na 44.100 Hz, največ 10 minut. Izvoz: 16-bit PCM mono prek začasne datoteke.
+
 ## `.pfproj`: projekt (`Project`)
 | Polje | Od | Opis |
 |---|---|---|
 | `Version` | v1 | shema manifesta |
 | `Id`, `Name` | v1 | GUID projekta, ime |
-| `Settings` | v1 | `TargetWidth`, `TargetHeight`, `TileSize`, `CollisionCategories{bit → ime}`, `CollisionMasks{bit → maska}` (manjka = trči z vsem; trk velja, ko ga dovolita obe strani) |
+| `Settings` | v1 | `TargetWidth`, `TargetHeight`, `TileSize`, `CollisionCategories{bit → ime}`, `CollisionMasks{bit → maska}` (manjka = trči z vsem; trk velja, ko ga dovolita obe strani), `Playlists[]` (`Name`, `Items[]` ID-ji, `Loop`, `Shuffle`) |
 | `Assets[]` | v1 | `Id` (GUID, stabilen), `Type` (besedilo enuma `AssetType`), `Path` (relativna, ne sme iz mape), `Tags[]`, `Favorite` |
 
 Odstranjena sredstva gredo v `.trash/`. Mape `.history`, `.trash` in `export` niso sredstva.

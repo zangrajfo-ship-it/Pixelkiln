@@ -1,6 +1,6 @@
 # PixelForge: navodila za delo v projektu
 
-Namizno orodje za izdelavo vsebin za 2D igre: Sprite, Character, Tilemap, Scene, Music, SFX, s projektom in brskalnikom sredstev.
+Namizno orodje za izdelavo vsebin za 2D igre: Sprite, Character, Tilemap, Scene, Audio, Music, SFX, s projektom in brskalnikom sredstev.
 Ob začetku dela preberi še `AGENT.md`, zadnji zapis v `.ai/sessions/` in `.ai/architecture/`.
 
 ## Sklad
@@ -35,7 +35,7 @@ dotnet run --project src/PixelForge.App
 Zlate primerke v2 zapiše samo `PF_WRITE_FIXTURES=1 PF_FIXTURES_DIR=<pot do Fixtures> dotnet test --filter WriteV2Fixtures`, in to le ob namerni spremembi formata.
 
 ## Združljivost formatov (obvezno)
-- Formati: `.pfproj`, `.pxf`, `.pxm`, `.pxs`, `.sfx`, `.pxchar`, `.pxscene` (opis v `.ai/context/formats.md`). Vsaka datoteka ima `Version`.
+- Formati: `.pfproj`, `.pxf`, `.pxm`, `.pxs`, `.sfx`, `.pxchar`, `.pxscene`, `.pxmix` (opis v `.ai/context/formats.md`). Vsaka datoteka ima `Version`.
 - Nova polja so neobvezna s privzeto vrednostjo; stare različice se morajo naložiti.
 - Sprememba sheme: nova različica, migracija, zlati primerek v `Fixtures/` in test v `FormatRegressionTests`.
 - Obstoječih zlatih primerkov ne prepisuj.
