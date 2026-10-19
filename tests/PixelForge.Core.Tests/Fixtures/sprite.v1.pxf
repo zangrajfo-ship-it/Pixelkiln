@@ -1,0 +1,24 @@
+{
+  "Version": 1,
+  "Width": 2,
+  "Height": 2,
+  "Palette": [
+    4278190080,
+    4294901760,
+    4278190335
+  ],
+  "FrameDurations": [
+    100,
+    250
+  ],
+  "Layers": [
+    {
+      "Name": "Layer 1",
+      "Visible": true,
+      "Cels": [
+        "AAD//wAAAAAAAAAA/wAA/w==",
+        "/wAA//8AAP8AAP//AAD//w=="
+      ]
+    }
+  ]
+}

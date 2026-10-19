@@ -1,0 +1,73 @@
+{
+  "Version": 2,
+  "Width": 3,
+  "Height": 2,
+  "Palette": [
+    4278190080,
+    4280426548,
+    4282722364,
+    4284889393,
+    4287583803,
+    4292833574,
+    4292452454,
+    4293837722,
+    4294701622,
+    4288275792,
+    4285185584,
+    4281832558,
+    4283132207,
+    4283583268,
+    4281482297,
+    4282335092,
+    4281360514,
+    4284182241,
+    4284718079,
+    4284468708,
+    4291550204,
+    4294967295,
+    4288392631,
+    4286873223,
+    4285098602,
+    4284044882,
+    4285940362,
+    4289475122,
+    4292433763,
+    4292311994,
+    4287600458,
+    4287262512
+  ],
+  "FrameDurations": [
+    100,
+    100,
+    100
+  ],
+  "Layers": [
+    {
+      "Name": "Layer 1",
+      "Visible": true,
+      "Cels": [
+        "AAD//wAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      ],
+      "Opacity": 1
+    },
+    {
+      "Name": "fx",
+      "Visible": false,
+      "Cels": [
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAD/AAD/"
+      ],
+      "Opacity": 0.5
+    }
+  ],
+  "Tags": [
+    {
+      "Name": "walk",
+      "From": 1,
+      "To": 2
+    }
+  ]
+}

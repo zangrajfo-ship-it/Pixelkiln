@@ -1,0 +1,16 @@
+{
+  "Wave": 1,
+  "Freq": 523.0,
+  "Slide": -2.0,
+  "DeltaSlide": 0.0,
+  "VibratoDepth": 0.0,
+  "VibratoSpeed": 10.0,
+  "Duty": 0.5,
+  "PitchJump": 0.0,
+  "JumpTime": 0.1,
+  "Attack": 0.0,
+  "Sustain": 0.05,
+  "Decay": 0.2,
+  "LowPass": 1.0,
+  "Volume": 0.5
+}
