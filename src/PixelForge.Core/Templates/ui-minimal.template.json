@@ -1,0 +1,75 @@
+{
+  "apiVersion": 1,
+  "id": "ui-minimal",
+  "name": "UI kit: minimal",
+  "version": "1.0",
+  "kind": "Scene",
+  "primary": "ui",
+  "tags": [
+    "ui",
+    "menu",
+    "hud",
+    "minimal"
+  ],
+  "description": "Flat rounded interface with smooth edges and all standard screens.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "minimal"
+    },
+    {
+      "key": "screens",
+      "label": "Screens (commas)",
+      "default": "Title, Main menu, Settings, Level select, Victory, Game over, Dialog, Shop, Inventory, HUD"
+    },
+    {
+      "key": "width",
+      "label": "Design width",
+      "default": "320",
+      "options": [
+        "320",
+        "480",
+        "640",
+        "1280",
+        "1920"
+      ]
+    },
+    {
+      "key": "height",
+      "label": "Design height",
+      "default": "180",
+      "options": [
+        "180",
+        "270",
+        "360",
+        "720",
+        "1080"
+      ]
+    },
+    {
+      "key": "pixel",
+      "label": "Pixel-art edges",
+      "default": "true",
+      "options": [
+        "true",
+        "false"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "ui",
+      "type": "ui",
+      "name": "{name} ui",
+      "core": true,
+      "settings": {
+        "style": "Minimal",
+        "screens": "{screens}",
+        "width": "{width}",
+        "height": "{height}",
+        "pixel": "{pixel}"
+      }
+    }
+  ]
+}

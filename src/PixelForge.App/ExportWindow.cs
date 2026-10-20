@@ -27,6 +27,7 @@ static class ExportWindow
         var outBox = new TextBox();
         var resBox = new TextBox();
         var zipBox = new CheckBox { Content = "Also write a .zip next to the folder", Margin = new Thickness(0, 6, 0, 0) };
+        var scalesBox = new TextBox { ToolTip = "Extra picture sizes, e.g. 2, 4 (writes name@2x.png …); empty = only 1×" };
         var allBox = new CheckBox { Content = "All assets (otherwise the ones selected below, plus what they use)", Margin = new Thickness(0, 6, 0, 0) };
         var assetList = new ListBox { SelectionMode = SelectionMode.Extended, Height = 140, Margin = new Thickness(0, 4, 0, 0) };
         AutomationProperties.SetName(assetList, "Assets to export");
@@ -59,6 +60,7 @@ static class ExportWindow
         Row("_Target", targetBox);
         Row("_Output folder", outBox);
         Row("_Godot folder (res://)", resBox);
+        Row("Extra _sizes (2, 4 …)", scalesBox);
 
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0), Children = { check, export, open, close } };
         var warn = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.Orange, Margin = new Thickness(0, 6, 0, 0),
@@ -95,6 +97,7 @@ static class ExportWindow
                 resBox.Text = pr.ResFolder;
                 resBox.IsEnabled = pr.Target == ExportTarget.Godot4;
                 zipBox.IsChecked = pr.Zip;
+                scalesBox.Text = string.Join(", ", pr.Scales);
                 allBox.IsChecked = pr.Assets is null;
                 assetList.IsEnabled = pr.Assets is not null;
                 assetList.SelectedItems.Clear();
@@ -126,6 +129,10 @@ static class ExportWindow
             pr.OutputFolder = outBox.Text.Trim().Replace('\\', '/');
             pr.ResFolder = resBox.Text.Trim().Trim('/');
             pr.Zip = zipBox.IsChecked == true;
+            var scales = scalesBox.Text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(x => int.TryParse(x.TrimEnd('x', 'X', '×'), out int v) ? v : -1).ToList();
+            if (scales.Any(v => v is < 2 or > 16)) { Ui.MarkInvalid(scalesBox, "Whole numbers from 2 to 16, separated by commas."); return false; }
+            Ui.MarkInvalid(scalesBox, null);
+            pr.Scales = [.. scales.Distinct().Order()];
             pr.Assets = allBox.IsChecked == true ? null : assetList.SelectedItems.Cast<ListBoxItem>().Select(i => (Guid)i.Tag).ToList();
             try { p.Save(); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Ui.Error(ex); return false; }

@@ -39,7 +39,7 @@ v1. `Kind` (Player, Enemy, Npc, Item), `SpriteAssetId`, `Animations{stanje → o
 ## `.pxscene`: prizor (`Scene`)
 | Polje | Od | Opis |
 |---|---|---|
-| `Version` | v1 | trenutno 1 |
+| `Version` | v1 | trenutno 2 |
 | `Width`, `Height`, `Background` | v1 | velikost v pikah (16–65536), barva ARGB |
 | `Level`, `Order` | v1 | ime stopnje in vrstni red v igri |
 | `CameraX`, `CameraY` | v1 | začetek kamere (velikost pogleda = `TargetWidth/Height` projekta) |
@@ -131,3 +131,11 @@ JSON prek `DocumentFile`: `Version` 1, `Width`, `Height` (umetniška površina),
 
 ## `.pxtex`: tekstura (`TextureDoc`, Faza 15)
 JSON prek `DocumentFile`: `Version` 1, `Texture`: `Source` (Procedural, Painting, Picture), `Material` (Ground, Stone, Grass, Wood, Water, Sand, Brick, Metal), `Seed`, `Size` (4–2048), `Dark`, `Light` (ARGB), `Scale` (značilnosti na ploščico, 1–64), `Detail` (oktave 1–6), `AssetId` (slika ali risba za vira Painting in Picture), `SeamBlend` (px), `NormalStrength`, `FlipGreen` (zelena navzdol, slog DirectX), `OcclusionStrength`. Izpeljane mape (višina, normale po Sobelu, okluzija) se računajo ob uporabi in se ne shranjujejo. Izvoz: `ime.png` in `ime_normal.png`; Godot še `ime_material.tres` (`CanvasTexture` z `normal_texture`), Generic še `ime_height.png` in `ime_ao.png`.
+
+## `.pxscene` v2 (Faza 16)
+Doda neobvezni `UiAssetId` (UI komplet) in `UiScreen` (ime zaslona), ki se v predogledu igre in v izvozu za Godot (`CanvasLayer` z instanco zaslona) pokaže nad igro. Datoteke v1 se naložijo brez prekrivnega sloja (zlati primerek `current/level.v1.pxscene` in `current/level.v2.pxscene`).
+
+## `.pxui`: UI komplet (`UiKit`, Faza 16)
+JSON prek `DocumentFile`: `Version` 1, `Style` (`Base`, `Accent`, `Dark`, `Light`, `Text`, `Radius`, `Border`, `Pixel`, `FontSize`), `Elements[]` (`Id`, `Name`, `Kind` = Button, Panel, Dialog, Slider, HealthBar, InventorySlot, Icon, Label; `W`, `H`, `Margin` za nine-slice, največ polovica manjše stranice; `Label`; `Art{stanje → ID slike}`, prazno = narisano iz sloga; `IconAssetId`), `Screens[]` (`Name` edinstveno, `Width`, `Height` 16–8192, `Background` 0 = prosojen sloj, `Items[]`: `ElementId`, `X`, `Y`, `W`, `H`, `Anchor` = TopLeft … BottomRight ali Stretch, `Text` (dialog: naslov|besedilo), `Value` 0–1, `State`). Izvoz: PNG vsakega stanja v `ime_ui/`, `ime_atlas.png`, `ime_ui.json`; Godot še `ime_theme.tres` (`StyleBoxTexture` za stanja gumbov, panel, dialog, vrstica) in `ime_<zaslon>.tscn` (`Control` s sidri in odmiki).
+
+**Izvozni profil:** `Scales[]` (2–16) zapiše še `ime@2x.png` …; vektorske risbe se narišejo znova v večji velikosti, ostalo se poveča po pikslih.

@@ -15,7 +15,7 @@ namespace PixelForge.App;
 /// Paint mode (Sprite tab): smooth brushes on large canvases with layers, blend modes, masks, alpha lock and pen
 /// pressure. Only the changed part of the picture is recomposited and redrawn while painting.
 /// </summary>
-public partial class PaintEditor : UserControl, IEditor, IStyleSource, IToolSelectable
+public partial class PaintEditor : UserControl, IEditor, IStyleSource, IToolSelectable, IPictureSource
 {
     static readonly double[] Zooms = [1 / 16.0, 1 / 8.0, 0.25, 1 / 3.0, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24, 32];
 
@@ -572,6 +572,8 @@ public partial class PaintEditor : UserControl, IEditor, IStyleSource, IToolSele
         int w = Math.Max(1, _doc.Width * n / longest), h = Math.Max(1, _doc.Height * n / longest);
         SendToPixel?.Invoke(PaintOps.Downscale(_doc, w, h), w, h);
     }
+
+    public (uint[] Pixels, int Width, int Height)? CurrentPicture => (_doc.Flatten(), _doc.Width, _doc.Height);
 
     // ---------- style ----------
 

@@ -215,3 +215,18 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Testi:** 174/174 (Texture 5: vsi materiali brez šiva in ponovljivi, smer normal in zelena, okluzija v jamici, odprava šiva na sliki, risanje čez rob, naslikana tekstura in izvoz, predloge materialov). Smoke preveri način Texture in stanje »brez vidnega šiva«.
 - **Popravki med delom:** prvotne formule so lomile ponavljanje (šum, raztegnjen za neceli faktor; liho število vrst opek); smoke je po zaprtju predogleda igre odpiral meni, preden je bilo glavno okno spet aktivno.
 - **Ni ročno preizkušeno:** risanje teksture v Paint načinu z miško, uvoz `CanvasTexture` v Godot.
+
+## Faza 16: UI & Icon Studio (končana, 20. 10. 2026)
+- **Način UI v zavihku Sprite** (Ctrl+5).
+- **`UiKit` (`.pxui` v1):**
+  - slog s petimi barvami, polmerom, robom, pisavo in ostrimi robovi za pixel art;
+  - elementi gumb, panel, dialog, drsnik, vrstica zdravja, polje inventarja, ikona, napis, v štirih stanjih (normal, hover, pressed, disabled);
+  - umetnina iz sloga ali iz slik projekta, nine-slice raztezanje.
+- **Zasloni:** postavitev s sidri (devet točk in raztezanje), predogled pri drugi ločljivosti; začetni kompleti s slogi Fantasy, Sci-fi, Minimal, Candy in zasloni naslovni, glavni meni, nastavitve, izbira stopnje, zmaga, konec igre, dialog, trgovina, inventar, HUD (4 predloge `ui-*`, korak `ui`).
+- **Prizor v2:** UI zaslon nad igro v predogledu igre (narisan enkrat, ne premika se s kamero), v Check scene (manjkajoči komplet ali zaslon) in v izvozu za Godot.
+- **Izvoz:** PNG stanj, atlas in JSON; Godot Theme (StyleBoxTexture z robovi nine-slice) in scena `Control` za vsak zaslon. Izvozni profil ima dodatne velikosti (`@2x` …, polje »Extra sizes« v oknu Export).
+- **Predogled naprave** (Options → Device preview, Ctrl+Shift+D, za vse načine s sliko): monitorji, prenosnik, telefona, tablica, ročna konzola; celoštevilsko povečanje, velikost v pikslih naprave in centimetrih.
+- **Zlati primerki** za `.pxpaint`, `.pxvec`, `.pxtex`, `.pxui` in `.pxscene` v2; pisalec primerkov ne prepiše nobene obstoječe datoteke več.
+- **Testi:** 183/183 (UI 5: začetni komplet in zavrnitve, različna stanja in ostri robovi, nine-slice in sidra, zasloni, prekrivni sloj v igri, Godot tema in scene, dodatne velikosti; regresija 4 novi primerki).
+- **Smoke:** način UI preverjen. Koraki, ki odpirajo menije (Device preview, paleta ukazov, delovni profil, predloge, zgodovina, izvoz), v tej seji niso tekli: okno aplikacije ni dobilo ospredja, ker je uporabnik delal na računalniku (sonda je potrdila, da se brez ospredja ne odpre noben meni v nobenem načinu). Skripta zdaj to sporoči kot »SMOKE INCOMPLETE« (izhod 2) namesto kot napake. Pritiskov tipk ne simulira, ker bi motili uporabnika.
+- **Ni ročno preizkušeno:** vlečenje elementov na zaslonu, okno predogleda naprave, uvoz teme in scen v Godot.

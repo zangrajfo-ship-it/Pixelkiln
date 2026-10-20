@@ -19,10 +19,12 @@ public sealed class ExportProfile
     public string ResFolder { get; set; } = "assets";
     /// <summary>Also write OutputFolder.zip.</summary>
     public bool Zip { get; set; }
+    /// <summary>Extra sizes for pictures (e.g. 2 and 4 write name@2x.png and name@4x.png next to name.png).</summary>
+    public List<int> Scales { get; set; } = [];
     /// <summary>Assets to export (plus everything they use); null = all.</summary>
     public List<Guid>? Assets { get; set; }
 
-    public ExportProfile Clone() => new() { Name = Name, Target = Target, OutputFolder = OutputFolder, ResFolder = ResFolder, Zip = Zip, Assets = Assets?.ToList() };
+    public ExportProfile Clone() => new() { Name = Name, Target = Target, OutputFolder = OutputFolder, ResFolder = ResFolder, Zip = Zip, Assets = Assets?.ToList(), Scales = [.. Scales] };
 }
 
 public sealed class ExportResult
@@ -196,6 +198,27 @@ public static class Exporter
         string Res(string rel) => $"res://{(prof.ResFolder.Trim('/').Length > 0 ? prof.ResFolder.Trim('/') + "/" : "")}{rel}";
 
         void Add(string rel, byte[] data) => r.Files[rel] = data;
+
+        /// <summary>
+        /// A picture plus its extra scales. Vector drawings are drawn again at each size (sharp); everything else is
+        /// enlarged pixel by pixel, which keeps pixel art crisp.
+        /// </summary>
+        void Picture(string rel, uint[] px, int w, int h, Func<int, uint[]>? redraw = null)
+        {
+            Add(rel, ImageIO.EncodePng(px, w, h));
+            foreach (int s in prof.Scales.Where(s => s is > 1 and <= 16).Distinct())
+            {
+                var big = redraw?.Invoke(s) ?? Enlarge(px, w, h, s);
+                Add(rel[..^4] + $"@{s}x.png", ImageIO.EncodePng(big, w * s, h * s));
+            }
+        }
+
+        static uint[] Enlarge(uint[] px, int w, int h, int s)
+        {
+            var o = new uint[w * s * h * s];
+            for (int y = 0; y < h * s; y++) for (int x = 0; x < w * s; x++) o[y * w * s + x] = px[y / s * w + x / s];
+            return o;
+        }
         void Add(string rel, string text) => r.Files[rel] = Encoding.UTF8.GetBytes(text.Replace("\r\n", "\n"));
 
         public void Export(AssetEntry a)
@@ -207,7 +230,7 @@ public static class Exporter
                 {
                     var s = ProjectFile.Load(path);
                     var sheet = SheetOf(s);
-                    Add(b + ".png", ImageIO.EncodePng(sheet.Pixels, sheet.Width, sheet.Height));
+                    Picture(b + ".png", sheet.Pixels, sheet.Width, sheet.Height);
                     if (Godot) Add(b + ".tres", GodotExport.SpriteFrames(s, sheet.Columns, Res(b + ".png")));
                     else Add(b + ".json", SpriteSheet.Json(s, sheet, FileName(b + ".png"), a.Name));
                     break;
@@ -215,13 +238,13 @@ public static class Exporter
                 case AssetType.Image or AssetType.Paint:
                 {
                     var (px, w, h) = AssetLoader.LoadImage(path);
-                    Add(b + ".png", ImageIO.EncodePng(px, w, h));
+                    Picture(b + ".png", px, w, h);
                     break;
                 }
                 case AssetType.Texture:
                 {
                     var maps = Textures.Build(TextureDoc.Load(path), p);
-                    Add(b + ".png", ImageIO.EncodePng(maps.Albedo, maps.Width, maps.Height));
+                    Picture(b + ".png", maps.Albedo, maps.Width, maps.Height);
                     Add(b + "_normal.png", ImageIO.EncodePng(maps.Normal, maps.Width, maps.Height));
                     if (Godot) Add(b + "_material.tres", Textures.GodotCanvasTexture(Res(b + ".png"), Res(b + "_normal.png")));
                     else
@@ -234,8 +257,9 @@ public static class Exporter
                 case AssetType.Vector:
                 {
                     var (px, w, h) = AssetLoader.LoadImage(path);
-                    Add(b + ".png", ImageIO.EncodePng(px, w, h));
-                    Add(b + ".svg", Svg.Export(VectorDoc.Load(path)));   // engines that import SVG get the scalable original too
+                    var drawing = VectorDoc.Load(path);
+                    Picture(b + ".png", px, w, h, s => VectorGeometry.Rasterize(drawing, w * s, h * s));
+                    Add(b + ".svg", Svg.Export(drawing));   // engines that import SVG get the scalable original too
                     break;
                 }
                 case AssetType.Tilemap:
@@ -281,6 +305,11 @@ public static class Exporter
                         (issue.Severity == "error" ? r.Errors : r.Warnings).Add($"{a.Path}: {issue.Message}");
                     if (Godot) Add(b + ".tscn", GodotExport.LevelScene(sc, a.Name, p, _assets, id => Res(_base[id]), r.Warnings));
                     else Add(b + "_scene.json", SceneJson(sc, b));
+                    break;
+                }
+                case AssetType.Ui:
+                {
+                    foreach (var (rel, data) in UiExport.Files(UiKit.Load(path), b, p, Godot ? Res : null)) Add(rel, data);
                     break;
                 }
                 case AssetType.Palette:

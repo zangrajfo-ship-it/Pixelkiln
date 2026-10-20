@@ -29,13 +29,13 @@ tools/smoke.ps1       UI smoke test (UI Automation)
 ```bash
 dotnet build
 dotnet test
-powershell -File tools/smoke.ps1
+powershell -File tools/smoke.ps1   # 0 = OK, 1 = napaka, 2 = nepopolno (okno ni v ospredju, koraki z meniji niso tekli)
 dotnet run --project src/PixelForge.App
 ```
 Zlate primerke v2 zapiše samo `PF_WRITE_FIXTURES=1 PF_FIXTURES_DIR=<pot do Fixtures> dotnet test --filter WriteV2Fixtures`, in to le ob namerni spremembi formata.
 
 ## Združljivost formatov (obvezno)
-- Formati: `.pfproj`, `.pxf`, `.pxm`, `.pxs`, `.sfx`, `.pxchar`, `.pxscene`, `.pxmix`, `.pxpaint`, `.pxvec`, `.pxtex` (opis v `.ai/context/formats.md`). Vsaka datoteka ima `Version`.
+- Formati: `.pfproj`, `.pxf`, `.pxm`, `.pxs`, `.sfx`, `.pxchar`, `.pxscene`, `.pxmix`, `.pxpaint`, `.pxvec`, `.pxtex`, `.pxui` (opis v `.ai/context/formats.md`). Vsaka datoteka ima `Version`.
 - Nova polja so neobvezna s privzeto vrednostjo; stare različice se morajo naložiti.
 - Sprememba sheme: nova različica, migracija, zlati primerek v `Fixtures/` in test v `FormatRegressionTests`.
 - Obstoječih zlatih primerkov ne prepisuj.

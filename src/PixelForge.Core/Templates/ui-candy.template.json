@@ -1,0 +1,75 @@
+{
+  "apiVersion": 1,
+  "id": "ui-candy",
+  "name": "UI kit: candy",
+  "version": "1.0",
+  "kind": "Scene",
+  "primary": "ui",
+  "tags": [
+    "ui",
+    "menu",
+    "hud",
+    "casual"
+  ],
+  "description": "Bright rounded casual-game interface with all standard screens.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "candy"
+    },
+    {
+      "key": "screens",
+      "label": "Screens (commas)",
+      "default": "Title, Main menu, Settings, Level select, Victory, Game over, Dialog, Shop, Inventory, HUD"
+    },
+    {
+      "key": "width",
+      "label": "Design width",
+      "default": "320",
+      "options": [
+        "320",
+        "480",
+        "640",
+        "1280",
+        "1920"
+      ]
+    },
+    {
+      "key": "height",
+      "label": "Design height",
+      "default": "180",
+      "options": [
+        "180",
+        "270",
+        "360",
+        "720",
+        "1080"
+      ]
+    },
+    {
+      "key": "pixel",
+      "label": "Pixel-art edges",
+      "default": "true",
+      "options": [
+        "true",
+        "false"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "ui",
+      "type": "ui",
+      "name": "{name} ui",
+      "core": true,
+      "settings": {
+        "style": "Candy",
+        "screens": "{screens}",
+        "width": "{width}",
+        "height": "{height}",
+        "pixel": "{pixel}"
+      }
+    }
+  ]
+}
