@@ -15,7 +15,7 @@ namespace PixelForge.App;
 /// Vector mode (Sprite tab): shapes and Bezier paths with fills, gradients and strokes, node editing, boolean
 /// operations, alignment, SVG import and export, and rasterising to PNG or pixel art at any size.
 /// </summary>
-public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSelectable
+public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSelectable, IPictureSource
 {
     static readonly double[] Zooms = [0.25, 0.5, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32];
     enum DragKind { None, Move, Scale, Marquee, Create, Node, HandleIn, HandleOut, PenHandle }
@@ -894,6 +894,9 @@ public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSel
         var (w, h) = SizeFor(n);
         SendToPixel?.Invoke(VectorGeometry.Rasterize(_doc, w, h, f[1].StartsWith("Crisp")), w, h);
     }
+
+    public (uint[] Pixels, int Width, int Height)? CurrentPicture =>
+        SizeFor((int)Math.Ceiling(Math.Max(_doc.Width, _doc.Height))) is var (w, h) ? (VectorGeometry.Rasterize(_doc, w, h), w, h) : null;
 
     // ---------- style ----------
 

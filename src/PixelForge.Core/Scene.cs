@@ -77,7 +77,8 @@ public sealed class SceneArea
 /// <summary>A level: layers (tilemaps, images, instances), areas and a camera (.pxscene).</summary>
 public sealed class Scene
 {
-    public const int Version = 1;
+    // v2: UiAssetId + UiScreen (a UI kit screen drawn over the game view)
+    public const int Version = 2;
 
     public int Width { get; set; } = 640;
     public int Height { get; set; } = 360;
@@ -92,10 +93,13 @@ public sealed class Scene
     public List<SceneLayer> Layers { get; set; } = [new() { Name = "Objects" }];
     public List<SceneInstance> Instances { get; set; } = [];
     public List<SceneArea> Areas { get; set; } = [];
+    /// <summary>UI kit and the name of its screen shown on top of the game (HUD, menus); null = none.</summary>
+    public Guid? UiAssetId { get; set; }
+    public string? UiScreen { get; set; }
 
     public IEnumerable<Guid> ReferencedAssets() =>
         Layers.Select(l => l.AssetId).OfType<Guid>().Concat(Instances.Select(i => i.AssetId))
-            .Concat(MusicAssetId is Guid m ? [m] : []).Distinct();
+            .Concat(MusicAssetId is Guid m ? [m] : []).Concat(UiAssetId is Guid u ? [u] : []).Distinct();
 
     /// <summary>Instances of a layer in drawing order.</summary>
     public IEnumerable<SceneInstance> InstancesOf(Guid layerId) => Instances.Where(i => i.LayerId == layerId).OrderBy(i => i.Z).ThenBy(i => i.Y);
@@ -112,6 +116,7 @@ public sealed class Scene
     public Scene Clone() => new()
     {
         Width = Width, Height = Height, Background = Background, Level = Level, Order = Order, CameraX = CameraX, CameraY = CameraY, MusicAssetId = MusicAssetId,
+        UiAssetId = UiAssetId, UiScreen = UiScreen,
         Layers = [.. Layers.Select(l => l.Clone())],
         Instances = [.. Instances.Select(i => i.Clone())],
         Areas = [.. Areas.Select(a => a.Clone())],
@@ -132,6 +137,8 @@ public sealed class Scene
         public int CameraX { get; set; }
         public int CameraY { get; set; }
         public Guid? MusicAssetId { get; set; }
+        public Guid? UiAssetId { get; set; }
+        public string? UiScreen { get; set; }
         public List<SceneLayer>? Layers { get; set; }
         public List<SceneInstance>? Instances { get; set; }
         public List<SceneArea>? Areas { get; set; }
@@ -140,7 +147,8 @@ public sealed class Scene
     public static string Serialize(Scene s) => JsonSerializer.Serialize(new Dto
     {
         Version = Version, Width = s.Width, Height = s.Height, Background = s.Background, Level = s.Level, Order = s.Order,
-        CameraX = s.CameraX, CameraY = s.CameraY, MusicAssetId = s.MusicAssetId, Layers = s.Layers, Instances = s.Instances, Areas = s.Areas,
+        CameraX = s.CameraX, CameraY = s.CameraY, MusicAssetId = s.MusicAssetId, UiAssetId = s.UiAssetId, UiScreen = s.UiScreen,
+        Layers = s.Layers, Instances = s.Instances, Areas = s.Areas,
     }, Json);
 
     public static Scene Deserialize(string json)
@@ -149,6 +157,7 @@ public sealed class Scene
         var s = new Scene
         {
             Level = d.Level ?? "", Order = d.Order, Background = d.Background, MusicAssetId = d.MusicAssetId,
+            UiAssetId = d.UiAssetId, UiScreen = d.UiScreen,   // absent in v1 files: no overlay
             Layers = d.Layers ?? [], Instances = d.Instances ?? [], Areas = d.Areas ?? [],
         };
         s.Resize(d.Width, d.Height);

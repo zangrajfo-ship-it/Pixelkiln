@@ -27,6 +27,13 @@ public static class SceneCheck
             if (!layerIds.Contains(i.LayerId)) Error($"Instance “{name}” is on a layer that no longer exists.");
             if (i.X < 0 || i.Y < 0 || i.X >= s.Width || i.Y >= s.Height) Warn($"Instance “{name}” is outside the scene ({i.X}, {i.Y}).");
         }
+        if (s.UiAssetId is Guid uiId)
+        {
+            if (p.Find(uiId) is not { Type: AssetType.Ui } || p.Resolve(uiId) is not string uiPath) Error("The UI overlay refers to a missing UI kit.");
+            else if (s.UiScreen is not null)
+                try { if (UiKit.Load(uiPath).Screens.All(x => x.Name != s.UiScreen)) Error($"The UI kit has no screen “{s.UiScreen}”."); }
+                catch (InvalidDataException ex) { Error($"The UI kit cannot be read: {ex.Message}"); }
+        }
         foreach (var a in s.Areas)
             if (a.X + a.W <= 0 || a.Y + a.H <= 0 || a.X >= s.Width || a.Y >= s.Height) Warn($"{a.Kind} area “{a.Name}” is outside the scene.");
 

@@ -27,6 +27,8 @@ using System; using System.Runtime.InteropServices;
 public static class PfWin {
   [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out R r);
   [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr hdc, uint f);
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
   public struct R { public int L, T, Ri, B; } }
 '@
 
@@ -43,8 +45,14 @@ function Save-Shot($h, $file) {
 }
 
 # opens a top-level menu and returns the item whose name matches (retries: menus open asynchronously)
+# menu steps need the app in the foreground; Windows refuses that while someone else is using the PC
+$script:background = $false
+$script:skipped = @()
+function Missing($what) { if ($script:background) { $script:skipped += $what } else { $script:failures += $what } }
+
 function Find-MenuItem($root, $top, $pattern) {
     for ($try = 0; $try -lt 5; $try++) {
+        [void][PfWin]::SetForegroundWindow([IntPtr]$root.Current.NativeWindowHandle)   # menus only open in the foreground window
         try { $root.SetFocus() } catch { }   # after another window closes, the main window may not be active yet
         Start-Sleep -Milliseconds (200 * $try)
         $bar = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
@@ -56,6 +64,8 @@ function Find-MenuItem($root, $top, $pattern) {
         $item = (Find-All $root ([System.Windows.Automation.ControlType]::MenuItem)) | Where-Object { ($_.Current.Name -replace '_', '') -like $pattern } | Select-Object -First 1
         if ($item) { return $item }
     }
+    $bar = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))
+    if ([PfWin]::GetForegroundWindow() -ne [IntPtr]$root.Current.NativeWindowHandle) { $script:background = $true }
     return $null
 }
 
@@ -121,6 +131,32 @@ try {
             if ($root.Current.Name -notlike '*untitled texture*' -or -not $status) { $failures += 'Texture mode did not build its maps' }
             if ($ShotDir) { Save-Shot $p.MainWindowHandle (Join-Path $ShotDir 'Texture.png') }
         }
+        $uiMode = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq 'UI mode' } | Select-Object -First 1
+        if (-not $uiMode) { $failures += 'UI mode button missing' }
+        else {
+            $uiMode.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+            Start-Sleep -Milliseconds 1500
+            $screens = (Find-All $root ([System.Windows.Automation.ControlType]::ListItem)) | Where-Object { $_.Current.Name -like '*320*180*' }
+            Write-Host ("UI       title: {0} | screens listed: {1}" -f $root.Current.Name, $screens.Count)
+            if ($root.Current.Name -notlike '*untitled UI kit*' -or $screens.Count -lt 2) { $failures += 'UI mode did not show its screens' }
+            if ($ShotDir) { Save-Shot $p.MainWindowHandle (Join-Path $ShotDir 'UI.png') }
+            # device preview of the current screen
+            $dev = Find-MenuItem $root 'Options' 'Device preview*'
+            if (-not $dev) { Missing 'Options > Device preview' }
+            else {
+                $dev.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+                Start-Sleep 2
+                $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+                $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
+                $devWin = $wins | Where-Object { $_.Current.Name -like 'Device preview*' } | Select-Object -First 1
+                if (-not $devWin) { $failures += 'device preview did not open' }
+                else {
+                    Write-Host "device preview: $($devWin.Current.Name)"
+                    $devWin.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+                    Start-Sleep -Milliseconds 500
+                }
+            }
+        }
         $pixelMode = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq 'Pixel mode' } | Select-Object -First 1
         $pixelMode.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
         Start-Sleep -Milliseconds 500
@@ -150,27 +186,30 @@ try {
     }
     # command palette: commands of every tab and of the sample plugin are listed
     $palItem = Find-MenuItem $root 'Options' 'Command palette*'
-    if ($palItem) { $palItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() } else { $failures += 'Options > Command palette not found' }
-    Start-Sleep 2
-    $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
-    $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
-    $pal = $wins | Where-Object { $_.Current.Name -eq 'Command palette' } | Select-Object -First 1
-    if (-not $pal) { $failures += 'command palette did not open' }
+    if (-not $palItem) { Missing 'Options > Command palette' }
     else {
-        $box = (Find-All $pal ([System.Windows.Automation.ControlType]::Edit))[0]
-        foreach ($q in 'Retro pack Macro', 'Flip horizontally', 'Generate tileset from seed') {
-            $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($q)
-            Start-Sleep -Milliseconds 400
-            $names = (Find-All $pal ([System.Windows.Automation.ControlType]::ListItem)) | ForEach-Object { $_.Current.Name }
-            Write-Host ("palette '{0}': {1}" -f $q, (($names | Select-Object -First 2) -join ' | '))
-            if (-not $names) { $failures += "command palette found nothing for '$q'" }
+        $palItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep 2
+        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
+        $pal = $wins | Where-Object { $_.Current.Name -eq 'Command palette' } | Select-Object -First 1
+        if (-not $pal) { $failures += 'command palette did not open' }
+        else {
+            $box = (Find-All $pal ([System.Windows.Automation.ControlType]::Edit))[0]
+            foreach ($q in 'Retro pack Macro', 'Flip horizontally', 'Generate tileset from seed') {
+                $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($q)
+                Start-Sleep -Milliseconds 400
+                $names = (Find-All $pal ([System.Windows.Automation.ControlType]::ListItem)) | ForEach-Object { $_.Current.Name }
+                Write-Host ("palette '{0}': {1}" -f $q, (($names | Select-Object -First 2) -join ' | '))
+                if (-not $names) { $failures += "command palette found nothing for '$q'" }
+            }
+            $pal.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+            Start-Sleep -Milliseconds 500
         }
-        $pal.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
-        Start-Sleep -Milliseconds 500
     }
     # workspace: Options > Workspace > Levels selects the Scene tab
     $ws = Find-MenuItem $root 'Options' 'Workspace*'
-    if (-not $ws) { $failures += 'Options > Workspace missing' }
+    if (-not $ws) { Missing 'Options > Workspace' }
     else {
         $ws.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
         Start-Sleep -Milliseconds 500
@@ -186,7 +225,7 @@ try {
     }
     # templates: Project > New from template, create the first template (starting point), new assets appear
     $tplItem = Find-MenuItem $root 'Project' 'New from template*'
-    if (-not $tplItem) { $failures += 'Project > New from template missing' }
+    if (-not $tplItem) { Missing 'Project > New from template' }
     else {
         $before = (Find-All $list ([System.Windows.Automation.ControlType]::ListItem)).Count
         $tplItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
@@ -214,7 +253,7 @@ try {
     $first.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
     Start-Sleep -Milliseconds 300
     $histItem = Find-MenuItem $root 'Project' 'History*'
-    if (-not $histItem) { $failures += 'Project > History missing' }
+    if (-not $histItem) { Missing 'Project > History' }
     else {
         $histItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 2
@@ -233,7 +272,7 @@ try {
     }
     # export: Project > Export, run the default Godot profile on the fixture project
     $exportItem = Find-MenuItem $root 'Project' 'Export*'
-    if (-not $exportItem) { $failures += 'Project > Export missing' }
+    if (-not $exportItem) { Missing 'Project > Export' }
     else {
         $exportItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 2
@@ -256,11 +295,20 @@ try {
         }
     }
     $p.CloseMainWindow() | Out-Null
-    if (-not $p.WaitForExit(5000)) { $failures += 'app did not exit within 5 s after closing' }
+    if (-not $p.WaitForExit(5000))
+    {
+        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+        $open = ([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond) | ForEach-Object { $_.Current.Name }) -join ' | '
+        $failures += "app did not exit within 5 s after closing (open: $open)"
+    }
 }
 finally {
     if (-not $p.HasExited) { Stop-Process $p -Force }
     Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue
 }
 if ($failures) { $failures | ForEach-Object { Write-Host "FAIL: $_" -ForegroundColor Red }; exit 1 }
+if ($script:skipped) {
+    Write-Host ("SMOKE INCOMPLETE: the app window could not get the foreground (someone is using the PC), so these menu steps did not run: " + ($script:skipped -join ', ')) -ForegroundColor Yellow
+    exit 2
+}
 Write-Host 'SMOKE OK' -ForegroundColor Green

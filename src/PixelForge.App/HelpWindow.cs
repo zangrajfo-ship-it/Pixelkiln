@@ -57,6 +57,12 @@ static class HelpWindow
             ("R", "New random seed"), ("Ctrl+E", "Export colour, normal, height and occlusion PNGs"),
             ("Paint it…", "Paint the texture in Paint mode; strokes wrap around the edges (W toggles wrap there)"),
         ]),
+        ("Sprite › UI (Ctrl+5)", [
+            ("Elements / Screens lists", "Edit one element (all four states and a stretched copy) or lay out a screen"),
+            ("P / Del", "Place the selected element on the screen / remove it"), ("Arrows / Shift+arrows", "Move by 1 / 8 px"),
+            ("Preview at", "See a screen at another resolution; anchors move elements as in the game"),
+            ("Ctrl+Shift+D", "Device preview of what you are editing (any mode)"),
+        ]),
         ("Tilemap", [
             ("B E G I", "Paint, erase, fill, pick"), ("A", "Auto-tile terrain"), ("O", "Objects"),
             ("Shift (objects)", "Snap to tiles"), ("Del", "Delete selected object"),

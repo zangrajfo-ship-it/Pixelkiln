@@ -13,7 +13,7 @@ namespace PixelForge.App;
 /// Texture mode (Sprite tab): seamless materials from a seeded recipe, a painting or a picture, with height, normal
 /// and occlusion maps, a repeat preview and a lit preview. Maps are rebuilt in the background after each change.
 /// </summary>
-public partial class TextureEditor : UserControl, IEditor
+public partial class TextureEditor : UserControl, IEditor, IPictureSource
 {
     TextureDoc _doc = new();
     readonly History<TextureDoc> _history = new(t => t.Clone(), App.Settings.UndoLimit);
@@ -212,6 +212,8 @@ public partial class TextureEditor : UserControl, IEditor
         double side = Math.Min(((FrameworkElement)PreviewRect.Parent).ActualWidth, ((FrameworkElement)PreviewRect.Parent).ActualHeight) - 16;
         PreviewRect.Width = PreviewRect.Height = Math.Max(64, side);
     }
+
+    public (uint[] Pixels, int Width, int Height)? CurrentPicture => _maps is { } m ? (m.Albedo, m.Width, m.Height) : null;
 
     // ---------- painting it ----------
 

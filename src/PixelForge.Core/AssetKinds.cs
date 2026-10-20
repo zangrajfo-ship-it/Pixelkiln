@@ -44,6 +44,7 @@ public static class AssetKinds
                 foreach (var l in s.Layers) if (l.AssetId is Guid g) l.AssetId = M(g);
                 foreach (var i in s.Instances) i.AssetId = M(i.AssetId);
                 if (s.MusicAssetId is Guid music) s.MusicAssetId = M(music);
+                if (s.UiAssetId is Guid ui) s.UiAssetId = M(ui);
                 if (changed) Scene.Save(s, p);
                 return changed;
             }),
@@ -78,6 +79,21 @@ public static class AssetKinds
                 t.AssetId = map(g);
                 TextureDoc.Save(t, p);
                 return true;
+            }),
+        new(AssetType.Ui, [".pxui"], p => UiKit.Load(p), p => UiKit.Load(p) is var k ? $"UI kit, {Plural(k.Elements.Count, "element")}, {Plural(k.Screens.Count, "screen")}" : "",
+            (p, project) => UiKit.Load(p) is var k && k.Screens.FirstOrDefault() is { } s ? (UiRender.Screen(k, s, s.Width, s.Height, project), s.Width, s.Height) : null,
+            p => UiKit.Load(p).ReferencedAssets(),
+            (p, map) =>
+            {
+                var k = UiKit.Load(p);
+                bool changed = false;
+                foreach (var e in k.Elements)
+                {
+                    foreach (var st in e.Art.Keys.ToList()) { var n = map(e.Art[st]); changed |= n != e.Art[st]; e.Art[st] = n; }
+                    if (e.IconAssetId is Guid ic && map(ic) != ic) { e.IconAssetId = map(ic); changed = true; }
+                }
+                if (changed) UiKit.Save(k, p);
+                return changed;
             }),
         new(AssetType.Mix, [".pxmix"], p => Mix.Load(p), p => DescribeMix(Mix.Load(p)), null,
             p => Mix.Load(p).ReferencedAssets(),

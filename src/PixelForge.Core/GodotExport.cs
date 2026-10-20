@@ -261,6 +261,17 @@ public static class GodotExport
             b.Append($"\n[node name=\"CollisionShape2D\" type=\"CollisionShape2D\" parent={Q(n)}]\nshape = {shape}\n\n");
         }
 
+        if (s.UiAssetId is Guid ui && p.Resolve(ui) is string uiPath)
+        {
+            var kit = UiKit.Load(uiPath);
+            var screen = kit.Screens.FirstOrDefault(x => x.Name == s.UiScreen) ?? kit.Screens.FirstOrDefault();
+            if (screen is not null)
+            {
+                string layer = Unique(areaNames, "UI");
+                b.Append($"[node name={Q(layer)} type=\"CanvasLayer\" parent=\".\"]\n\n");
+                b.Append($"[node name={Q(NodeName(screen.Name))} parent={Q(layer)} instance={d.Ext("PackedScene", UiExport.ScreenFile(res(ui), screen.Name))}]\n\n");
+            }
+        }
         string cam = Unique(areaNames, "Camera2D");
         b.Append($"[node name={Q(cam)} type=\"Camera2D\" parent=\".\"]\n");
         b.Append($"position = Vector2({F(s.CameraX + p.Settings.TargetWidth / 2.0)}, {F(s.CameraY + p.Settings.TargetHeight / 2.0)})\n");

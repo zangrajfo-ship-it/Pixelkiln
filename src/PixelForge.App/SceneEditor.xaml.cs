@@ -96,6 +96,15 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         var songs = p?.Assets.Where(a => a.Type == AssetType.Song).ToList() ?? [];
         MusicBox.ItemsSource = new[] { new ComboBoxItem { Content = "(none)", Tag = null } }.Concat(songs.Select(a => new ComboBoxItem { Content = a.Path, Tag = a.Id })).ToList();
         MusicBox.SelectedItem = MusicBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => i.Tag is Guid g && g == _scene.MusicAssetId) ?? MusicBox.Items[0];
+        var kits = p?.Assets.Where(a => a.Type == AssetType.Ui).ToList() ?? [];
+        UiBox.ItemsSource = new[] { new ComboBoxItem { Content = "(none)", Tag = null } }.Concat(kits.Select(a => new ComboBoxItem { Content = a.Path, Tag = a.Id })).ToList();
+        UiBox.SelectedItem = UiBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => i.Tag is Guid g && g == _scene.UiAssetId) ?? UiBox.Items[0];
+        string[] screens = [];
+        if (_scene.UiAssetId is Guid uid && p?.Resolve(uid) is string uiPath)
+            try { screens = [.. UiKit.Load(uiPath).Screens.Select(s => s.Name)]; } catch (InvalidDataException) { }
+        UiScreenBox.ItemsSource = screens;
+        UiScreenBox.SelectedItem = screens.FirstOrDefault(s => s == _scene.UiScreen);
+        UiScreenBox.IsEnabled = screens.Length > 0;
         PlaceList.ItemsSource = p?.Assets.Where(a => a.Type is AssetType.Sprite or AssetType.Character).OrderBy(a => a.Type).ThenBy(a => a.Path)
             .Select(a => new ListBoxItem { Content = $"{(a.Type == AssetType.Character ? "☺ " : "")}{a.Path}", Tag = a.Id }).ToList();
         _refreshing = false;
@@ -455,6 +464,18 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         if (id == _scene.MusicAssetId) return;
         Snapshot();
         _scene.MusicAssetId = id;
+    }
+
+    void OnUiChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_refreshing) return;
+        Guid? kit = (UiBox.SelectedItem as ComboBoxItem)?.Tag as Guid?;
+        string? screen = kit is null ? null : UiScreenBox.SelectedItem as string;
+        if (kit != _scene.UiAssetId) screen = null;   // another kit: choose its screen again
+        if ((kit, screen) == (_scene.UiAssetId, _scene.UiScreen)) return;
+        Snapshot();
+        (_scene.UiAssetId, _scene.UiScreen) = (kit, screen);
+        RefreshAll();
     }
 
     // ---------- layers (list shows the front layer first) ----------

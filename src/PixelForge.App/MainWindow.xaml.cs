@@ -12,12 +12,13 @@ namespace PixelForge.App;
 public partial class MainWindow : Window
 {
     // order = autosave file index; new editors are appended, whatever their tab position
-    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd, AudioEd, PaintEd, VectorEd, TextureEd];
+    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd, AudioEd, PaintEd, VectorEd, TextureEd, UiEd];
 
     // modes added in code (they live inside a tab's ModeHost, not in the XAML)
     readonly PaintEditor PaintEd = new();
     readonly VectorEditor VectorEd = new();
     readonly TextureEditor TextureEd = new();
+    readonly UiEditor UiEd = new();
 
     TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed || t.Content is ModeHost h && h.Contains(ed));
 
@@ -43,6 +44,7 @@ public partial class MainWindow : Window
         HostOf(SpriteEd).Add("Paint", PaintEd);
         HostOf(SpriteEd).Add("Vector", VectorEd);
         HostOf(SpriteEd).Add("Texture", TextureEd);
+        HostOf(SpriteEd).Add("UI", UiEd);
         TextureEd.OpenPainting = a => { OpenAsset(a); PaintEd.SetWrap(true); };
         PaintEd.SendToPixel = VectorEd.SendToPixel = (px, w, h) => { Reveal(SpriteEd); SpriteEd.LoadPixels(px, w, h); };
     }
@@ -109,6 +111,7 @@ public partial class MainWindow : Window
         MainMenu.Items.Add(ProjectMenu());
         MainMenu.Items.Add(Ui.Menu("_Options",
             Ui.Item("_Command palette…", "Ctrl+Shift+P", ShowCommandPalette),
+            Ui.Item("_Device preview…", "Ctrl+Shift+D", ShowDevicePreview),
             Ui.Item("P_lugins…", null, () => PluginsWindow.Show(this)),
             WorkspaceMenu(),
             Ui.Item("Copy st_yle", "Ctrl+Alt+C", CopyStyle),
@@ -205,6 +208,19 @@ public partial class MainWindow : Window
                 ed.OpenPath(path, confirmed: true);
     }
 
+    /// <summary>The picture of the active editor (sprite frame, painting, drawing, texture, UI screen) on a chosen device.</summary>
+    void ShowDevicePreview()
+    {
+        var pic = ActiveEditor switch
+        {
+            IPictureSource s => s.CurrentPicture,
+            SpriteEditor sp => sp.CurrentImage,
+            _ => null,
+        };
+        if (pic is not { } p) { Ui.Error(new InvalidOperationException("Open a sprite, painting, drawing, texture or UI screen first.")); return; }
+        DevicePreview.Show(this, p, Title.Replace("PixelForge — ", ""));
+    }
+
     void ShowTemplateStudio()
     {
         if (App.Project is { } p) TemplateStudio.Show(this, p, Assets.SelectedAll, OpenAsset);
@@ -230,6 +246,7 @@ public partial class MainWindow : Window
             AssetType.Paint => PaintEd,
             AssetType.Vector => VectorEd,
             AssetType.Texture => TextureEd,
+            AssetType.Ui => UiEd,
             _ => null,
         };
         if (a.Type == AssetType.Audio)   // a WAV is material: it goes onto a track
@@ -320,6 +337,7 @@ public partial class MainWindow : Window
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         if (e.Key == Key.P && ctrl && shift) { ShowCommandPalette(); e.Handled = true; return; }
         if (e.Key == Key.B && ctrl && shift) { SetAssetsVisible(!AssetsVisible); e.Handled = true; return; }
+        if (e.Key == Key.D && ctrl && shift) { ShowDevicePreview(); e.Handled = true; return; }
         if (e.Key == Key.H && ctrl && !shift && App.Project is not null) { Assets.ShowHistory(); e.Handled = true; return; }
         if (e.Key == Key.T && ctrl && !shift && App.Project is not null) { ShowTemplateStudio(); e.Handled = true; return; }
         if (e.Key == Key.E && ctrl && shift && App.Project is { } project)

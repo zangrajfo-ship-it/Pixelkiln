@@ -1,0 +1,106 @@
+{
+  "Version": 2,
+  "Width": 320,
+  "Height": 180,
+  "Background": 4280295472,
+  "Level": "World 1",
+  "Order": 2,
+  "CameraX": 8,
+  "CameraY": 0,
+  "MusicAssetId": "44444444-4444-4444-4444-444444444444",
+  "UiAssetId": "55555555-5555-5555-5555-555555555555",
+  "UiScreen": "HUD",
+  "Layers": [
+    {
+      "Id": "c0d3ab09-fc7b-472e-a3a6-e5a1cda2860d",
+      "Name": "Sky",
+      "Kind": "Image",
+      "AssetId": "11111111-1111-1111-1111-111111111111",
+      "ParallaxX": 0.5,
+      "ParallaxY": 1,
+      "OffsetX": 0,
+      "OffsetY": 0,
+      "RepeatX": true,
+      "Visible": true
+    },
+    {
+      "Id": "e2593dda-93dd-4143-9770-4d5b09911be9",
+      "Name": "Ground",
+      "Kind": "Tilemap",
+      "AssetId": "22222222-2222-2222-2222-222222222222",
+      "ParallaxX": 1,
+      "ParallaxY": 1,
+      "OffsetX": 0,
+      "OffsetY": 0,
+      "RepeatX": false,
+      "Visible": true
+    },
+    {
+      "Id": "bce43906-d040-4d5e-b315-a282b8590634",
+      "Name": "Objects",
+      "Kind": "Instances",
+      "ParallaxX": 1,
+      "ParallaxY": 1,
+      "OffsetX": 0,
+      "OffsetY": 0,
+      "RepeatX": false,
+      "Visible": true
+    }
+  ],
+  "Instances": [
+    {
+      "Id": "b822a7dc-e1e0-4147-bca7-4f32cbd8fe69",
+      "Name": "Hero",
+      "AssetId": "33333333-3333-3333-3333-333333333333",
+      "LayerId": "bce43906-d040-4d5e-b315-a282b8590634",
+      "X": 16,
+      "Y": 64,
+      "Animation": "idle",
+      "FlipX": true,
+      "Z": 1,
+      "Track": {
+        "Keys": [
+          {
+            "TimeMs": 0,
+            "X": 0,
+            "Y": 0,
+            "ScaleX": 1,
+            "ScaleY": 1,
+            "Rotation": 0,
+            "Opacity": 1,
+            "Easing": "Linear"
+          },
+          {
+            "TimeMs": 800,
+            "X": 32,
+            "Y": 0,
+            "ScaleX": 1,
+            "ScaleY": 1,
+            "Rotation": 0,
+            "Opacity": 0.5,
+            "Easing": "EaseOut"
+          }
+        ],
+        "Loop": false,
+        "DurationMs": 800
+      },
+      "Properties": {
+        "hp": "3"
+      }
+    }
+  ],
+  "Areas": [
+    {
+      "Id": "14dbd60f-9ef2-4c92-a0a5-7859a86b306c",
+      "Kind": "Checkpoint",
+      "Name": "cp1",
+      "X": 100,
+      "Y": 40,
+      "W": 8,
+      "H": 32,
+      "Properties": {
+        "id": "1"
+      }
+    }
+  ]
+}

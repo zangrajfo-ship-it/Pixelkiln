@@ -1,0 +1,220 @@
+{
+  "Version": 1,
+  "Style": {
+    "Base": 4280171098,
+    "Accent": 4282179824,
+    "Dark": 4278850080,
+    "Light": 4288469247,
+    "Text": 4293458687,
+    "Radius": 0,
+    "Border": 1,
+    "Pixel": true,
+    "FontSize": 8
+  },
+  "Elements": [
+    {
+      "Id": "1f34094a-8639-4b05-8165-ab7e0d216df8",
+      "Name": "Button",
+      "Kind": "Button",
+      "W": 64,
+      "H": 16,
+      "Margin": 4,
+      "Label": "Button",
+      "Art": {
+        "Hover": "11111111-1111-1111-1111-111111111111"
+      },
+      "IconAssetId": null
+    },
+    {
+      "Id": "5a852347-b2c1-4011-8d55-3b99fef26d1a",
+      "Name": "Panel",
+      "Kind": "Panel",
+      "W": 32,
+      "H": 32,
+      "Margin": 6,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "17792253-1d83-49aa-b40c-a1f489690d6b",
+      "Name": "Dialog",
+      "Kind": "Dialog",
+      "W": 48,
+      "H": 40,
+      "Margin": 10,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "a75eac33-04f3-4303-89b0-871250aab975",
+      "Name": "Slider",
+      "Kind": "Slider",
+      "W": 64,
+      "H": 10,
+      "Margin": 4,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "33350a2e-3a13-4d6c-8a86-8e110d0c2d91",
+      "Name": "Health bar",
+      "Kind": "HealthBar",
+      "W": 64,
+      "H": 8,
+      "Margin": 2,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "d647b2d5-4bdb-4205-993c-740279d02fdb",
+      "Name": "Slot",
+      "Kind": "InventorySlot",
+      "W": 20,
+      "H": 20,
+      "Margin": 4,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "ec2b5a17-fa37-4571-9613-c93c6e3c5ab5",
+      "Name": "Icon",
+      "Kind": "Icon",
+      "W": 16,
+      "H": 16,
+      "Margin": 0,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "d16b150f-9500-45cd-9426-d1f85ed05ae7",
+      "Name": "Label",
+      "Kind": "Label",
+      "W": 64,
+      "H": 12,
+      "Margin": 0,
+      "Label": "Text",
+      "Art": {},
+      "IconAssetId": null
+    }
+  ],
+  "Screens": [
+    {
+      "Name": "Main menu",
+      "Width": 320,
+      "Height": 180,
+      "Background": 4278850080,
+      "Items": [
+        {
+          "Id": "0527380b-c983-4425-9f8a-16145697e368",
+          "ElementId": "5a852347-b2c1-4011-8d55-3b99fef26d1a",
+          "X": 99,
+          "Y": 37,
+          "W": 122,
+          "H": 88,
+          "Anchor": "Center",
+          "Text": null,
+          "Value": 0.7,
+          "State": "Normal"
+        },
+        {
+          "Id": "e0c0dcb2-fd75-4a9a-9344-390a4e1db761",
+          "ElementId": "1f34094a-8639-4b05-8165-ab7e0d216df8",
+          "X": 107,
+          "Y": 45,
+          "W": 106,
+          "H": 15,
+          "Anchor": "Center",
+          "Text": "Play",
+          "Value": 0.7,
+          "State": "Normal"
+        },
+        {
+          "Id": "b5d12d91-bf48-4420-8c98-3ff20734b161",
+          "ElementId": "1f34094a-8639-4b05-8165-ab7e0d216df8",
+          "X": 107,
+          "Y": 65,
+          "W": 106,
+          "H": 15,
+          "Anchor": "Center",
+          "Text": "Options",
+          "Value": 0.7,
+          "State": "Normal"
+        },
+        {
+          "Id": "83c5e186-0722-4f18-be01-f1978ee84d47",
+          "ElementId": "1f34094a-8639-4b05-8165-ab7e0d216df8",
+          "X": 107,
+          "Y": 85,
+          "W": 106,
+          "H": 15,
+          "Anchor": "Center",
+          "Text": "Credits",
+          "Value": 0.7,
+          "State": "Normal"
+        },
+        {
+          "Id": "b9f4ec1d-9d49-4937-aea6-24ab0a995495",
+          "ElementId": "1f34094a-8639-4b05-8165-ab7e0d216df8",
+          "X": 107,
+          "Y": 105,
+          "W": 106,
+          "H": 15,
+          "Anchor": "Center",
+          "Text": "Quit",
+          "Value": 0.7,
+          "State": "Normal"
+        }
+      ]
+    },
+    {
+      "Name": "HUD",
+      "Width": 320,
+      "Height": 180,
+      "Background": 0,
+      "Items": [
+        {
+          "Id": "b5d58420-fa0d-4025-b628-c4690bda32d8",
+          "ElementId": "33350a2e-3a13-4d6c-8a86-8e110d0c2d91",
+          "X": 6,
+          "Y": 6,
+          "W": 80,
+          "H": 8,
+          "Anchor": "TopLeft",
+          "Text": null,
+          "Value": 0.8,
+          "State": "Normal"
+        },
+        {
+          "Id": "6657443b-e4c3-4839-96b4-628c0074330c",
+          "ElementId": "ec2b5a17-fa37-4571-9613-c93c6e3c5ab5",
+          "X": 298,
+          "Y": 4,
+          "W": 16,
+          "H": 16,
+          "Anchor": "TopRight",
+          "Text": null,
+          "Value": 0.7,
+          "State": "Normal"
+        },
+        {
+          "Id": "8ad3ec5b-5a7a-429f-b22d-7df47f254877",
+          "ElementId": "d16b150f-9500-45cd-9426-d1f85ed05ae7",
+          "X": 250,
+          "Y": 6,
+          "W": 46,
+          "H": 12,
+          "Anchor": "TopRight",
+          "Text": "x 12",
+          "Value": 0.7,
+          "State": "Normal"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "Version": 1,
+  "Width": 32,
+  "Height": 16,
+  "Shapes": [
+    {
+      "Id": "65ed2fc9-5333-447f-b528-9c4b3a9a38cb",
+      "Name": "box",
+      "Kind": "Rect",
+      "Contours": [],
+      "EvenOdd": false,
+      "X": 1,
+      "Y": 2,
+      "W": 10,
+      "H": 6,
+      "Radius": 2,
+      "Fill": {
+        "Kind": "Solid",
+        "Color": 4294901760,
+        "X1": 0,
+        "Y1": 0,
+        "X2": 0,
+        "Y2": 0,
+        "R": 0
+      },
+      "StrokeWidth": 1,
+      "Opacity": 1,
+      "Children": []
+    },
+    {
+      "Id": "edb0b0f1-5ccf-4e8c-8402-2975cbfbe62a",
+      "Name": "curve",
+      "Kind": "Path",
+      "Contours": [
+        {
+          "Nodes": [
+            {
+              "X": 0,
+              "Y": 0,
+              "InX": 0,
+              "InY": 0,
+              "OutX": 5,
+              "OutY": 0,
+              "Smooth": true
+            },
+            {
+              "X": 10,
+              "Y": 10,
+              "InX": 5,
+              "InY": 10,
+              "OutX": 10,
+              "OutY": 10,
+              "Smooth": true
+            }
+          ],
+          "Closed": false
+        }
+      ],
+      "EvenOdd": false,
+      "X": 0,
+      "Y": 0,
+      "W": 0,
+      "H": 0,
+      "Radius": 0,
+      "Stroke": {
+        "Kind": "Linear",
+        "Color": 4278190335,
+        "Stops": [
+          {
+            "Offset": 0,
+            "Color": 4278190335
+          },
+          {
+            "Offset": 1,
+            "Color": 4294901760
+          }
+        ],
+        "X1": 0,
+        "Y1": 0,
+        "X2": 10,
+        "Y2": 10,
+        "R": 0
+      },
+      "StrokeWidth": 2,
+      "Opacity": 1,
+      "Children": []
+    }
+  ]
+}

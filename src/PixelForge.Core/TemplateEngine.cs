@@ -114,6 +114,19 @@ public static class TemplateEngine
                     Core.Song.Save(song, f);
                     return p.Add(f);
                 }
+                case "ui":
+                {
+                    string styleName = S("style", "Fantasy");
+                    if (!UiKit.Styles.TryGetValue(styleName, out var style)) throw new InvalidDataException($"Step “{_s.Id}”: unknown UI style “{styleName}” (use {string.Join(", ", UiKit.Styles.Keys)}).");
+                    style = style with { Pixel = S("pixel", style.Pixel ? "true" : "false") == "true" };
+                    var names = S("screens", string.Join(",", UiKit.ScreenNames)).Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                    var unknown = names.Where(n => !UiKit.ScreenNames.Contains(n)).ToList();
+                    if (unknown.Count > 0) throw new InvalidDataException($"Step “{_s.Id}”: unknown screen(s) {string.Join(", ", unknown)}.");
+                    var kit = UiKit.Starter(style, names, I("width", p.Settings.TargetWidth, 64, 4096), I("height", p.Settings.TargetHeight, 64, 4096));
+                    string f = FileFor(Name("ui"), ".pxui");
+                    UiKit.Save(kit, f);
+                    return p.Add(f);
+                }
                 case "texture":
                 {
                     if (!Enum.TryParse<Material>(S("material", "Stone"), true, out var mat)) throw new InvalidDataException($"Step “{_s.Id}”: unknown material.");

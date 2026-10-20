@@ -1,0 +1,18 @@
+{
+  "Version": 1,
+  "Texture": {
+    "Source": "Procedural",
+    "Material": "Wood",
+    "Seed": "oak",
+    "Size": 64,
+    "Dark": 4282006084,
+    "Light": 4289243316,
+    "Scale": 3,
+    "Detail": 4,
+    "AssetId": null,
+    "SeamBlend": 0,
+    "NormalStrength": 2,
+    "FlipGreen": true,
+    "OcclusionStrength": 1
+  }
+}

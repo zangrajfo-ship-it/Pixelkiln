@@ -294,5 +294,29 @@ public sealed class Sandbox
         CamY = bounds.H <= _viewH ? bounds.Y + (bounds.H - _viewH) / 2 : Math.Clamp(CamY, bounds.Y, bounds.Y + bounds.H - _viewH);
     }
 
-    public uint[] Render(bool boxes) => SceneRenderer.Render(Scene, _assets, CamX, CamY, _viewW, _viewH, TimeMs, boxes, Colliders);
+    public uint[] Render(bool boxes)
+    {
+        var o = SceneRenderer.Render(Scene, _assets, CamX, CamY, _viewW, _viewH, TimeMs, boxes, Colliders);
+        if (Overlay() is { } ui)
+            for (int i = 0; i < o.Length; i++) if (ui[i] >> 24 != 0) o[i] = Blending.Over(o[i], ui[i] | 0xFF000000, (ui[i] >> 24) / 255.0);
+        return o;
+    }
+
+    uint[]? _overlay;
+    bool _overlayTried;
+
+    /// <summary>The scene's UI screen at the view size (drawn once; it does not move with the camera).</summary>
+    uint[]? Overlay()
+    {
+        if (_overlayTried) return _overlay;
+        _overlayTried = true;
+        if (Scene.UiAssetId is not Guid id || _assets.Project.Resolve(id) is not string path) return null;
+        try
+        {
+            var kit = UiKit.Load(path);
+            var screen = kit.Screens.FirstOrDefault(s => s.Name == Scene.UiScreen) ?? kit.Screens.FirstOrDefault();
+            return _overlay = screen is null ? null : UiRender.Screen(kit, screen, _viewW, _viewH, _assets.Project);
+        }
+        catch (InvalidDataException) { return null; }   // Check scene reports it
+    }
 }

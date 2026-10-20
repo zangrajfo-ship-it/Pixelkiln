@@ -146,6 +146,49 @@ public class FormatRegressionTests
         Assert.True(m.Tracks[1].Mute);
     }
 
+    static readonly Guid UiId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+
+    [Fact]
+    public void Scene_v2_with_ui_overlay_and_v1_still_loads()
+    {
+        var v2 = Scene.Load(Fixture("current/level.v2.pxscene"));
+        Assert.Equal((UiId, "HUD"), (v2.UiAssetId!.Value, v2.UiScreen));
+        var v1 = Scene.Load(Fixture("current/level.v1.pxscene"));
+        Assert.Null(v1.UiAssetId);                                    // v1 had no overlay
+        Assert.Equal(v1.Instances[0].Track!.Keys.Count, v2.Instances[0].Track!.Keys.Count);
+    }
+
+    [Fact]
+    public void Painting_v1()
+    {
+        var d = PaintDoc.Load(Fixture("current/painting.v1.pxpaint"));
+        Assert.Equal((300, 40, 2), (d.Width, d.Height, d.Layers.Count));
+        Assert.Equal(R, d.Layers[0].Get(256 + 3, 0));
+        Assert.Equal((BlendMode.Screen, 0.5), (d.Layers[1].Blend, d.Layers[1].Opacity));
+        Assert.Equal(0, d.Layers[1].MaskAt(5, 5));
+    }
+
+    [Fact]
+    public void Drawing_v1()
+    {
+        var v = VectorDoc.Load(Fixture("current/drawing.v1.pxvec"));
+        Assert.Equal((32.0, 16.0, 2), (v.Width, v.Height, v.Shapes.Count));
+        Assert.Equal((VShapeKind.Rect, 2.0), (v.Shapes[0].Kind, v.Shapes[0].Radius));
+        Assert.Equal(VPaintKind.Linear, v.Shapes[1].Stroke!.Kind);
+        Assert.Equal(5.0, v.Shapes[1].Contours[0].Nodes[0].OutX);
+    }
+
+    [Fact]
+    public void Texture_v1_and_kit_v1()
+    {
+        var t = TextureDoc.Load(Fixture("current/texture.v1.pxtex"));
+        Assert.Equal((Material.Wood, "oak", 64, true), (t.Material, t.Seed, t.Size, t.FlipGreen));
+        var k = UiKit.Load(Fixture("current/kit.v1.pxui"));
+        Assert.Equal(["Main menu", "HUD"], k.Screens.Select(s => s.Name));
+        Assert.Equal(SpriteId, k.Elements[0].Art[UiState.Hover]);
+        Assert.Equal(UiAnchor.TopLeft, k.Screens[1].Items[0].Anchor);
+    }
+
     /// <summary>Writes Fixtures/current with the current code (PF_WRITE_FIXTURES=1, PF_FIXTURES_DIR = the Fixtures folder).</summary>
     [Fact]
     public void WriteCurrentFixtures()
@@ -153,12 +196,13 @@ public class FormatRegressionTests
         if (Environment.GetEnvironmentVariable("PF_WRITE_FIXTURES") != "1") return;
         string dir = Path.Combine(Environment.GetEnvironmentVariable("PF_FIXTURES_DIR") ?? throw new InvalidOperationException("Set PF_FIXTURES_DIR."), "current");
         Directory.CreateDirectory(dir);
+        bool New(string name) => !File.Exists(Path.Combine(dir, name));   // golden files are written once and never replaced
 
         var m = new Tilemap(2, 2, 2) { Tileset = new Tileset([R, R, B, B, R, R, B, B], 4, 2, 2), TilesetAssetId = MapId };
         m.Layers[0].Tiles[0] = 1;
         m.Terrains.Add(new TerrainRule { Base = 0, Mode = TerrainMode.Blob47, Variants = [3] });
         m.TileCollisions[1] = new TileCollision(0, 0, 2, 1, OneWay: true, Category: 2);
-        Tilemap.Save(m, Path.Combine(dir, "map.v5.pxm"));
+        if (New("map.v5.pxm")) Tilemap.Save(m, Path.Combine(dir, "map.v5.pxm"));
 
         var c = new Character { Kind = CharacterKind.Player, SpriteAssetId = SpriteId, OriginX = 4, OriginY = 8, Facing = Facing.Left };
         c.Animations["idle"] = "idle";
@@ -166,7 +210,7 @@ public class FormatRegressionTests
         c.Boxes.Add(new CharacterBox { Kind = BoxKind.Solid, X = 2, Y = 0, W = 4, H = 8, Category = 1 });
         c.Boxes.Add(new CharacterBox { Kind = BoxKind.Hit, State = "run", Frame = 1, X = 6, Y = 2, W = 3, H = 3 });
         c.Properties["speed"] = "120";
-        Character.Save(c, Path.Combine(dir, "hero.v1.pxchar"));
+        if (New("hero.v1.pxchar")) Character.Save(c, Path.Combine(dir, "hero.v1.pxchar"));
 
         var s = new Scene { Width = 320, Height = 180, Level = "World 1", Order = 2, CameraX = 8, MusicAssetId = WavId };
         s.Layers.Insert(0, new SceneLayer { Name = "Sky", Kind = SceneLayerKind.Image, AssetId = SpriteId, ParallaxX = 0.5, RepeatX = true });
@@ -177,12 +221,44 @@ public class FormatRegressionTests
             Track = new KeyframeTrack { Keys = [new Keyframe(0), new Keyframe(800, X: 32, Opacity: 0.5, Easing: Easing.EaseOut)], Loop = false },
         });
         s.Areas.Add(new SceneArea { Kind = AreaKind.Checkpoint, Name = "cp1", X = 100, Y = 40, W = 8, H = 32, Properties = { ["id"] = "1" } });
-        Scene.Save(s, Path.Combine(dir, "level.v1.pxscene"));
+        if (New("level.v2.pxscene"))
+        {
+            s.UiAssetId = UiId;
+            s.UiScreen = "HUD";
+            Scene.Save(s, Path.Combine(dir, "level.v2.pxscene"));
+        }
 
         var mix = new Mix { MasterVolume = 0.8, LoopStartMs = 500, LoopEndMs = 2500 };
         mix.Tracks[0].Clips.Add(new MixClip { AssetId = WavId, StartMs = 250, OffsetMs = 100, LengthMs = 900, Gain = 0.7, FadeInMs = 20, FadeOutMs = 50, Repeat = 3 });
         mix.Tracks[1].Mute = true;
-        Mix.Save(mix, Path.Combine(dir, "music.v1.pxmix"));
+        if (New("music.v1.pxmix")) Mix.Save(mix, Path.Combine(dir, "music.v1.pxmix"));
+
+        // phases 13–16
+        if (New("painting.v1.pxpaint"))
+        {
+            var paint = new PaintDoc(300, 40);
+            paint.Layers[0].TileFor(1, 0)[3] = R;
+            paint.Layers.Add(new PaintLayer { Name = "glow", Blend = BlendMode.Screen, Opacity = 0.5, Mask = new() { [PaintLayer.Key(0, 0)] = new byte[256 * 256] } });
+            PaintDoc.Save(paint, Path.Combine(dir, "painting.v1.pxpaint"));
+        }
+        if (New("drawing.v1.pxvec"))
+        {
+            var v = new VectorDoc { Width = 32, Height = 16 };
+            v.Shapes.Add(new VShape { Kind = VShapeKind.Rect, Name = "box", X = 1, Y = 2, W = 10, H = 6, Radius = 2, Fill = VPaint.Solid(R) });
+            v.Shapes.Add(new VShape
+            {
+                Kind = VShapeKind.Path, Name = "curve", Contours = [new VContour([new VNode(0, 0, 0, 0, 5, 0), new VNode(10, 10, 5, 10, 10, 10)], false)],
+                Stroke = new VPaint(VPaintKind.Linear, B, [new VStop(0, B), new VStop(1, R)], 0, 0, 10, 10), StrokeWidth = 2,
+            });
+            VectorDoc.Save(v, Path.Combine(dir, "drawing.v1.pxvec"));
+        }
+        if (New("texture.v1.pxtex")) TextureDoc.Save(new TextureDoc { Material = Material.Wood, Seed = "oak", Size = 64, Scale = 3, FlipGreen = true }, Path.Combine(dir, "texture.v1.pxtex"));
+        if (New("kit.v1.pxui"))
+        {
+            var kit = UiKit.Starter(UiKit.Styles["Sci-fi"], ["Main menu", "HUD"], 320, 180);
+            kit.Elements[0].Art[UiState.Hover] = SpriteId;
+            UiKit.Save(kit, Path.Combine(dir, "kit.v1.pxui"));
+        }
     }
 
     /// <summary>Writes the v2 fixtures with the current code. Runs only with PF_WRITE_FIXTURES=1 and the fixtures folder as PF_FIXTURES_DIR.</summary>
