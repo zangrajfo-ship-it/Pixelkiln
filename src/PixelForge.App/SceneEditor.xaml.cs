@@ -105,6 +105,8 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         UiScreenBox.ItemsSource = screens;
         UiScreenBox.SelectedItem = screens.FirstOrDefault(s => s == _scene.UiScreen);
         UiScreenBox.IsEnabled = screens.Length > 0;
+        CameraClipBox.ItemsSource = ClipItems("(none)");
+        SelectClip(CameraClipBox, _scene.CameraClipAssetId, _scene.CameraClip);
         PlaceList.ItemsSource = p?.Assets.Where(a => a.Type is AssetType.Sprite or AssetType.Character).OrderBy(a => a.Type).ThenBy(a => a.Path)
             .Select(a => new ListBoxItem { Content = $"{(a.Type == AssetType.Character ? "☺ " : "")}{a.Path}", Tag = a.Id }).ToList();
         _refreshing = false;
@@ -207,7 +209,7 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         foreach (var (i, img, look) in _live)
         {
             img.Source = FrameBitmap(look.Sprite, SceneAssets.FrameAt(look.Sprite, look.From, look.To, t));
-            var pose = i.Track?.Sample(t) ?? new Keyframe(0);
+            var pose = Assets?.ClipOf(i)?.Pose("", t) ?? i.Track?.Sample(t) ?? new Keyframe(0);
             Canvas.SetLeft(img, i.X + pose.X - look.OriginX);
             Canvas.SetTop(img, i.Y + pose.Y - look.OriginY);
             img.Opacity = pose.Opacity;
@@ -478,6 +480,79 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         RefreshAll();
     }
 
+    // ---------- motion clips (animation libraries made in the Motion mode) ----------
+
+    /// <summary>Every clip of every animation library in the project, tagged with (library, clip name).</summary>
+    static List<ComboBoxItem> ClipItems(string none)
+    {
+        var items = new List<ComboBoxItem> { new() { Content = none, Tag = null } };
+        if (App.Project is not { } p) return items;
+        foreach (var a in p.Assets.Where(a => a.Type == AssetType.Anim).OrderBy(a => a.Path))
+            try { items.AddRange(AnimLibrary.Load(p.FullPath(a)).Clips.Select(c => new ComboBoxItem { Content = $"{a.Path} › {c.Name}", Tag = (a.Id, c.Name) })); }
+            catch (Exception ex) when (ex is InvalidDataException or IOException) { }   // Check project reports broken files
+        return items;
+    }
+
+    static void SelectClip(ComboBox box, Guid? lib, string? clip) =>
+        box.SelectedItem = box.Items.Cast<ComboBoxItem>().FirstOrDefault(i => i.Tag is (Guid g, string n) && g == lib && n == clip) ?? box.Items[0];
+
+    static (Guid? Lib, string? Clip) ClipOf(ComboBox box) => (box.SelectedItem as ComboBoxItem)?.Tag is (Guid g, string n) ? (g, n) : (null, null);
+
+    void OnCameraClipChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_refreshing) return;
+        var (lib, clip) = ClipOf(CameraClipBox);
+        if ((lib, clip) == (_scene.CameraClipAssetId, _scene.CameraClip)) return;
+        Snapshot();
+        (_scene.CameraClipAssetId, _scene.CameraClip) = (lib, clip);
+    }
+
+    void OnClipChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_refreshing || _sel is not SceneInstance i) return;
+        var (lib, clip) = ClipOf(ClipBox);
+        if ((lib, clip) == (i.ClipAssetId, i.Clip)) return;
+        Snapshot();
+        (i.ClipAssetId, i.Clip) = (lib, clip);
+        Rebuild();
+    }
+
+    void OnSaveTrackAsClip(object sender, RoutedEventArgs e)
+    {
+        if (_sel is not SceneInstance { Track: { Keys.Count: > 0 } track } i) { Ui.Error(new InvalidOperationException("The selected object has no movement track.")); return; }
+        if (App.Project is not { } p) { Ui.Error(new InvalidOperationException("Open a project first.")); return; }
+        const string newFile = "(new library)";
+        var libs = p.Assets.Where(a => a.Type == AssetType.Anim).OrderBy(a => a.Path).ToList();
+        var v = Ui.AskFields(this, "Save track as clip", ("Animation library", libs.FirstOrDefault()?.Path ?? newFile, [newFile, .. libs.Select(a => a.Path)]),
+            ("Clip name", i.Name.Length > 0 ? i.Name : "move", null));
+        if (v is null || v[1].Trim() is not { Length: > 0 } name) return;
+        try
+        {
+            string path;
+            AnimLibrary lib;
+            if (v[0] == newFile)
+            {
+                path = Enumerable.Range(1, 999).Select(n => System.IO.Path.Combine(p.Root, n == 1 ? "animations.pxanim" : $"animations{n}.pxanim")).First(f => !File.Exists(f));
+                lib = new AnimLibrary();
+            }
+            else
+            {
+                path = p.FullPath(libs.First(a => a.Path == v[0]));
+                lib = AnimLibrary.Load(path);
+            }
+            if (lib.Clips.Any(c => c.Name == name)) { Ui.Error(new InvalidDataException($"The library already has a clip named “{name}”.")); return; }
+            lib.Clips.Add(AnimClip.FromTrack(track, name));
+            AnimLibrary.Save(lib, path);
+            App.AddRecent(path);   // registers a new library in the project
+            var id = p.FindByPath(path)!.Id;
+            Snapshot();
+            (i.ClipAssetId, i.Clip, i.Track) = (id, name, null);
+            _assets = null;   // the library changed on disk
+            RefreshAll();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException) { Ui.Error(ex); }
+    }
+
     // ---------- layers (list shows the front layer first) ----------
 
     SceneLayer? Layer => _scene.Layers.FirstOrDefault(l => l.Id == _layerId);
@@ -613,6 +688,8 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
                 ZBox.Text = i.Z.ToString();
                 TrackBox.Text = i.Track is null ? "" : string.Join("\n", i.Track.Keys.Select(k => FormatKey(k)));
                 LoopBox.IsChecked = i.Track?.Loop ?? true;
+                ClipBox.ItemsSource = ClipItems("(movement track)");
+                SelectClip(ClipBox, i.ClipAssetId, i.Clip);
                 SelPropsBox.Text = string.Join("\n", i.Properties.Select(kv => $"{kv.Key} = {kv.Value}"));
                 break;
             case SceneArea a:

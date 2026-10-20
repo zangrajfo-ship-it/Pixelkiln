@@ -64,6 +64,8 @@
                 <Label Content="_UI over the game" Target="{Binding ElementName=UiBox}" Padding="0" Margin="0,6,0,0" />
                 <ComboBox x:Name="UiBox" SelectionChanged="OnUiChanged" ToolTip="A UI kit screen (HUD, menu) drawn over the game in the preview and in exports" />
                 <ComboBox x:Name="UiScreenBox" Margin="0,4,0,0" SelectionChanged="OnUiChanged" AutomationProperties.Name="UI screen" />
+                <Label Content="Camera mo_tion" Target="{Binding ElementName=CameraClipBox}" Padding="0" Margin="0,6,0,0" />
+                <ComboBox x:Name="CameraClipBox" SelectionChanged="OnCameraClipChanged" ToolTip="A clip from an animation library (Motion mode) added to the camera: shakes, pans" />
 
                 <TextBlock Text="Layers (top = front)" FontWeight="SemiBold" Margin="0,12,0,4" />
                 <ListBox x:Name="LayersList" Height="150" SelectionChanged="OnLayerSelected" AutomationProperties.Name="Scene layers" />
@@ -128,6 +130,10 @@
                         <TextBox x:Name="TrackBox" AcceptsReturn="True" MinHeight="70" FontFamily="Consolas" LostKeyboardFocus="OnSelCommit"
                                  ToolTip="One key per line, e.g. 0 0 0 then 2000 64 0 EaseInOut. Offsets are relative to X, Y." />
                         <CheckBox x:Name="LoopBox" Content="Loop track" IsChecked="True" Click="OnSelCommit" />
+                        <Label Content="Motion _clip (replaces the track)" Target="{Binding ElementName=ClipBox}" Padding="0" Margin="0,6,0,0" />
+                        <ComboBox x:Name="ClipBox" SelectionChanged="OnClipChanged" />
+                        <Button Content="Save track as clip…" Margin="0,4,0,0" HorizontalAlignment="Left" Click="OnSaveTrackAsClip"
+                                ToolTip="Copies the movement track into an animation library, so other objects and scenes can reuse it" />
                     </StackPanel>
                     <StackPanel x:Name="AreaProps">
                         <Label Content="Area k_ind" Target="{Binding ElementName=SelAreaKindBox}" Padding="0" Margin="0,4,0,0" />

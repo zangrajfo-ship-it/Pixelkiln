@@ -42,7 +42,12 @@ public static class AssetKinds
                 bool changed = false;
                 Guid M(Guid g) { var n = map(g); changed |= n != g; return n; }
                 foreach (var l in s.Layers) if (l.AssetId is Guid g) l.AssetId = M(g);
-                foreach (var i in s.Instances) i.AssetId = M(i.AssetId);
+                foreach (var i in s.Instances)
+                {
+                    i.AssetId = M(i.AssetId);
+                    if (i.ClipAssetId is Guid clip) i.ClipAssetId = M(clip);
+                }
+                if (s.CameraClipAssetId is Guid cam) s.CameraClipAssetId = M(cam);
                 if (s.MusicAssetId is Guid music) s.MusicAssetId = M(music);
                 if (s.UiAssetId is Guid ui) s.UiAssetId = M(ui);
                 if (changed) Scene.Save(s, p);
@@ -50,12 +55,13 @@ public static class AssetKinds
             }),
         new(AssetType.Character, [".pxchar"], p => Character.Load(p), p => DescribeCharacter(Character.Load(p)),
             (p, project) => project is not null && Character.Load(p).SpriteAssetId is Guid sid && project.Resolve(sid) is string sp ? AssetLoader.LoadImage(sp) : null,
-            p => Character.Load(p).SpriteAssetId is Guid c ? [c] : [],
+            p => Character.Load(p) is var ch ? new[] { ch.SpriteAssetId, ch.RigAnimAssetId }.OfType<Guid>() : [],
             (p, map) =>
             {
                 var c = Character.Load(p);
-                if (c.SpriteAssetId is not Guid g || map(g) == g) return false;
-                c.SpriteAssetId = map(g);
+                Guid? M(Guid? g) => g is Guid x ? map(x) : null;
+                if ((M(c.SpriteAssetId), M(c.RigAnimAssetId)) == (c.SpriteAssetId, c.RigAnimAssetId)) return false;
+                (c.SpriteAssetId, c.RigAnimAssetId) = (M(c.SpriteAssetId), M(c.RigAnimAssetId));
                 Character.Save(c, p);
                 return true;
             }),
@@ -92,9 +98,13 @@ public static class AssetKinds
                     foreach (var st in e.Art.Keys.ToList()) { var n = map(e.Art[st]); changed |= n != e.Art[st]; e.Art[st] = n; }
                     if (e.IconAssetId is Guid ic && map(ic) != ic) { e.IconAssetId = map(ic); changed = true; }
                 }
+                foreach (var i in k.Screens.SelectMany(s => s.Items))
+                    if (i.ClipAssetId is Guid c && map(c) != c) { i.ClipAssetId = map(c); changed = true; }
                 if (changed) UiKit.Save(k, p);
                 return changed;
             }),
+        new(AssetType.Anim, [".pxanim"], p => AnimLibrary.Load(p), p => AnimLibrary.Load(p) is var l
+                ? $"Animations: {string.Join(", ", l.Clips.Take(6).Select(c => $"{c.Name} ({c.DurationMs / 1000.0:0.##} s)"))}{(l.Clips.Count > 6 ? " …" : "")}" : ""),
         new(AssetType.Mix, [".pxmix"], p => Mix.Load(p), p => DescribeMix(Mix.Load(p)), null,
             p => Mix.Load(p).ReferencedAssets(),
             (p, map) =>

@@ -285,8 +285,10 @@ public static class Exporter
                     var c = Character.Load(path);
                     if (c.SpriteAssetId is not Guid sid || p.Find(sid) is not { Type: AssetType.Sprite }) throw new InvalidDataException("The character has no sprite.");
                     var s = ProjectFile.Load(p.Resolve(sid)!);
-                    if (Godot) Add(b + "_character.tscn", GodotExport.CharacterScene(c, s, a.Name, Res(_base[sid] + ".tres"), p.Settings));
-                    else Add(b + "_character.json", CharacterExport.Json(c, s, a.Name, Rel(b, _base[sid] + ".png")));
+                    var rigLib = c.Parts.Count > 0 && c.RigAnimAssetId is Guid rid ? _assets.Anim(rid) : null;
+                    if (Godot) Add(b + "_character.tscn", GodotExport.CharacterScene(c, s, a.Name, Res(_base[sid] + ".tres"), p.Settings, Res(_base[sid] + ".png"), rigLib));
+                    else Add(b + "_character.json", CharacterExport.Json(c, s, a.Name, Rel(b, _base[sid] + ".png"),
+                        c.RigAnimAssetId is Guid ra && _base.TryGetValue(ra, out var rb) ? Rel(b, rb + ".json") : null));
                     break;
                 }
                 case AssetType.Song or AssetType.Sound or AssetType.Audio or AssetType.Mix:
@@ -307,6 +309,9 @@ public static class Exporter
                     else Add(b + "_scene.json", SceneJson(sc, b));
                     break;
                 }
+                case AssetType.Anim:
+                    Add(b + ".json", AnimLibrary.Serialize(AnimLibrary.Load(path)));   // Godot scenes bake the clips they use
+                    break;
                 case AssetType.Ui:
                 {
                     foreach (var (rel, data) in UiExport.Files(UiKit.Load(path), b, p, Godot ? Res : null)) Add(rel, data);
@@ -337,12 +342,12 @@ public static class Exporter
         {
             string? File(Guid? id) => id is Guid g && p.Find(g) is { } e ? Rel(b, _base[g] + e.Type switch
             {
-                AssetType.Sprite => ".json", AssetType.Image or AssetType.Paint or AssetType.Vector or AssetType.Texture => ".png", AssetType.Tilemap => ".tmj", AssetType.Character => "_character.json", _ => ".wav",
+                AssetType.Sprite => ".json", AssetType.Image or AssetType.Paint or AssetType.Vector or AssetType.Texture => ".png", AssetType.Tilemap => ".tmj", AssetType.Character => "_character.json", AssetType.Anim => ".json", _ => ".wav",
             }) : null;
             return JsonSerializer.Serialize(new
             {
                 format = "pixelforge-scene", version = 1, width = s.Width, height = s.Height, background = $"#{s.Background:X8}",
-                level = s.Level, order = s.Order, camera = new { x = s.CameraX, y = s.CameraY }, music = File(s.MusicAssetId),
+                level = s.Level, order = s.Order, camera = new { x = s.CameraX, y = s.CameraY, animations = File(s.CameraClipAssetId), clip = s.CameraClip }, music = File(s.MusicAssetId),
                 layers = s.Layers.Select(l => new
                 {
                     name = l.Name, kind = l.Kind.ToString(), file = File(l.AssetId), parallax = new { x = l.ParallaxX, y = l.ParallaxY },
@@ -350,6 +355,7 @@ public static class Exporter
                     instances = s.InstancesOf(l.Id).Select(i => new
                     {
                         name = i.Name, file = File(i.AssetId), x = i.X, y = i.Y, animation = i.Animation, flipX = i.FlipX, z = i.Z, properties = i.Properties,
+                        animations = File(i.ClipAssetId), clip = i.Clip,
                         track = i.Track is null ? null : new { loop = i.Track.Loop, keys = i.Track.Keys.Select(k => new { time = k.TimeMs, x = k.X, y = k.Y, scaleX = k.ScaleX, scaleY = k.ScaleY, rotation = k.Rotation, opacity = k.Opacity, easing = k.Easing.ToString() }) },
                     }),
                 }),

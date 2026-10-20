@@ -75,6 +75,21 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
         UpdateTitle();
     }
 
+    // ---------- shared with the Rig mode ----------
+
+    internal Character Doc => _char;
+    internal Sprite? SpriteDoc => _sprite;
+    /// <summary>Raised after the document was replaced or changed (open, undo, rig edits).</summary>
+    internal event Action? DocumentChanged;
+
+    /// <summary>An undoable edit made by another mode.</summary>
+    internal void Change(Action edit)
+    {
+        Snapshot();
+        edit();
+        RefreshAll();
+    }
+
     sealed record CharacterStyle(CharacterKind Kind, Facing Facing, Dictionary<string, string> Properties);
 
     public object? CopyStyle() => new CharacterStyle(_char.Kind, _char.Facing, new(_char.Properties));
@@ -110,6 +125,7 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
         RenderPreview();
         RefreshBoxList();
         UpdateTitle();
+        DocumentChanged?.Invoke();
     }
 
     void LoadSprite()

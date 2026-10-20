@@ -43,6 +43,9 @@ public sealed class SceneInstance
     public int Z { get; set; }
     /// <summary>Optional movement (moving platforms, patrols), relative to X/Y.</summary>
     public KeyframeTrack? Track { get; set; }
+    /// <summary>A clip from an animation library, used instead of Track when set (reusable across scenes).</summary>
+    public Guid? ClipAssetId { get; set; }
+    public string? Clip { get; set; }
     public Dictionary<string, string> Properties { get; set; } = [];
 
     public SceneInstance Clone()
@@ -78,7 +81,8 @@ public sealed class SceneArea
 public sealed class Scene
 {
     // v2: UiAssetId + UiScreen (a UI kit screen drawn over the game view)
-    public const int Version = 2;
+    // v3: SceneInstance.ClipAssetId/Clip and CameraClipAssetId/CameraClip (clips from an animation library)
+    public const int Version = 3;
 
     public int Width { get; set; } = 640;
     public int Height { get; set; } = 360;
@@ -96,10 +100,13 @@ public sealed class Scene
     /// <summary>UI kit and the name of its screen shown on top of the game (HUD, menus); null = none.</summary>
     public Guid? UiAssetId { get; set; }
     public string? UiScreen { get; set; }
+    /// <summary>Camera move from an animation library (X, Y added to the camera; null = none).</summary>
+    public Guid? CameraClipAssetId { get; set; }
+    public string? CameraClip { get; set; }
 
     public IEnumerable<Guid> ReferencedAssets() =>
-        Layers.Select(l => l.AssetId).OfType<Guid>().Concat(Instances.Select(i => i.AssetId))
-            .Concat(MusicAssetId is Guid m ? [m] : []).Concat(UiAssetId is Guid u ? [u] : []).Distinct();
+        Layers.Select(l => l.AssetId).OfType<Guid>().Concat(Instances.Select(i => i.AssetId)).Concat(Instances.Select(i => i.ClipAssetId).OfType<Guid>())
+            .Concat(MusicAssetId is Guid m ? [m] : []).Concat(UiAssetId is Guid u ? [u] : []).Concat(CameraClipAssetId is Guid c ? [c] : []).Distinct();
 
     /// <summary>Instances of a layer in drawing order.</summary>
     public IEnumerable<SceneInstance> InstancesOf(Guid layerId) => Instances.Where(i => i.LayerId == layerId).OrderBy(i => i.Z).ThenBy(i => i.Y);
@@ -116,7 +123,7 @@ public sealed class Scene
     public Scene Clone() => new()
     {
         Width = Width, Height = Height, Background = Background, Level = Level, Order = Order, CameraX = CameraX, CameraY = CameraY, MusicAssetId = MusicAssetId,
-        UiAssetId = UiAssetId, UiScreen = UiScreen,
+        UiAssetId = UiAssetId, UiScreen = UiScreen, CameraClipAssetId = CameraClipAssetId, CameraClip = CameraClip,
         Layers = [.. Layers.Select(l => l.Clone())],
         Instances = [.. Instances.Select(i => i.Clone())],
         Areas = [.. Areas.Select(a => a.Clone())],
@@ -139,6 +146,8 @@ public sealed class Scene
         public Guid? MusicAssetId { get; set; }
         public Guid? UiAssetId { get; set; }
         public string? UiScreen { get; set; }
+        public Guid? CameraClipAssetId { get; set; }
+        public string? CameraClip { get; set; }
         public List<SceneLayer>? Layers { get; set; }
         public List<SceneInstance>? Instances { get; set; }
         public List<SceneArea>? Areas { get; set; }
@@ -148,6 +157,7 @@ public sealed class Scene
     {
         Version = Version, Width = s.Width, Height = s.Height, Background = s.Background, Level = s.Level, Order = s.Order,
         CameraX = s.CameraX, CameraY = s.CameraY, MusicAssetId = s.MusicAssetId, UiAssetId = s.UiAssetId, UiScreen = s.UiScreen,
+        CameraClipAssetId = s.CameraClipAssetId, CameraClip = s.CameraClip,
         Layers = s.Layers, Instances = s.Instances, Areas = s.Areas,
     }, Json);
 
@@ -158,6 +168,7 @@ public sealed class Scene
         {
             Level = d.Level ?? "", Order = d.Order, Background = d.Background, MusicAssetId = d.MusicAssetId,
             UiAssetId = d.UiAssetId, UiScreen = d.UiScreen,   // absent in v1 files: no overlay
+            CameraClipAssetId = d.CameraClipAssetId, CameraClip = d.CameraClip,   // absent before v3
             Layers = d.Layers ?? [], Instances = d.Instances ?? [], Areas = d.Areas ?? [],
         };
         s.Resize(d.Width, d.Height);

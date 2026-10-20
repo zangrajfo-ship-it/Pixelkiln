@@ -42,6 +42,15 @@ public sealed class SceneAssets(Project project)
 
     public Character? Character(Guid id) => Get(id, Core.Character.Load);
 
+    public AnimLibrary? Anim(Guid id) => Get(id, AnimLibrary.Load);
+
+    /// <summary>The clip a scene object plays (its library clip, or null when it uses its own track or none).</summary>
+    public AnimClip? ClipOf(SceneInstance i) => i.ClipAssetId is Guid id ? Anim(id)?.Clip(i.Clip) : null;
+
+    /// <summary>The body-part clip of a rigged character in a state (null = parts at rest).</summary>
+    public AnimClip? RigClip(Character c, string? state) =>
+        c.RigAnimAssetId is Guid id && Anim(id) is { } lib ? lib.Clip(state is not null && c.RigClips.TryGetValue(state, out var n) ? n : c.RigClips.Values.FirstOrDefault()) : null;
+
     /// <summary>Sprite, pivot and frame range for an instance; null when its asset is missing or unreadable.</summary>
     public InstanceLook? Look(SceneInstance i)
     {
