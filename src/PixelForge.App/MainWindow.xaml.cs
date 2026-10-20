@@ -147,6 +147,8 @@ public partial class MainWindow : Window
             new Separator(),
             Ui.Item("New from _template…", "Ctrl+T", ShowTemplateStudio, open),
             Ui.Item("C_heck project…", null, () => { if (App.Project is { } p) HealthWindow.Show(this, p); }, open),
+            Ui.Item("Optimi_ze assets…", null, () => { if (App.Project is { } p) OptimizeWindow.Show(this, p, App.NotifyProjectChanged); }, open),
+            Ui.Item("St_yle guide…", null, () => { if (App.Project is { } p) StyleGuideWindow.Show(this, p); }, open),
             Ui.Item("Project _settings and collisions…", null, () => { if (App.Project is { } p) ProjectSettingsWindow.Show(this, p); }, open),
             Ui.Item("_History of selected asset…", "Ctrl+H", Assets.ShowHistory, open),
             Ui.Item("_Export…", "Ctrl+Shift+E", () =>

@@ -45,6 +45,7 @@ static class HealthWindow
             Section("Broken references", broken, b => $"{b.From.Path} → unknown asset {b.To}");
             Section("Files in the folder but not in the project", loose, f => Path.GetRelativePath(p.Root, f));
             Section("Images and palettes nothing uses", unused, a => a.Path);
+            if (!p.Settings.Style.IsEmpty) Section("Style guide", StyleCheck.Run(p, p.Settings.Style), i => $"{i.Asset.Path}: {i.Message}");
             report.Text = sb.ToString();
             addLoose.IsEnabled = loose.Count > 0;
             forget.IsEnabled = missing.Count > 0;

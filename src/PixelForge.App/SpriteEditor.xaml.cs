@@ -502,8 +502,17 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
     void OnNew(object? sender, RoutedEventArgs? e)
     {
         if (!ConfirmDiscard()) return;
-        if (Ui.AskSize(this, "New sprite", _sprite.Width, _sprite.Height, anchor: false) is not (int w, int h, _, _)) return;
-        LoadSprite(new Sprite(w, h), null);
+        // the style guide sets the starting size and palette
+        var style = App.Project?.Settings.Style;
+        int sw = style is { Grid: > 0 } ? Math.Max(1, _sprite.Width / style.Grid) * style.Grid : _sprite.Width, sh = style is { Grid: > 0 } ? Math.Max(1, _sprite.Height / style.Grid) * style.Grid : _sprite.Height;
+        if (Ui.AskSize(this, "New sprite", sw, sh, anchor: false) is not (int w, int h, _, _)) return;
+        var s = new Sprite(w, h);
+        if (App.Project is { } p && style is not null && StyleCheck.Colors(p, style) is { Count: > 0 } colors)
+        {
+            s.Palette.Clear();
+            s.Palette.AddRange(colors.Select(c => c | 0xFF000000));
+        }
+        LoadSprite(s, null);
     }
 
     void OnCanvasSize(object sender, RoutedEventArgs e)

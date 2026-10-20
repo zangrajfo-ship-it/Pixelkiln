@@ -255,3 +255,12 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Testi:** 199 (osvetlitev 6: upad, stožec, sence ploščic in poligonov, enosmerne ploščice, sij in utrip, delci s semenom, ogreti in omejeni, prizor v4, izvoz Godot in generični, hitrost: 4 luči, okluder in 2000 delcev pod 100 ms na sličico 320×180; predloge: baklje in sneg; regresija: v4). 194 uspešnih; 5 testov z izrisom WPF še vedno pade zaradi zaklenjene postaje (glej Fazo 17).
 - **Poenostavitve (`ponytail`):** senčenje teče na procesorju na vsako sličico (za velike zaslone z veliko lučmi bi bil potreben predpomnilnik svetlobne mape); predogled v urejevalniku izriše ves prizor do 4096×4096; sij in utrip v Godot sta samo metapodatka.
 - **Ni ročno preizkušeno:** vlečenje oznak, uvoz v Godot. Smoke ni tekel (zaklenjena postaja).
+
+## Faza 19: Asset Optimization in Style Guide (končana, 20. 10. 2026)
+- **Core:** `Atlas` (MaxRects z najboljšim ujemanjem krajše stranice, obrezovanje praznih robov, enake slike po SHA-256 shranjene enkrat, več strani, potence števila 2, JSON), `Optimizer` (velikost datotek in pomnilnika, neuporabljena sredstva, enake datoteke, prevelike slike in teksture, ki niso potenca števila 2, prihranek atlasa), `StyleGuide` in `StyleCheck` (mreža velikosti, število barv, dovoljene palete, barva obrobe, debelina vektorskih črt, največja velikost).
+- **Okno Project › Optimize assets:** poročilo v ozadju s preklicem, »Point identical files to one copy« (prek `ReplaceReferences`, z zgodovino različic, datotek ne briše), »Write atlas…«.
+- **Okno Project › Style guide:** pravila projekta, shranjena v `.pfproj`, in preverjanje vseh sredstev. Check project prikaže kršitve, nov sprajt začne z velikostjo mreže in z barvami dovoljenih palet.
+- **Izvoz:** možnost »pack every picture into an atlas« v izvoznem profilu.
+- **Testi:** 204 (optimizacija 5: MaxRects brez prekrivanja, obrez, ponovitve, prazne sličice, več strani, 1000 sprajtov v manj kot 10 s brez prekrivanja, poročilo, atlas v izvozu, slogovna pravila in stari projekt brez vodnika). 5 testov z izrisom WPF še pade zaradi zaklenjene postaje.
+- **Poenostavitve:** poročilo neuporabljenih sredstev šteje kot uporabljeno vse, na kar kaže drugo sredstvo ali seznam predvajanja, prizori in palete niso nikoli neuporabljeni; atlas za Godot je dodatna datoteka JSON, sprajti še naprej uporabljajo svoje liste.
+- **Ni ročno preizkušeno:** okni Optimize in Style guide. Smoke ni tekel (zaklenjena postaja).

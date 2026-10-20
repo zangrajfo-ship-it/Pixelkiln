@@ -159,3 +159,8 @@ JSON prek `DocumentFile`: `Version` 1, `Clips[]` (`Name` edinstveno, `Play` = Lo
 - Datoteke v1 do v3 se naložijo brez osvetlitve (zlati primerek `current/level.v4.pxscene`).
 
 **Izvoz:** Godot dobi `CanvasModulate` (ambient), `PointLight2D` (radialna `GradientTexture2D`, za stožec slika `ime_spotN.png`, `shadow_enabled`), `LightOccluder2D` za poligone in združene vrste trdnih ploščic ter `CPUParticles2D` (količina, življenje, smer, razpršenost, gravitacija, hitrost, merilo, barvni prehod, seme; aditivni z `CanvasItemMaterial`). Sij in utrip sta metapodatka. Generični JSON prizora ima `ambient`, `tileShadows`, `lights`, `occluders`, `emitters`.
+
+## Faza 19: slogovni vodnik in atlas
+- **`.pfproj`:** `Settings.Style` (neobvezno; brez njega velja prazen vodnik): `Palettes[]` (ID-ji palet z dovoljenimi barvami), `Grid` (širina in višina sprajtov sta večkratnik), `MaxColors`, `Outline` (RGB robnih pikslov ali `null`), `VectorStroke`, `MaxSize`. Vrednost 0 ali prazno pomeni, da pravilo ni preverjeno.
+- **Izvozni profil:** `Atlas` (bool) zapiše še `atlas/atlas{n}.png` in `atlas/atlas.json`.
+- **`atlas.json`:** `format` = `pixelforge-atlas`, `version` 1, `pages[]` (`file`, `width`, `height`), `frames[]` (`key` = izvozno ime, sličice sprajtov kot `ime#indeks`; `page` (−1 = prazna sličica, ni shranjena), `x`, `y`, `w`, `h` = obrezan pravokotnik na strani, `trimX`, `trimY` = odmik obreza v izvirniku, `sourceW`, `sourceH`, `sameAs` = ključ enake slike, ki je shranjena le enkrat). Strani so potence števila 2, med slikami je 1 px razmika.
