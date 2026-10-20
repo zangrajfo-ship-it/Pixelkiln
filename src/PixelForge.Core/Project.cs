@@ -52,6 +52,8 @@ public sealed class ProjectSettings
     public int HistoryMaxMegabytes { get; set; } = VersionStore.DefaultMaxMegabytes;
     /// <summary>Per-asset view state (guides, reference picture): editing aids, not content, so asset formats stay unchanged.</summary>
     public Dictionary<Guid, AssetView> Views { get; set; } = [];
+    /// <summary>Visual rules the Style guide window checks (absent = none).</summary>
+    public StyleGuide Style { get; set; } = new();
 
     public bool Collides(int a, int b) =>
         (CollisionMasks.GetValueOrDefault(a, uint.MaxValue) & 1u << b) != 0 && (CollisionMasks.GetValueOrDefault(b, uint.MaxValue) & 1u << a) != 0;
@@ -111,7 +113,10 @@ public sealed class Project
         var p = DocumentFile.Load(path, "project", SchemaVersion, json =>
         {
             var d = JsonSerializer.Deserialize<Dto>(json, Json) ?? throw new InvalidDataException("Empty project file.");
-            return new Project { Id = d.Id, Name = d.Name ?? "Game", Settings = d.Settings ?? new(), Assets = d.Assets ?? [] };
+            var settings = d.Settings ?? new();
+            settings.Style ??= new();   // projects from before the style guide
+            settings.Style.Palettes ??= [];
+            return new Project { Id = d.Id, Name = d.Name ?? "Game", Settings = settings, Assets = d.Assets ?? [] };
         });
         p.FilePath = System.IO.Path.GetFullPath(path);
         p.Validate();

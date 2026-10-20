@@ -27,6 +27,7 @@ static class ExportWindow
         var outBox = new TextBox();
         var resBox = new TextBox();
         var zipBox = new CheckBox { Content = "Also write a .zip next to the folder", Margin = new Thickness(0, 6, 0, 0) };
+        var atlasBox = new CheckBox { Content = "Also pack every picture into an atlas (atlas/atlas.json, trimmed, repeats stored once)", Margin = new Thickness(0, 4, 0, 0) };
         var scalesBox = new TextBox { ToolTip = "Extra picture sizes, e.g. 2, 4 (writes name@2x.png …); empty = only 1×" };
         var allBox = new CheckBox { Content = "All assets (otherwise the ones selected below, plus what they use)", Margin = new Thickness(0, 6, 0, 0) };
         var assetList = new ListBox { SelectionMode = SelectionMode.Extended, Height = 140, Margin = new Thickness(0, 4, 0, 0) };
@@ -71,7 +72,7 @@ static class ExportWindow
             Children =
             {
                 new StackPanel { Orientation = Orientation.Horizontal, Children = { profileBox, add, del } },
-                form, zipBox, allBox, assetList, warn,
+                form, zipBox, atlasBox, allBox, assetList, warn,
             },
         };
         DockPanel.SetDock(top, Dock.Top);
@@ -97,6 +98,7 @@ static class ExportWindow
                 resBox.Text = pr.ResFolder;
                 resBox.IsEnabled = pr.Target == ExportTarget.Godot4;
                 zipBox.IsChecked = pr.Zip;
+                atlasBox.IsChecked = pr.Atlas;
                 scalesBox.Text = string.Join(", ", pr.Scales);
                 allBox.IsChecked = pr.Assets is null;
                 assetList.IsEnabled = pr.Assets is not null;
@@ -129,6 +131,7 @@ static class ExportWindow
             pr.OutputFolder = outBox.Text.Trim().Replace('\\', '/');
             pr.ResFolder = resBox.Text.Trim().Trim('/');
             pr.Zip = zipBox.IsChecked == true;
+            pr.Atlas = atlasBox.IsChecked == true;
             var scales = scalesBox.Text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(x => int.TryParse(x.TrimEnd('x', 'X', '×'), out int v) ? v : -1).ToList();
             if (scales.Any(v => v is < 2 or > 16)) { Ui.MarkInvalid(scalesBox, "Whole numbers from 2 to 16, separated by commas."); return false; }
             Ui.MarkInvalid(scalesBox, null);

@@ -21,10 +21,12 @@ public sealed class ExportProfile
     public bool Zip { get; set; }
     /// <summary>Extra sizes for pictures (e.g. 2 and 4 write name@2x.png and name@4x.png next to name.png).</summary>
     public List<int> Scales { get; set; } = [];
+    /// <summary>Also pack every exported picture into atlas/atlas{n}.png with atlas/atlas.json (trimmed, repeats stored once).</summary>
+    public bool Atlas { get; set; }
     /// <summary>Assets to export (plus everything they use); null = all.</summary>
     public List<Guid>? Assets { get; set; }
 
-    public ExportProfile Clone() => new() { Name = Name, Target = Target, OutputFolder = OutputFolder, ResFolder = ResFolder, Zip = Zip, Assets = Assets?.ToList(), Scales = [.. Scales] };
+    public ExportProfile Clone() => new() { Name = Name, Target = Target, OutputFolder = OutputFolder, ResFolder = ResFolder, Zip = Zip, Assets = Assets?.ToList(), Scales = [.. Scales], Atlas = Atlas };
 }
 
 public sealed class ExportResult
@@ -68,6 +70,9 @@ public static class Exporter
                 r.Errors.Add($"“{a.Path}”: {ex.Message}");
             }
         }
+        if (prof.Atlas && r.Ok)
+            try { ctx.WriteAtlas(); }
+            catch (InvalidDataException ex) { r.Errors.Add("Atlas: " + ex.Message); }
         ctx.WriteProjectJson();
         return Finish(r, prof);
     }
@@ -375,6 +380,14 @@ public static class Exporter
                     color = $"#{e.Color:X8}", endColor = $"#{e.EndColor:X8}", additive = e.Additive, seed = e.Seed,
                 }),
             }, new JsonSerializerOptions { WriteIndented = true });
+        }
+
+        /// <summary>Atlas pages of every exported picture; keys are the exported names (sprite frames as name#frame).</summary>
+        public void WriteAtlas()
+        {
+            var atlas = Atlas.Pack(Optimizer.Pictures(p, set, a => _base[a.Id]));
+            for (int i = 0; i < atlas.Pages.Count; i++) Add($"atlas/atlas{i}.png", ImageIO.EncodePng(atlas.Pages[i].Pixels, atlas.Pages[i].W, atlas.Pages[i].H));
+            Add("atlas/atlas.json", Atlas.Json(atlas, i => $"atlas{i}.png"));
         }
 
         /// <summary>project.json: game settings, collision categories, playlists and music loops, with file paths.</summary>
