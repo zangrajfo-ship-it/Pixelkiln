@@ -285,7 +285,7 @@ public static class GodotExport
     /// after their kind, the start camera and the music.
     /// </summary>
     public static string LevelScene(Scene s, string name, Project p, SceneAssets assets, Func<Guid, string> res, List<string> warnings,
-        Func<string, uint[], int, int, string>? picture = null)
+        Func<string, uint[], int, int, string>? picture = null, string? logicScript = null)
     {
         var d = new Doc("[gd_scene load_steps={steps} format=3]");
         var b = d.Body;
@@ -353,6 +353,8 @@ public static class GodotExport
             }
         }
         Effects(d, s, assets, areaNames, picture, warnings);
+        if (logicScript is not null)
+            b.Append($"[node name={Q(Unique(areaNames, "Logic"))} type=\"Node\" parent=\".\"]\nscript = {d.Ext("Script", logicScript)}\n\n");
         string cam = Unique(areaNames, "Camera2D");
         b.Append($"[node name={Q(cam)} type=\"Camera2D\" parent=\".\"]\n");
         b.Append($"position = Vector2({F(s.CameraX + p.Settings.TargetWidth / 2.0)}, {F(s.CameraY + p.Settings.TargetHeight / 2.0)})\n");

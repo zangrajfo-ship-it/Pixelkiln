@@ -66,6 +66,8 @@
                 <ComboBox x:Name="UiScreenBox" Margin="0,4,0,0" SelectionChanged="OnUiChanged" AutomationProperties.Name="UI screen" />
                 <Label Content="Camera mo_tion" Target="{Binding ElementName=CameraClipBox}" Padding="0" Margin="0,6,0,0" />
                 <ComboBox x:Name="CameraClipBox" SelectionChanged="OnCameraClipChanged" ToolTip="A clip from an animation library (Motion mode) added to the camera: shakes, pans" />
+                <Label Content="Lo_gic" Target="{Binding ElementName=LogicBox}" Padding="0" Margin="0,6,0,0" />
+                <ComboBox x:Name="LogicBox" SelectionChanged="OnLogicChanged" ToolTip="A logic graph (Logic mode) that runs in the game preview and is exported as a GDScript" />
 
                 <TextBlock Text="Lighting and effects" FontWeight="SemiBold" Margin="0,12,0,4" />
                 <Label Content="Ambient li_ght (FFFFFF = no lighting)" Target="{Binding ElementName=AmbientBox}" Padding="0" />

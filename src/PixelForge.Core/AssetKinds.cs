@@ -48,6 +48,7 @@ public static class AssetKinds
                     if (i.ClipAssetId is Guid clip) i.ClipAssetId = M(clip);
                 }
                 if (s.CameraClipAssetId is Guid cam) s.CameraClipAssetId = M(cam);
+                if (s.LogicAssetId is Guid logic) s.LogicAssetId = M(logic);
                 if (s.MusicAssetId is Guid music) s.MusicAssetId = M(music);
                 if (s.UiAssetId is Guid ui) s.UiAssetId = M(ui);
                 if (changed) Scene.Save(s, p);
@@ -101,6 +102,19 @@ public static class AssetKinds
                 foreach (var i in k.Screens.SelectMany(s => s.Items))
                     if (i.ClipAssetId is Guid c && map(c) != c) { i.ClipAssetId = map(c); changed = true; }
                 if (changed) UiKit.Save(k, p);
+                return changed;
+            }),
+        new(AssetType.Logic, [".pxlogic"], p => LogicGraph.Load(p), p => LogicGraph.Load(p) is var g
+                ? $"Logic: {g.Nodes.Count(n => LogicGraph.IsEvent(n.Kind))} events, {g.Nodes.Count} nodes" : "",
+            References: p => LogicGraph.Load(p).Nodes.SelectMany(n => n.Params.Where(kv => kv.Key is "sound" or "scene" or "library").Select(kv => Guid.TryParse(kv.Value, out var g) ? g : (Guid?)null)).OfType<Guid>().Distinct(),
+            Remap: (p, map) =>
+            {
+                var g = LogicGraph.Load(p);
+                bool changed = false;
+                foreach (var n in g.Nodes)
+                    foreach (var key in n.Params.Keys.Where(k => k is "sound" or "scene" or "library").ToList())
+                        if (Guid.TryParse(n.Params[key], out var id) && map(id) != id) { n.Params[key] = map(id).ToString(); changed = true; }
+                if (changed) LogicGraph.Save(g, p);
                 return changed;
             }),
         new(AssetType.Anim, [".pxanim"], p => AnimLibrary.Load(p), p => AnimLibrary.Load(p) is var l

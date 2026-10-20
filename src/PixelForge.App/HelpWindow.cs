@@ -85,6 +85,12 @@ static class HelpWindow
             ("Add track…", "Target: empty = object, camera or UI element; a body part's name for rigs"),
             ("Space / Home / Del", "Play or stop / rewind / delete the selected key"),
         ]),
+        ("Scene › Logic (Ctrl+3)", [
+            ("Palette buttons", "Add an event (blue), condition (orange) or action (green) node"),
+            ("Drag title / drag from a port dot", "Move a node / link it to another node (green = true, red = false)"),
+            ("Click a link, Del", "Delete the link (or the selected node)"),
+            ("Layout › Logic, then F5", "Run the graph in the game preview; variables and items show in its status line"),
+        ]),
         ("Character › Rig (Ctrl+2)", [
             ("Drag / right-click on the sprite", "Cut a body part / set the selected part's pivot"),
             ("Enter / Del", "Edit the part (parent, offset, Z) / delete it"),

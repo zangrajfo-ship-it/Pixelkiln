@@ -310,13 +310,29 @@ public static class Exporter
                     var sc = Scene.Load(path);
                     foreach (var issue in SceneCheck.Run(sc, p))
                         (issue.Severity == "error" ? r.Errors : r.Warnings).Add($"{a.Path}: {issue.Message}");
+                    string? script = null;
+                    if (Godot && sc.LogicAssetId is Guid lid && _assets.Logic(lid) is { } graph)
+                    {
+                        string? Path(Guid id) => !_base.TryGetValue(id, out var nb) ? null : p.Find(id)?.Type switch
+                        {
+                            AssetType.Song or AssetType.Sound or AssetType.Audio or AssetType.Mix => Res(nb + ".wav"), AssetType.Scene => Res(nb + ".tscn"), _ => null,
+                        };
+                        string? player = sc.Instances.FirstOrDefault(i => _assets.Look(i)?.Character?.Kind == CharacterKind.Player) is { } pl ? (pl.Name.Length > 0 ? pl.Name : "object") : null;
+                        Add(b + "_logic.gd", LogicExport.Gd(graph, a.Name, Path, player));
+                        script = Res(b + "_logic.gd");
+                    }
                     if (Godot) Add(b + ".tscn", GodotExport.LevelScene(sc, a.Name, p, _assets, id => Res(_base[id]), r.Warnings,
-                        (suffix, px, w, h) => { Picture(b + suffix, px, w, h); return Res(b + suffix); }));
+                        (suffix, px, w, h) => { Picture(b + suffix, px, w, h); return Res(b + suffix); }, script));
                     else Add(b + "_scene.json", SceneJson(sc, b));
                     break;
                 }
                 case AssetType.Anim:
                     Add(b + ".json", AnimLibrary.Serialize(AnimLibrary.Load(path)));   // Godot scenes bake the clips they use
+                    break;
+                case AssetType.Logic:
+                    var logic = LogicGraph.Load(path);
+                    foreach (var problem in logic.Check()) (problem.StartsWith("Warning:") ? r.Warnings : r.Errors).Add($"{a.Path}: {problem}");
+                    if (!Godot) Add(b + "_logic.json", LogicGraph.Serialize(logic));   // Godot: each level that uses it gets a script
                     break;
                 case AssetType.Ui:
                 {
@@ -348,7 +364,7 @@ public static class Exporter
         {
             string? File(Guid? id) => id is Guid g && p.Find(g) is { } e ? Rel(b, _base[g] + e.Type switch
             {
-                AssetType.Sprite => ".json", AssetType.Image or AssetType.Paint or AssetType.Vector or AssetType.Texture => ".png", AssetType.Tilemap => ".tmj", AssetType.Character => "_character.json", AssetType.Anim => ".json", _ => ".wav",
+                AssetType.Sprite => ".json", AssetType.Image or AssetType.Paint or AssetType.Vector or AssetType.Texture => ".png", AssetType.Tilemap => ".tmj", AssetType.Character => "_character.json", AssetType.Anim => ".json", AssetType.Logic => "_logic.json", _ => ".wav",
             }) : null;
             return JsonSerializer.Serialize(new
             {
@@ -366,7 +382,7 @@ public static class Exporter
                     }),
                 }),
                 areas = s.Areas.Select(a => new { name = a.Name, kind = a.Kind.ToString(), x = a.X, y = a.Y, w = a.W, h = a.H, properties = a.Properties }),
-                ambient = $"#{s.Ambient:X8}", tileShadows = s.TileShadows,
+                ambient = $"#{s.Ambient:X8}", tileShadows = s.TileShadows, logic = File(s.LogicAssetId),
                 lights = s.Lights.Select(l => new
                 {
                     name = l.Name, kind = l.Kind.ToString(), x = l.X, y = l.Y, radius = l.Radius, color = $"#{l.Color:X8}", intensity = l.Intensity,

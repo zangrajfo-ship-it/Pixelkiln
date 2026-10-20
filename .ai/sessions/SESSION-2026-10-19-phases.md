@@ -264,3 +264,13 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Testi:** 204 (optimizacija 5: MaxRects brez prekrivanja, obrez, ponovitve, prazne sličice, več strani, 1000 sprajtov v manj kot 10 s brez prekrivanja, poročilo, atlas v izvozu, slogovna pravila in stari projekt brez vodnika). 5 testov z izrisom WPF še pade zaradi zaklenjene postaje.
 - **Poenostavitve:** poročilo neuporabljenih sredstev šteje kot uporabljeno vse, na kar kaže drugo sredstvo ali seznam predvajanja, prizori in palete niso nikoli neuporabljeni; atlas za Godot je dodatna datoteka JSON, sprajti še naprej uporabljajo svoje liste.
 - **Ni ročno preizkušeno:** okni Optimize in Style guide. Smoke ni tekel (zaklenjena postaja).
+
+## Faza 20: Visual Logic Editor (končana, 20. 10. 2026)
+- **Specifikacija** pred kodo: `.ai/context/logic.md` (vrste vozlišč, vrstni red v sličici, ena izvedba na dogodek na sličico, čakanje, menjava prizora, meja 1000 vozlišč, preverjanje grafa, izvoz).
+- **Core:** `LogicGraph` (`.pxlogic` v1, preverjanje: vrata, povezave v dogodke, cikli brez `Wait`, parametri, nedosegljiva vozlišča), `LogicRuntime` (determinističen interpreter s spremenljivkami, inventarjem in učinki), `LogicExport` (GDScript). Register vrst sredstev pozna reference v grafu.
+- **Predogled igre:** prizor z logiko (`.pxscene` v5, `LogicAssetId`) zažene graf; dotiki objektov, vstopi v območja, skrivanje in prikaz objektov, stanja, posnetki, zvoki in menjava prizora delujejo; vrstica stanja prikaže spremenljivke in predmete ali napako grafa.
+- **Način Scene › Logic** (Ctrl+3): paleta vozlišč, premikanje, povezovanje z vlečenjem iz vrat, brisanje povezav in vozlišč, lastnosti izbranega vozlišča (izbira sredstev iz projekta), seznam težav, undo. V načinu Layout se graf izbere v polju »Logic«.
+- **Izvoz:** Godot `ime_logic.gd` in vozlišče `Logic` v sceni stopnje; generično `ime_logic.json`.
+- **Testi:** 211 (logika 6: preverjanje, pogoji in dejanja, časovniki, čakanje, enkratni dogodki in sprememba stanja v isti sličici, menjava prizora in meja korakov, predogled igre z dotikom, skrivanjem, zvokom in menjavo prizora, izvoz GDScript in JSON; regresija: logika v1 in prizor v5). 5 testov z izrisom WPF še pade zaradi zaklenjene postaje.
+- **Poenostavitve:** GDScript ni preverjen v Godotu (ni nameščen); dotik v Godotu je razdalja 12 px med izhodiščema; `PlayClip` v Godotu predvaja samo posnetke, ki jih je objekt dobil že ob izvozu.
+- **Ni ročno preizkušeno:** urejevalnik grafa z miško, skripta v Godotu. Smoke ni tekel (zaklenjena postaja).

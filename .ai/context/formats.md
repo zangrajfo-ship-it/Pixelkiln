@@ -164,3 +164,11 @@ JSON prek `DocumentFile`: `Version` 1, `Clips[]` (`Name` edinstveno, `Play` = Lo
 - **`.pfproj`:** `Settings.Style` (neobvezno; brez njega velja prazen vodnik): `Palettes[]` (ID-ji palet z dovoljenimi barvami), `Grid` (širina in višina sprajtov sta večkratnik), `MaxColors`, `Outline` (RGB robnih pikslov ali `null`), `VectorStroke`, `MaxSize`. Vrednost 0 ali prazno pomeni, da pravilo ni preverjeno.
 - **Izvozni profil:** `Atlas` (bool) zapiše še `atlas/atlas{n}.png` in `atlas/atlas.json`.
 - **`atlas.json`:** `format` = `pixelforge-atlas`, `version` 1, `pages[]` (`file`, `width`, `height`), `frames[]` (`key` = izvozno ime, sličice sprajtov kot `ime#indeks`; `page` (−1 = prazna sličica, ni shranjena), `x`, `y`, `w`, `h` = obrezan pravokotnik na strani, `trimX`, `trimY` = odmik obreza v izvirniku, `sourceW`, `sourceH`, `sameAs` = ključ enake slike, ki je shranjena le enkrat). Strani so potence števila 2, med slikami je 1 px razmika.
+
+## `.pxlogic`: vizualna logika (`LogicGraph`, Faza 20)
+JSON prek `DocumentFile`: `Version` 1, `Nodes[]` (`Id` edinstven in neprazen, `Kind`, `X`, `Y`, `Params{ključ → niz}`), `Links[]` (`From`, `Port` = `out`, `true` ali `false`, `To`). Vrste vozlišč, parametri, vrstni red izvajanja in preverjanje: `.ai/context/logic.md`. Reference na sredstva (`sound`, `scene`, `library`) so ID-ji v parametrih, zato jih register vrst sredstev pozna in jih zamenjava sredstva preusmeri.
+
+## `.pxscene` v5 (Faza 20)
+Doda neobvezni `LogicAssetId` (graf, ki teče v prizoru). Zlati primerek `current/level.v5.pxscene`, logika `current/logic.v1.pxlogic`.
+
+**Izvoz:** Godot zapiše `ime_logic.gd` za vsak prizor z logiko in v sceno doda vozlišče `Logic` s to skripto; generični izvoz zapiše `ime_logic.json`, JSON prizora pa `logic`.

@@ -1,0 +1,60 @@
+{
+  "Version": 1,
+  "Nodes": [
+    {
+      "Id": "door",
+      "Kind": "EnterArea",
+      "X": 10,
+      "Y": 20,
+      "Params": {
+        "area": "exit"
+      }
+    },
+    {
+      "Id": "rich",
+      "Kind": "Compare",
+      "X": 200,
+      "Y": 20,
+      "Params": {
+        "variable": "score",
+        "op": "\u003E=",
+        "value": "10"
+      }
+    },
+    {
+      "Id": "pause",
+      "Kind": "Wait",
+      "X": 400,
+      "Y": 20,
+      "Params": {
+        "ms": "500"
+      }
+    },
+    {
+      "Id": "go",
+      "Kind": "LoadScene",
+      "X": 600,
+      "Y": 20,
+      "Params": {
+        "scene": "11111111-1111-1111-1111-111111111111"
+      }
+    }
+  ],
+  "Links": [
+    {
+      "From": "door",
+      "Port": "out",
+      "To": "rich"
+    },
+    {
+      "From": "rich",
+      "Port": "true",
+      "To": "pause"
+    },
+    {
+      "From": "pause",
+      "Port": "out",
+      "To": "go"
+    }
+  ]
+}

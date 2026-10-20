@@ -44,6 +44,8 @@ public sealed class SceneAssets(Project project)
 
     public AnimLibrary? Anim(Guid id) => Get(id, AnimLibrary.Load);
 
+    public LogicGraph? Logic(Guid id) => Get(id, LogicGraph.Load);
+
     /// <summary>Collision rectangles of a tilemap's visible tiles, in map pixels (cached with the file).</summary>
     public List<Collider>? TileSolids(Guid id) => Get(id, path =>
     {
