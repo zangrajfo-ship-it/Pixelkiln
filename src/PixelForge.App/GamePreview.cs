@@ -16,9 +16,9 @@ namespace PixelForge.App;
 /// </summary>
 sealed class GamePreview : Window
 {
-    readonly Sandbox _sb;
+    Sandbox _sb;
     readonly Project _project;
-    readonly Scene _scene;
+    Scene _scene;
     readonly WriteableBitmap _bmp;
     readonly TextBlock _status = new() { Margin = new Thickness(8, 4, 8, 4), TextWrapping = TextWrapping.Wrap };
     readonly DispatcherTimer _timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
@@ -92,6 +92,21 @@ sealed class GamePreview : Window
                 try { AudioOut.Shared.PlayOnce(new AudioLibrary(_project).Samples(asset.Id)); }
                 catch (InvalidDataException ex) { _lastEvent += $" (sound not played: {ex.Message})"; }
         }
+        // what the scene's logic asked for
+        if (!_muted)
+            foreach (var id in _sb.SoundsToPlay)
+                try { AudioOut.Shared.PlayOnce(new AudioLibrary(_project).Samples(id)); }
+                catch (InvalidDataException ex) { _lastEvent = $"sound not played: {ex.Message}"; }
+        if (_sb.RequestedScene is Guid next && _project.Resolve(next) is string path)
+            try
+            {
+                _scene = Scene.Load(path);
+                _sb = new Sandbox(_scene, new SceneAssets(_project), _w, _h);
+                _lastEvent = $"scene “{_project.Find(next)?.Name}”";
+                Title = $"Game preview — {(_scene.Level.Length > 0 ? _scene.Level : _project.Find(next)?.Name)}";
+                StartMusic();
+            }
+            catch (InvalidDataException ex) { _lastEvent = $"scene not loaded: {ex.Message}"; }
         Draw();
     }
 
@@ -100,7 +115,11 @@ sealed class GamePreview : Window
         var px = _sb.Render(_boxes);
         _bmp.WritePixels(new Int32Rect(0, 0, _w, _h), px, _w * 4, 0);
         string who = _sb.Player is null ? "No player character: arrows move the camera." : $"Player {_sb.X:0},{_sb.Y:0} · {(_sb.OnGround ? "on ground" : "in air")} · {_sb.Player.Animation ?? "-"} · deaths {_sb.Deaths}";
-        _status.Text = $"{_sb.TimeMs / 1000:0.0} s{(_paused ? " (paused)" : "")} · {who}{(_lastEvent.Length > 0 ? " · last: " + _lastEvent : "")}\n"
+        string logic = _sb.LogicError is { } err ? $"\nLogic not running: {err}"
+            : _sb.Logic is { } l && (l.Variables.Count > 0 || l.Items.Count > 0)
+                ? "\n" + string.Join(" · ", l.Variables.OrderBy(kv => kv.Key).Select(kv => $"{kv.Key} {kv.Value:0.##}").Concat(l.Items.Where(kv => kv.Value > 0).OrderBy(kv => kv.Key).Select(kv => $"{kv.Key} ×{kv.Value}")))
+                : "";
+        _status.Text = $"{_sb.TimeMs / 1000:0.0} s{(_paused ? " (paused)" : "")} · {who}{(_lastEvent.Length > 0 ? " · last: " + _lastEvent : "")}{logic}\n"
                        + "←→/A D move · Space/↑ jump · R reset · H hitboxes · M mute · P pause · Esc close";
     }
 

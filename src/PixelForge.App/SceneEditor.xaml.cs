@@ -106,6 +106,9 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         UiScreenBox.SelectedItem = screens.FirstOrDefault(s => s == _scene.UiScreen);
         UiScreenBox.IsEnabled = screens.Length > 0;
         RefreshEffects();
+        var graphs = p?.Assets.Where(a => a.Type == AssetType.Logic).OrderBy(a => a.Path).ToList() ?? [];
+        LogicBox.ItemsSource = new[] { new ComboBoxItem { Content = "(none)", Tag = null } }.Concat(graphs.Select(a => new ComboBoxItem { Content = a.Path, Tag = a.Id })).ToList();
+        LogicBox.SelectedItem = LogicBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => i.Tag is Guid g && g == _scene.LogicAssetId) ?? LogicBox.Items[0];
         CameraClipBox.ItemsSource = ClipItems("(none)");
         SelectClip(CameraClipBox, _scene.CameraClipAssetId, _scene.CameraClip);
         PlaceList.ItemsSource = p?.Assets.Where(a => a.Type is AssetType.Sprite or AssetType.Character).OrderBy(a => a.Type).ThenBy(a => a.Path)
@@ -501,6 +504,15 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         box.SelectedItem = box.Items.Cast<ComboBoxItem>().FirstOrDefault(i => i.Tag is (Guid g, string n) && g == lib && n == clip) ?? box.Items[0];
 
     static (Guid? Lib, string? Clip) ClipOf(ComboBox box) => (box.SelectedItem as ComboBoxItem)?.Tag is (Guid g, string n) ? (g, n) : (null, null);
+
+    void OnLogicChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_refreshing) return;
+        var id = (LogicBox.SelectedItem as ComboBoxItem)?.Tag as Guid?;
+        if (id == _scene.LogicAssetId) return;
+        Snapshot();
+        _scene.LogicAssetId = id;
+    }
 
     void OnCameraClipChanged(object sender, SelectionChangedEventArgs e)
     {

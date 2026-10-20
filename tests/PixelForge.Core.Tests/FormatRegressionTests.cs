@@ -227,6 +227,20 @@ public class FormatRegressionTests
         Assert.True(v3.TileShadows);
     }
 
+    static readonly Guid LogicId = Guid.Parse("77777777-7777-7777-7777-777777777777");
+
+    [Fact]
+    public void Logic_v1_and_scene_v5()
+    {
+        var g = LogicGraph.Load(Fixture("current/logic.v1.pxlogic"));
+        Assert.Equal(["door", "rich", "pause", "go"], g.Nodes.Select(n => n.Id));
+        Assert.Equal((LogicKind.Compare, ">=", 200.0), (g.Nodes[1].Kind, g.Nodes[1].P("op"), g.Nodes[1].X));
+        Assert.Equal(new LogicLink("rich", "true", "pause"), g.Links[1]);
+        Assert.DoesNotContain(g.Check(), m => !m.StartsWith("Warning:"));
+        Assert.Equal(LogicId, Scene.Load(Fixture("current/level.v5.pxscene")).LogicAssetId);
+        Assert.Null(Scene.Load(Fixture("current/level.v4.pxscene")).LogicAssetId);
+    }
+
     /// <summary>Writes Fixtures/current with the current code (PF_WRITE_FIXTURES=1, PF_FIXTURES_DIR = the Fixtures folder).</summary>
     [Fact]
     public void WriteCurrentFixtures()
@@ -331,6 +345,23 @@ public class FormatRegressionTests
             s.Occluders.Add(new SceneOccluder { Name = "rock", Points = [0, 0, 10, 0, 5, 8] });
             s.Emitters.Add(new SceneEmitter { Name = "smoke", Preset = EmitterPreset.Smoke, X = 3, Y = 4, W = 5, Rate = 12, LifeMs = 900, Gravity = -4, Color = 0xB0808080, EndColor = 0x00606060, Additive = true, Seed = 7 });
             Scene.Save(s, Path.Combine(dir, "level.v4.pxscene"));
+        }
+        if (New("logic.v1.pxlogic"))   // phase 20
+        {
+            var g = new LogicGraph();
+            g.Nodes.Add(LogicGraph.NewNode(LogicKind.EnterArea, "door", 10, 20));
+            g.Nodes[0].Params["area"] = "exit";
+            g.Nodes.Add(LogicGraph.NewNode(LogicKind.Compare, "rich", 200, 20));
+            g.Nodes.Add(LogicGraph.NewNode(LogicKind.Wait, "pause", 400, 20));
+            g.Nodes.Add(LogicGraph.NewNode(LogicKind.LoadScene, "go", 600, 20));
+            g.Nodes[3].Params["scene"] = SpriteId.ToString();
+            g.Links.AddRange([new LogicLink("door", "out", "rich"), new LogicLink("rich", "true", "pause"), new LogicLink("pause", "out", "go")]);
+            LogicGraph.Save(g, Path.Combine(dir, "logic.v1.pxlogic"));
+        }
+        if (New("level.v5.pxscene"))
+        {
+            s.LogicAssetId = LogicId;
+            Scene.Save(s, Path.Combine(dir, "level.v5.pxscene"));
         }
         if (New("kit.v2.pxui"))
         {

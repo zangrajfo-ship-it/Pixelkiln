@@ -83,7 +83,8 @@ public sealed class Scene
     // v2: UiAssetId + UiScreen (a UI kit screen drawn over the game view)
     // v3: SceneInstance.ClipAssetId/Clip and CameraClipAssetId/CameraClip (clips from an animation library)
     // v4: Ambient, Lights, Occluders, TileShadows, Emitters (2D lighting and particles)
-    public const int Version = 4;
+    // v5: LogicAssetId (visual logic graph)
+    public const int Version = 5;
 
     public int Width { get; set; } = 640;
     public int Height { get; set; } = 360;
@@ -111,10 +112,13 @@ public sealed class Scene
     /// <summary>Solid tiles of world-speed tilemap layers cast shadows.</summary>
     public bool TileShadows { get; set; } = true;
     public List<SceneEmitter> Emitters { get; set; } = [];
+    /// <summary>Visual logic graph (.pxlogic) that runs in this scene; null = none.</summary>
+    public Guid? LogicAssetId { get; set; }
 
     public IEnumerable<Guid> ReferencedAssets() =>
         Layers.Select(l => l.AssetId).OfType<Guid>().Concat(Instances.Select(i => i.AssetId)).Concat(Instances.Select(i => i.ClipAssetId).OfType<Guid>())
-            .Concat(MusicAssetId is Guid m ? [m] : []).Concat(UiAssetId is Guid u ? [u] : []).Concat(CameraClipAssetId is Guid c ? [c] : []).Distinct();
+            .Concat(MusicAssetId is Guid m ? [m] : []).Concat(UiAssetId is Guid u ? [u] : []).Concat(CameraClipAssetId is Guid c ? [c] : [])
+            .Concat(LogicAssetId is Guid g ? [g] : []).Distinct();
 
     /// <summary>Instances of a layer in drawing order.</summary>
     public IEnumerable<SceneInstance> InstancesOf(Guid layerId) => Instances.Where(i => i.LayerId == layerId).OrderBy(i => i.Z).ThenBy(i => i.Y);
@@ -132,7 +136,7 @@ public sealed class Scene
     {
         Width = Width, Height = Height, Background = Background, Level = Level, Order = Order, CameraX = CameraX, CameraY = CameraY, MusicAssetId = MusicAssetId,
         UiAssetId = UiAssetId, UiScreen = UiScreen, CameraClipAssetId = CameraClipAssetId, CameraClip = CameraClip,
-        Ambient = Ambient, TileShadows = TileShadows,
+        Ambient = Ambient, TileShadows = TileShadows, LogicAssetId = LogicAssetId,
         Lights = [.. Lights.Select(l => l.Clone())], Occluders = [.. Occluders.Select(o => o.Clone())], Emitters = [.. Emitters.Select(e => e.Clone())],
         Layers = [.. Layers.Select(l => l.Clone())],
         Instances = [.. Instances.Select(i => i.Clone())],
@@ -163,6 +167,7 @@ public sealed class Scene
         public List<SceneLight>? Lights { get; set; }
         public List<SceneOccluder>? Occluders { get; set; }
         public List<SceneEmitter>? Emitters { get; set; }
+        public Guid? LogicAssetId { get; set; }
         public List<SceneLayer>? Layers { get; set; }
         public List<SceneInstance>? Instances { get; set; }
         public List<SceneArea>? Areas { get; set; }
@@ -173,7 +178,7 @@ public sealed class Scene
         Version = Version, Width = s.Width, Height = s.Height, Background = s.Background, Level = s.Level, Order = s.Order,
         CameraX = s.CameraX, CameraY = s.CameraY, MusicAssetId = s.MusicAssetId, UiAssetId = s.UiAssetId, UiScreen = s.UiScreen,
         CameraClipAssetId = s.CameraClipAssetId, CameraClip = s.CameraClip,
-        Ambient = s.Ambient, TileShadows = s.TileShadows, Lights = s.Lights, Occluders = s.Occluders, Emitters = s.Emitters,
+        Ambient = s.Ambient, TileShadows = s.TileShadows, Lights = s.Lights, Occluders = s.Occluders, Emitters = s.Emitters, LogicAssetId = s.LogicAssetId,
         Layers = s.Layers, Instances = s.Instances, Areas = s.Areas,
     }, Json);
 
@@ -187,6 +192,7 @@ public sealed class Scene
             CameraClipAssetId = d.CameraClipAssetId, CameraClip = d.CameraClip,   // absent before v3
             Ambient = d.Ambient ?? 0xFFFFFFFF, TileShadows = d.TileShadows ?? true,   // before v4: unlit
             Lights = d.Lights ?? [], Occluders = d.Occluders ?? [], Emitters = d.Emitters ?? [],
+            LogicAssetId = d.LogicAssetId,   // absent before v5
             Layers = d.Layers ?? [], Instances = d.Instances ?? [], Areas = d.Areas ?? [],
         };
         s.Resize(d.Width, d.Height);

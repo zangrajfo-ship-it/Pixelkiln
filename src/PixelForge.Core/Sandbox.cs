@@ -175,6 +175,14 @@ public sealed class Sandbox
     public List<SceneArea> Entered { get; } = [];
     readonly HashSet<Guid> _inside = [];
 
+    /// <summary>The scene's logic (null = none or broken, see LogicError) and what it asked for this step.</summary>
+    public LogicRuntime? Logic { get; private set; }
+    public string? LogicError { get; private set; }
+    public List<Guid> SoundsToPlay { get; } = [];
+    public Guid? RequestedScene { get; private set; }
+    readonly HashSet<Guid> _touching = [];
+    readonly Dictionary<string, List<SceneInstance>> _hidden = [];
+
     // tuning: character properties speed, jump, gravity (pixels per second)
     double _speed = 90, _jump = 230, _gravity = 640;
     (int X, int Y, int W, int H) _box;   // player body relative to the origin
@@ -194,6 +202,14 @@ public sealed class Sandbox
         Deaths = 0;
         Entered.Clear();
         _inside.Clear();
+        _touching.Clear();
+        _hidden.Clear();
+        SoundsToPlay.Clear();
+        RequestedScene = null;
+        (Logic, LogicError) = (null, null);
+        if (Scene.LogicAssetId is Guid lid)
+            try { Logic = _assets.Logic(lid) is { } g ? new LogicRuntime(g) : throw new InvalidDataException("The logic graph is missing or cannot be read."); }
+            catch (InvalidDataException ex) { LogicError = ex.Message; }
         Player = Scene.Instances.FirstOrDefault(i => _assets.Look(i)?.Character?.Kind == CharacterKind.Player);
         var spawn = Scene.Areas.FirstOrDefault(a => a.Kind == AreaKind.Spawn);
         if (Player is not null && _assets.Look(Player)?.Character is { } c)
@@ -234,6 +250,7 @@ public sealed class Sandbox
             ClampCamera();
             (X, Y) = (CamX + _viewW / 2.0, CamY + _viewH / 2.0);
             CameraMove();
+            RunLogic([]);
             return;
         }
 
@@ -273,7 +290,47 @@ public sealed class Sandbox
         (CamX, CamY) = CameraFor(X, Y);
         ClampCamera();
         CameraMove();
+        RunLogic(Touched(body));
     }
+
+    /// <summary>Named objects the player's body started to overlap this step.</summary>
+    List<string> Touched((double X, double Y, double W, double H) body)
+    {
+        var o = new List<string>();
+        foreach (var i in Scene.Instances.Where(i => i != Player && i.Name.Length > 0))
+        {
+            if (_assets.Look(i) is not { } look) continue;
+            bool on = Hit(body, i.X - look.OriginX, i.Y - look.OriginY, look.Sprite.Width, look.Sprite.Height);
+            if (on && _touching.Add(i.Id)) o.Add(i.Name);
+            else if (!on) _touching.Remove(i.Id);
+        }
+        return o;
+    }
+
+    /// <summary>One logic step, then its effects on the copy of the scene (spec: .ai/context/logic.md).</summary>
+    void RunLogic(List<string> touched)
+    {
+        SoundsToPlay.Clear();
+        if (Logic is null) return;
+        Logic.Step(TimeMs, new LogicEvents([.. Entered.Select(a => a.Name)], touched));
+        foreach (var e in Logic.Effects)
+            switch (e)
+            {
+                case PlaySoundEffect s: SoundsToPlay.Add(s.Sound); break;
+                case LoadSceneEffect l: RequestedScene = l.Scene; break;
+                case ShowEffect { Visible: false } h:
+                    var gone = Scene.Instances.Where(i => i.Name == h.Object && i != Player).ToList();
+                    if (gone.Count == 0) break;
+                    Scene.Instances.RemoveAll(gone.Contains);
+                    (_hidden.TryGetValue(h.Object, out var list) ? list : _hidden[h.Object] = []).AddRange(gone);
+                    break;
+                case ShowEffect sh when _hidden.Remove(sh.Object, out var back): Scene.Instances.AddRange(back); break;
+                case SetStateEffect st: foreach (var i in Named(st.Object)) i.Animation = st.State; break;
+                case PlayClipEffect pc: foreach (var i in Named(pc.Object)) (i.ClipAssetId, i.Clip, i.Track) = (pc.Library, pc.Clip, null); break;
+            }
+    }
+
+    IEnumerable<SceneInstance> Named(string name) => Scene.Instances.Where(i => i.Name == name);
 
     /// <summary>The scene's camera clip (shake, pans) on top of the camera position.</summary>
     void CameraMove()

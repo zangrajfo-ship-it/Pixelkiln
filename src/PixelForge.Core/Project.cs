@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace PixelForge.Core;
 
-public enum AssetType { Sprite, Image, Tilemap, Song, Sound, Scene, Character, Palette, Audio, Mix, Paint, Vector, Texture, Ui, Anim }
+public enum AssetType { Sprite, Image, Tilemap, Song, Sound, Scene, Character, Palette, Audio, Mix, Paint, Vector, Texture, Ui, Anim, Logic }
 
 /// <summary>One file of a project. <see cref="Id"/> never changes; <see cref="Path"/> is relative to the project folder.</summary>
 public sealed class AssetEntry
