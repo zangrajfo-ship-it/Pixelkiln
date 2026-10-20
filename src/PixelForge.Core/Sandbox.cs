@@ -54,6 +54,10 @@ public static class SceneRenderer
                     break;
             }
         }
+        // effects: particles, then light; additive particles (fire, sparks) shine after the light so they glow in the dark
+        foreach (var e in s.Emitters.Where(e => !e.Additive)) Particles.Draw(o, w, h, camX, camY, e, timeMs);
+        if (Lighting.IsOn(s)) Lighting.Apply(o, w, h, camX, camY, s, colliders ?? a.Solids(s), timeMs);
+        foreach (var e in s.Emitters.Where(e => e.Additive)) Particles.Draw(o, w, h, camX, camY, e, timeMs);
         if (!boxes) return o;
 
         foreach (var c in colliders ?? []) Outline(o, w, h, c.X - camX, c.Y - camY, c.W, c.H, c.OneWay ? 0xFF33AAFF : 0xFFFF3333);
@@ -178,12 +182,7 @@ public sealed class Sandbox
     public Sandbox(Scene scene, SceneAssets assets, int viewW, int viewH)
     {
         (_source, _assets, _viewW, _viewH) = (scene.Clone(), assets, viewW, viewH);   // reset returns to the scene as it was when the preview started
-        foreach (var l in scene.Layers.Where(l => l.Kind == SceneLayerKind.Tilemap && l.ParallaxX == 1 && l.ParallaxY == 1 && l.AssetId is not null))
-            if (assets.Tilemap(l.AssetId!.Value) is { } m)
-                foreach (var layer in m.Layers.Where(x => x.Visible))
-                    for (int i = 0; i < layer.Tiles.Length; i++)
-                        if (layer.Tiles[i] >= 0 && m.TileCollisions.TryGetValue(layer.Tiles[i], out var c))
-                            Colliders.Add(new(l.OffsetX + i % m.Width * m.TileSize + c.X, l.OffsetY + i / m.Width * m.TileSize + c.Y, c.W, c.H, c.OneWay));
+        Colliders.AddRange(assets.Solids(scene));
         Reset();
     }
 

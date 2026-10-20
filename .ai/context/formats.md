@@ -150,3 +150,12 @@ JSON prek `DocumentFile`: `Version` 1, `Clips[]` (`Name` edinstveno, `Play` = Lo
 - Zlati primerki: `current/anim.v1.pxanim`, `hero.v2.pxchar`, `level.v3.pxscene`, `kit.v2.pxui`; starejši se naložijo brez novih polj.
 
 **Izvoz:** knjižnica gre v `ime.json` (enaka shema kot `.pxanim`). Godot: posnetki objektov in kamere (`offset`) so `AnimationPlayer` z vzorčenimi ključi (30 na sekundo, zato krivulje Bezier, ping-pong in obratno predvajanje delujejo enako); lik z deli je `Node2D` „Rig“ z gnezdenimi `Sprite2D` (`AtlasTexture` z izrezom, pivot kot izhodišče, absolutni `z_index`) in `AnimationPlayer` s posnetki stanj, `metadata/rig_states`. Generični JSON prizora ima `animations` in `clip` pri objektih in kameri, JSON lika pa `rig`. Posnetki UI elementov so v `.pxui` in generičnem izvozu, Godot scena `Control` jih še nima.
+
+## `.pxscene` v4: osvetlitev in delci (Faza 18)
+- `Ambient` (ARGB; bela brez luči pomeni, da je osvetlitev izklopljena), `TileShadows` (trdne ploščice plasti s parallaxom 1 mečejo sence; enosmerne ne).
+- `Lights[]`: `Id`, `Name`, `Kind` = Point ali Spot, `X`, `Y`, `Radius` 1–4096, `Color`, `Intensity` 0–16, `Direction` (stopinje, 0 = desno, 90 = dol) in `Cone` 1–360 za stožec, `Shadows`, `Glow` 0–1 (sij, viden tudi v temi), `Flicker` 0–1 (determinističen utrip).
+- `Occluders[]`: `Id`, `Name`, `Points` (x0, y0, x1, y1 …, vsaj tri točke).
+- `Emitters[]`: `Id`, `Name`, `Preset` = Smoke, Fire, Rain, Snow, Sparks, Magic; `X`, `Y`, `W`, `H` (območje rojevanja, 0 = točka), `Rate` 0–2000 na sekundo, `LifeMs` 1–60000, `Speed`, `Direction`, `Spread`, `Gravity`, `Size`, `EndSize`, `Color`, `EndColor` (alfa izginja), `Additive`, `Seed`. Delci so formula indeksa in starosti, zato je vsak trenutek ponovljiv in neodvisen od hitrosti sličic; prikaz je vnaprej ogret (dež pada že ob začetku), največ 4000 delcev na oddajnik.
+- Datoteke v1 do v3 se naložijo brez osvetlitve (zlati primerek `current/level.v4.pxscene`).
+
+**Izvoz:** Godot dobi `CanvasModulate` (ambient), `PointLight2D` (radialna `GradientTexture2D`, za stožec slika `ime_spotN.png`, `shadow_enabled`), `LightOccluder2D` za poligone in združene vrste trdnih ploščic ter `CPUParticles2D` (količina, življenje, smer, razpršenost, gravitacija, hitrost, merilo, barvni prehod, seme; aditivni z `CanvasItemMaterial`). Sij in utrip sta metapodatka. Generični JSON prizora ima `ambient`, `tileShadows`, `lights`, `occluders`, `emitters`.

@@ -304,6 +304,22 @@ public static class TemplateEngine
                 foreach (var (ix, iy, n) in plan.Collectibles.Select((c, n) => (c.X, c.Y, n + 1)))
                     scene.Instances.Add(new SceneInstance { Name = $"item {n}", AssetId = item.Id, LayerId = objects.Id, X = ix * ts, Y = iy * ts, Properties = { ["collect"] = "1" } });
             if (_s.Settings?.ContainsKey("musicStep") == true && made.TryGetValue(S("musicStep", ""), out var music)) scene.MusicAssetId = music.Id;
+            // lighting and weather: a dim ambient, torches at the start and the checkpoints, rain or snow over the level
+            if (_s.Settings?.ContainsKey("ambient") == true && ColorUtil.TryParseHex(S("ambient", "FFFFFF").TrimStart('#'), out uint ambient)) scene.Ambient = ambient | 0xFF000000;
+            if (S("torches", "none") == "checkpoints")
+                foreach (var (tx, ty) in plan.Checkpoints.Prepend(plan.Spawn))
+                {
+                    var torch = SceneLight.Presets["Torch"]();
+                    (torch.X, torch.Y) = (tx * ts + ts / 2, (ty - 1) * ts + ts / 2);
+                    scene.Lights.Add(torch);
+                }
+            if (Enum.TryParse<EmitterPreset>(S("weather", ""), out var weather) && weather is EmitterPreset.Rain or EmitterPreset.Snow)
+            {
+                var sky = SceneEmitter.FromPreset(weather);
+                (sky.X, sky.Y, sky.W, sky.Rate) = (0, -8, scene.Width, sky.Rate * Math.Max(1, scene.Width / 320.0));
+                sky.Rate = Math.Min(2000, sky.Rate);
+                scene.Emitters.Add(sky);
+            }
             scene.CameraX = Math.Clamp(sx * ts - p.Settings.TargetWidth / 2, 0, Math.Max(0, scene.Width - p.Settings.TargetWidth));
             scene.CameraY = Math.Clamp(sy * ts - p.Settings.TargetHeight / 2, 0, Math.Max(0, scene.Height - p.Settings.TargetHeight));
             string f = FileFor(Name("level"), ".pxscene");

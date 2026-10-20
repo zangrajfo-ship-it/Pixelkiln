@@ -76,6 +76,8 @@ static class HelpWindow
             ("F5", "Game preview: ←→ move, Space jump, R reset, H hitboxes, M mute, P pause"),
             ("Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / fit"),
             ("Motion clip / Camera motion", "Play a clip from an animation library instead of the object's track, or on the camera"),
+            ("Lighting and effects", "Ambient light, lights, particles and occluders; drag their markers, double-click to edit"),
+            ("Show lighting and particles", "Draw the scene as the game shows it (Space plays it)"),
         ]),
         ("Scene › Motion (Ctrl+2)", [
             ("Double-click a row / drag a key", "Add a key / move it in time (10 ms steps)"),

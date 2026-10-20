@@ -245,3 +245,13 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Smoke:** ni tekel (zaklenjena postaja).
 - **Poenostavitve (`ponytail`):** rig v prizoru sledi premiku in zrcaljenju objekta, merila in vrtenja celotnega riga ne upošteva; Godot dobi vzorčene ključe namesto lastnih krivulj; posnetki UI elementov v Godot sceni `Control` niso izvoženi; urejevalnik prizora prikaže lik z deli kot sličico sprajta.
 - **Ni ročno preizkušeno:** risanje delov z miško, časovnica z miško, uvoz v Godot.
+
+## Faza 18: 2D Lighting & VFX (končana, 20. 10. 2026)
+- **Core:** `Lighting` (ambient, točkovne luči in žarometi z mehkim robom stožca, kvadratni upad, sence z metanjem žarkov skozi mrežo trdnih ploščic in poligonov, sij, utrip) in `Particles` (brez stanja, s semenom, šest prednastavitev). `SceneRenderer` nariše delce, nato svetlobo, nato aditivne delce, da ogenj in iskre svetijo v temi. `SceneAssets.Solids` je skupen za trke v predogledu igre in za sence.
+- **`.pxscene` v4** z zlatim primerkom; starejše različice ostanejo neosvetljene.
+- **Urejevalnik prizora:** razdelek »Lighting and effects« (ambient, sence ploščic, seznam luči, delcev in okluderjev, dodajanje iz prednastavitev Torch, Lamp, Spotlight, Moonlight, Magic in Smoke, Fire, Rain, Snow, Sparks, Magic, urejanje v pogovornem oknu, brisanje), oznake na platnu z vlečenjem, osvetljen predogled, ki se predvaja s preslednico. Predogled igre je osvetljen samodejno.
+- **Predloge:** stopnja dobi neobvezne nastavitve `ambient`, `torches`, `weather`; jama, grad in ječa (različica 1.1) imajo baklje, led ima sneg.
+- **Izvoz:** Godot `CanvasModulate`, `PointLight2D`, `LightOccluder2D`, `CPUParticles2D`; generični JSON.
+- **Testi:** 199 (osvetlitev 6: upad, stožec, sence ploščic in poligonov, enosmerne ploščice, sij in utrip, delci s semenom, ogreti in omejeni, prizor v4, izvoz Godot in generični, hitrost: 4 luči, okluder in 2000 delcev pod 100 ms na sličico 320×180; predloge: baklje in sneg; regresija: v4). 194 uspešnih; 5 testov z izrisom WPF še vedno pade zaradi zaklenjene postaje (glej Fazo 17).
+- **Poenostavitve (`ponytail`):** senčenje teče na procesorju na vsako sličico (za velike zaslone z veliko lučmi bi bil potreben predpomnilnik svetlobne mape); predogled v urejevalniku izriše ves prizor do 4096×4096; sij in utrip v Godot sta samo metapodatka.
+- **Ni ročno preizkušeno:** vlečenje oznak, uvoz v Godot. Smoke ni tekel (zaklenjena postaja).

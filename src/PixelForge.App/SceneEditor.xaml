@@ -67,6 +67,20 @@
                 <Label Content="Camera mo_tion" Target="{Binding ElementName=CameraClipBox}" Padding="0" Margin="0,6,0,0" />
                 <ComboBox x:Name="CameraClipBox" SelectionChanged="OnCameraClipChanged" ToolTip="A clip from an animation library (Motion mode) added to the camera: shakes, pans" />
 
+                <TextBlock Text="Lighting and effects" FontWeight="SemiBold" Margin="0,12,0,4" />
+                <Label Content="Ambient li_ght (FFFFFF = no lighting)" Target="{Binding ElementName=AmbientBox}" Padding="0" />
+                <TextBox x:Name="AmbientBox" LostKeyboardFocus="OnAmbientCommit" />
+                <CheckBox x:Name="TileShadowsBox" Content="Solid tiles cast shadows" Margin="0,4,0,0" Click="OnTileShadows" />
+                <ListBox x:Name="EffectsList" Height="110" Margin="0,4,0,0" AutomationProperties.Name="Lights and effects" MouseDoubleClick="OnEditEffect" SelectionChanged="OnEffectSelected" />
+                <WrapPanel Margin="0,4,0,0">
+                    <Button Content="Light…" Margin="0,0,4,4" Click="OnAddLight" ToolTip="Add a light (torch, lamp, spotlight, moonlight, magic)" />
+                    <Button Content="Particles…" Margin="0,0,4,4" Click="OnAddEmitter" ToolTip="Add particles (smoke, fire, rain, snow, sparks, magic)" />
+                    <Button Content="Occluder" Margin="0,0,4,4" Click="OnAddOccluder" ToolTip="Add a shape that blocks light" />
+                    <Button Content="Edit…" Margin="0,0,4,4" Click="OnEditEffect" />
+                    <Button Content="Delete" Margin="0,0,4,4" Click="OnDeleteEffect" />
+                </WrapPanel>
+                <CheckBox x:Name="LitPreviewBox" Content="Show lighting and particles" Click="OnLitPreview" ToolTip="Draws the scene as the game shows it (Space plays it)" />
+
                 <TextBlock Text="Layers (top = front)" FontWeight="SemiBold" Margin="0,12,0,4" />
                 <ListBox x:Name="LayersList" Height="150" SelectionChanged="OnLayerSelected" AutomationProperties.Name="Scene layers" />
                 <WrapPanel Margin="0,4,0,0">

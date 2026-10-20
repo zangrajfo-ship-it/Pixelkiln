@@ -2,7 +2,7 @@
   "apiVersion": 1,
   "id": "level-dungeon",
   "name": "Dungeon (top-down RPG)",
-  "version": "1.0",
+  "version": "1.1",
   "kind": "Level",
   "primary": "level",
   "tags": [
@@ -167,7 +167,9 @@
         "hazards": "{difficulty}",
         "collectibles": "10",
         "seed": "{seed}",
-        "background": "101018"
+        "background": "101018",
+        "ambient": "282030",
+        "torches": "checkpoints"
       }
     }
   ]

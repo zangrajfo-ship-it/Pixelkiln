@@ -305,7 +305,8 @@ public static class Exporter
                     var sc = Scene.Load(path);
                     foreach (var issue in SceneCheck.Run(sc, p))
                         (issue.Severity == "error" ? r.Errors : r.Warnings).Add($"{a.Path}: {issue.Message}");
-                    if (Godot) Add(b + ".tscn", GodotExport.LevelScene(sc, a.Name, p, _assets, id => Res(_base[id]), r.Warnings));
+                    if (Godot) Add(b + ".tscn", GodotExport.LevelScene(sc, a.Name, p, _assets, id => Res(_base[id]), r.Warnings,
+                        (suffix, px, w, h) => { Picture(b + suffix, px, w, h); return Res(b + suffix); }));
                     else Add(b + "_scene.json", SceneJson(sc, b));
                     break;
                 }
@@ -360,6 +361,19 @@ public static class Exporter
                     }),
                 }),
                 areas = s.Areas.Select(a => new { name = a.Name, kind = a.Kind.ToString(), x = a.X, y = a.Y, w = a.W, h = a.H, properties = a.Properties }),
+                ambient = $"#{s.Ambient:X8}", tileShadows = s.TileShadows,
+                lights = s.Lights.Select(l => new
+                {
+                    name = l.Name, kind = l.Kind.ToString(), x = l.X, y = l.Y, radius = l.Radius, color = $"#{l.Color:X8}", intensity = l.Intensity,
+                    direction = l.Direction, cone = l.Cone, shadows = l.Shadows, glow = l.Glow, flicker = l.Flicker,
+                }),
+                occluders = s.Occluders.Select(o => new { name = o.Name, points = o.Points }),
+                emitters = s.Emitters.Select(e => new
+                {
+                    name = e.Name, preset = e.Preset.ToString(), x = e.X, y = e.Y, w = e.W, h = e.H, rate = e.Rate, lifeMs = e.LifeMs, speed = e.Speed,
+                    direction = e.Direction, spread = e.Spread, gravity = e.Gravity, size = e.Size, endSize = e.EndSize,
+                    color = $"#{e.Color:X8}", endColor = $"#{e.EndColor:X8}", additive = e.Additive, seed = e.Seed,
+                }),
             }, new JsonSerializerOptions { WriteIndented = true });
         }
 

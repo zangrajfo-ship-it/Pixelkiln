@@ -66,6 +66,13 @@ public sealed class TemplateTests : IDisposable
         Assert.Contains(level.Areas, x => x.Kind == AreaKind.Spawn);
         Assert.Contains(level.Instances, i => i.Name == "Player");
         Assert.NotNull(level.MusicAssetId);
+        Assert.False(Lighting.IsOn(level));                                // daylight forest
+
+        var cave = Scene.Load(p.FullPath(TemplateEngine.Create(Builtin("level-cave"), null, p, "cave", fullKit: false).Primary));
+        Assert.Equal(0xFF302838u, cave.Ambient);
+        Assert.Equal(cave.Areas.Count(x => x.Kind is AreaKind.Spawn or AreaKind.Checkpoint), cave.Lights.Count);   // torches
+        var ice = Scene.Load(p.FullPath(TemplateEngine.Create(Builtin("level-ice"), null, p, "ice", fullKit: false).Primary));
+        Assert.Equal((EmitterPreset.Snow, ice.Width), (ice.Emitters.Single().Preset, ice.Emitters[0].W));
     }
 
     [Fact]

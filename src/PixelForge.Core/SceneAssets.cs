@@ -44,6 +44,23 @@ public sealed class SceneAssets(Project project)
 
     public AnimLibrary? Anim(Guid id) => Get(id, AnimLibrary.Load);
 
+    /// <summary>Collision rectangles of a tilemap's visible tiles, in map pixels (cached with the file).</summary>
+    public List<Collider>? TileSolids(Guid id) => Get(id, path =>
+    {
+        var m = Core.Tilemap.Load(path);
+        var o = new List<Collider>();
+        foreach (var layer in m.Layers.Where(x => x.Visible))
+            for (int i = 0; i < layer.Tiles.Length; i++)
+                if (layer.Tiles[i] >= 0 && m.TileCollisions.TryGetValue(layer.Tiles[i], out var c))
+                    o.Add(new(i % m.Width * m.TileSize + c.X, i / m.Width * m.TileSize + c.Y, c.W, c.H, c.OneWay));
+        return o;
+    });
+
+    /// <summary>Solid tiles of the scene's world-speed tilemap layers, in scene pixels (collisions and shadows).</summary>
+    public IEnumerable<Collider> Solids(Scene s) =>
+        s.Layers.Where(l => l.Kind == SceneLayerKind.Tilemap && l.ParallaxX == 1 && l.ParallaxY == 1 && l.AssetId is not null)
+            .SelectMany(l => (TileSolids(l.AssetId!.Value) ?? []).Select(c => c with { X = c.X + l.OffsetX, Y = c.Y + l.OffsetY }));
+
     /// <summary>The clip a scene object plays (its library clip, or null when it uses its own track or none).</summary>
     public AnimClip? ClipOf(SceneInstance i) => i.ClipAssetId is Guid id ? Anim(id)?.Clip(i.Clip) : null;
 

@@ -33,7 +33,7 @@ Predloga vsebuje samo podatke in ne izvaja kode. Koraki uporabljajo vgrajene gen
 | `character` | `spriteStep`, `kind`, `facing`, `origin` (`feet`, `center`); `boxes[]` (`kind`, `rect` = `full`, `body`, `feet`, `head`, `front` ali štirje deleži `x y w h`, `state`, `category`); `properties{}` |
 | `tileset` | `tileSize`, `pattern`, `baseColor`, `variants`, `seed`, `asset` (slika iz projekta namesto generiranja) |
 | `tilemap` | `width`, `height`, `tilesetStep`, `layout` (`Platforms`, `Cave`, `Rooms`, `Flat`), `fill`, `seed`, `difficulty` |
-| `level` | `mapStep`, `playerStep`, `collectibleStep`, `musicStep` (zadnji trije niso obvezni), `checkpoints`, `hazards`, `collectibles`, `seed`, `background`, `genre` (`platformer`, `top-down`, `puzzle`) |
+| `level` | `mapStep`, `playerStep`, `collectibleStep`, `musicStep` (zadnji trije niso obvezni), `checkpoints`, `hazards`, `collectibles`, `seed`, `background`, `genre` (`platformer`, `top-down`, `puzzle`); neobvezno `ambient` (barva RRGGBB), `torches` (`checkpoints` = bakla na začetku in pri vsaki kontrolni točki), `weather` (`Rain` ali `Snow` čez vso širino) |
 | `song` | `seed`, `bpm`, `scale` (`major`, `minor`, `pentatonic`), `patterns` |
 | `file` | `file` (kopija iz mape predloge), `originalId` (za preusmeritev referenc) |
 
