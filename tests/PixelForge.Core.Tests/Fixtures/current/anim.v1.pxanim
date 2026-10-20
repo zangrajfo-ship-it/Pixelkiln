@@ -1,0 +1,69 @@
+{
+  "Version": 1,
+  "Clips": [
+    {
+      "Name": "wave",
+      "Play": "PingPong",
+      "Reverse": false,
+      "Tracks": [
+        {
+          "Target": "arm",
+          "Property": "Rotation",
+          "Keys": [
+            {
+              "TimeMs": 0,
+              "Value": 0,
+              "Ease": "Bezier",
+              "X1": 0.42,
+              "Y1": 0,
+              "X2": 0.58,
+              "Y2": 1
+            },
+            {
+              "TimeMs": 400,
+              "Value": 45,
+              "Ease": "Linear",
+              "X1": 0.25,
+              "Y1": 0.1,
+              "X2": 0.25,
+              "Y2": 1
+            }
+          ]
+        }
+      ],
+      "DurationMs": 400
+    },
+    {
+      "Name": "shake",
+      "Play": "Once",
+      "Reverse": true,
+      "Tracks": [
+        {
+          "Target": "",
+          "Property": "X",
+          "Keys": [
+            {
+              "TimeMs": 0,
+              "Value": 0,
+              "Ease": "Linear",
+              "X1": 0.25,
+              "Y1": 0.1,
+              "X2": 0.25,
+              "Y2": 1
+            },
+            {
+              "TimeMs": 100,
+              "Value": 3,
+              "Ease": "Step",
+              "X1": 0.25,
+              "Y1": 0.1,
+              "X2": 0.25,
+              "Y2": 1
+            }
+          ]
+        }
+      ],
+      "DurationMs": 100
+    }
+  ]
+}

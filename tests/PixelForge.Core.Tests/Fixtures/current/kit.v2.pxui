@@ -1,0 +1,156 @@
+{
+  "Version": 2,
+  "Style": {
+    "Base": 4280171098,
+    "Accent": 4282179824,
+    "Dark": 4278850080,
+    "Light": 4288469247,
+    "Text": 4293458687,
+    "Radius": 0,
+    "Border": 1,
+    "Pixel": true,
+    "FontSize": 8
+  },
+  "Elements": [
+    {
+      "Id": "f21aeb7e-9465-4bbd-b6ea-28af3e72bd2c",
+      "Name": "Button",
+      "Kind": "Button",
+      "W": 64,
+      "H": 16,
+      "Margin": 4,
+      "Label": "Button",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "41962e90-3e74-4298-a56f-6921c451962a",
+      "Name": "Panel",
+      "Kind": "Panel",
+      "W": 32,
+      "H": 32,
+      "Margin": 6,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "c8694be6-df10-4425-b313-a05513ba7fd8",
+      "Name": "Dialog",
+      "Kind": "Dialog",
+      "W": 48,
+      "H": 40,
+      "Margin": 10,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "a88e76b3-8023-47a2-a311-5058c4b3b110",
+      "Name": "Slider",
+      "Kind": "Slider",
+      "W": 64,
+      "H": 10,
+      "Margin": 4,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "eed4e3c7-88b1-4842-af03-a68af3d2b55b",
+      "Name": "Health bar",
+      "Kind": "HealthBar",
+      "W": 64,
+      "H": 8,
+      "Margin": 2,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "4a135b22-511c-4160-afd6-02ebe4b383d9",
+      "Name": "Slot",
+      "Kind": "InventorySlot",
+      "W": 20,
+      "H": 20,
+      "Margin": 4,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "68d98955-1ae7-40b5-8605-e75fbbe5a9f0",
+      "Name": "Icon",
+      "Kind": "Icon",
+      "W": 16,
+      "H": 16,
+      "Margin": 0,
+      "Label": "",
+      "Art": {},
+      "IconAssetId": null
+    },
+    {
+      "Id": "0b9027ee-8267-4968-a258-2309a0b1b70f",
+      "Name": "Label",
+      "Kind": "Label",
+      "W": 64,
+      "H": 12,
+      "Margin": 0,
+      "Label": "Text",
+      "Art": {},
+      "IconAssetId": null
+    }
+  ],
+  "Screens": [
+    {
+      "Name": "HUD",
+      "Width": 320,
+      "Height": 180,
+      "Background": 0,
+      "Items": [
+        {
+          "Id": "7c370828-10f5-483d-92c5-48ed49efebf0",
+          "ElementId": "eed4e3c7-88b1-4842-af03-a68af3d2b55b",
+          "X": 6,
+          "Y": 6,
+          "W": 80,
+          "H": 8,
+          "Anchor": "TopLeft",
+          "Text": null,
+          "Value": 0.8,
+          "State": "Normal",
+          "ClipAssetId": "66666666-6666-6666-6666-666666666666",
+          "Clip": "shake"
+        },
+        {
+          "Id": "342a024f-3a39-4664-8204-ea71b4b3c07e",
+          "ElementId": "68d98955-1ae7-40b5-8605-e75fbbe5a9f0",
+          "X": 298,
+          "Y": 4,
+          "W": 16,
+          "H": 16,
+          "Anchor": "TopRight",
+          "Text": null,
+          "Value": 0.7,
+          "State": "Normal",
+          "ClipAssetId": null,
+          "Clip": null
+        },
+        {
+          "Id": "7eadc88b-9496-480c-b6f5-70b470e7bd0f",
+          "ElementId": "0b9027ee-8267-4968-a258-2309a0b1b70f",
+          "X": 250,
+          "Y": 6,
+          "W": 46,
+          "H": 12,
+          "Anchor": "TopRight",
+          "Text": "x 12",
+          "Value": 0.7,
+          "State": "Normal",
+          "ClipAssetId": null,
+          "Clip": null
+        }
+      ]
+    }
+  ]
+}

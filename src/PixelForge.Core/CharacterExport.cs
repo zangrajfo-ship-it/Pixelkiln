@@ -8,7 +8,7 @@ namespace PixelForge.Core;
 /// </summary>
 public static class CharacterExport
 {
-    public static string Json(Character c, Sprite sprite, string name, string sheetImage)
+    public static string Json(Character c, Sprite sprite, string name, string sheetImage, string? rigAnimations = null)
     {
         var states = c.Animations.Keys.Select(state => (state, range: c.FramesOf(state, sprite))).Where(s => s.range is not null).ToList();
         return JsonSerializer.Serialize(new
@@ -17,6 +17,12 @@ public static class CharacterExport
             frameWidth = sprite.Width, frameHeight = sprite.Height, sheet = sheetImage,
             origin = new { x = c.OriginX, y = c.OriginY },
             properties = c.Properties,
+            // cut-out parts are rectangles of the sheet's first frame; clips are in the animation file
+            rig = c.Parts.Count == 0 ? null : new
+            {
+                parts = c.Parts.Select(p => new { name = p.Name, x = p.X, y = p.Y, w = p.W, h = p.H, pivot = new { x = p.PivotX, y = p.PivotY }, parent = p.Parent, offset = new { x = p.OffsetX, y = p.OffsetY }, z = p.Z }),
+                animations = rigAnimations, clips = c.RigClips,
+            },
             states = states.ToDictionary(s => s.state, s => new
             {
                 frames = Enumerable.Range(s.range!.Value.From, s.range.Value.To - s.range.Value.From + 1).Select((f, i) => new

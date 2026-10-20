@@ -173,7 +173,7 @@ public static class GodotExport
     /// Character scene: CharacterBody2D (player, enemy) or Area2D (npc, item) with an AnimatedSprite2D whose origin is
     /// the node position, the solid box as collision shape and the other boxes as metadata; properties as metadata.
     /// </summary>
-    public static string CharacterScene(Character c, Sprite s, string name, string framesPath, ProjectSettings settings)
+    public static string CharacterScene(Character c, Sprite s, string name, string framesPath, ProjectSettings settings, string? sheetPath = null, AnimLibrary? rigLib = null)
     {
         var d = new Doc("[gd_scene load_steps={steps} format=3]");
         string frames = d.Ext("SpriteFrames", framesPath);
@@ -190,12 +190,91 @@ public static class GodotExport
         b.Append($"metadata/states = {{{string.Join(", ", c.Animations.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => $"{Q(kv.Key)}: {Q(kv.Value)}"))}}}\n");
         foreach (var (k, v) in c.Properties.OrderBy(kv => kv.Key, StringComparer.Ordinal)) b.Append($"metadata/{NodeName(k)} = {Q(v)}\n");
         var others = c.Boxes.Where(x => x != solid).Select(x => $"{{\"kind\": {Q(x.Kind.ToString())}, \"state\": {(x.State is null ? "null" : Q(x.State))}, \"frame\": {(x.Frame is int f ? f.ToString(Inv) : "null")}, \"rect\": Rect2({x.X - c.OriginX}, {x.Y - c.OriginY}, {x.W}, {x.H}), \"category\": {x.Category}}}");
-        b.Append($"metadata/boxes = [{string.Join(", ", others)}]\n\n");
-        b.Append($"[node name=\"AnimatedSprite2D\" type=\"AnimatedSprite2D\" parent=\".\"]\n");
-        b.Append($"sprite_frames = {frames}\nanimation = &{Q(anim)}\nautoplay = {Q(anim)}\ncentered = false\noffset = Vector2({F(-c.OriginX)}, {F(-c.OriginY)})\n\n");
+        b.Append($"metadata/boxes = [{string.Join(", ", others)}]\n");
+        if (c.Parts.Count > 0 && sheetPath is not null)
+        {
+            b.Append($"metadata/rig_states = {{{string.Join(", ", c.RigClips.OrderBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => $"{Q(kv.Key)}: {Q(kv.Value)}"))}}}\n\n");
+            Rig(d, c, sheetPath, rigLib, defaultState);
+        }
+        else
+        {
+            b.Append($"\n[node name=\"AnimatedSprite2D\" type=\"AnimatedSprite2D\" parent=\".\"]\n");
+            b.Append($"sprite_frames = {frames}\nanimation = &{Q(anim)}\nautoplay = {Q(anim)}\ncentered = false\noffset = Vector2({F(-c.OriginX)}, {F(-c.OriginY)})\n\n");
+        }
         if (solid is not null)
             b.Append($"[node name=\"CollisionShape2D\" type=\"CollisionShape2D\" parent=\".\"]\nposition = Vector2({F(solid.X - c.OriginX + solid.W / 2.0)}, {F(solid.Y - c.OriginY + solid.H / 2.0)})\nshape = {shape}\n\n");
         return d.ToString();
+    }
+
+    /// <summary>
+    /// Cut-out rig: Sprite2D per part (a region of the sheet's first frame) nested under its parent with the pivot as
+    /// node origin, absolute z_index; the state clips baked into an AnimationPlayer (no skinning).
+    /// </summary>
+    static void Rig(Doc d, Character c, string sheetPath, AnimLibrary? lib, string defaultState)
+    {
+        var b = d.Body;
+        string tex = d.Ext("Texture2D", sheetPath);
+        b.Append("[node name=\"Rig\" type=\"Node2D\" parent=\".\"]\n\n");
+        var paths = new Dictionary<string, string>();
+        string PathOf(RigPart p, int depth) => paths.TryGetValue(p.Name, out var hit) ? hit
+            : paths[p.Name] = (depth <= c.Parts.Count && c.Parts.FirstOrDefault(x => x.Name == p.Parent && x != p) is { } up ? PathOf(up, depth + 1) : "Rig") + "/" + NodeName(p.Name);
+        // parents first: Godot needs a node's parent declared above it
+        foreach (var p in c.Parts.OrderBy(p => PathOf(p, 0).Count(ch => ch == '/')))
+        {
+            string path = PathOf(p, 0), parent = path[..path.LastIndexOf('/')];
+            string region = d.Sub("AtlasTexture", $"atlas = {tex}", $"region = Rect2({p.X}, {p.Y}, {p.W}, {p.H})");
+            b.Append($"[node name={Q(NodeName(p.Name))} type=\"Sprite2D\" parent={Q(parent)}]\n");
+            b.Append($"position = Vector2({F(p.OffsetX)}, {F(p.OffsetY)})\nz_index = {p.Z}\nz_as_relative = false\ntexture = {region}\ncentered = false\noffset = Vector2({F(-p.PivotX)}, {F(-p.PivotY)})\n\n");
+        }
+        if (lib is null) return;
+        var clips = c.RigClips.Values.Distinct().Select(lib.Clip).OfType<AnimClip>().ToList();
+        if (clips.Count == 0) return;
+        var anims = clips.ToDictionary(clip => clip.Name, clip => Baked(d, clip, c.Parts.SelectMany(p => Tracks(clip, p.Name, PathOf(p, 0), p.OffsetX, p.OffsetY, 1, "position"))));
+        string auto = c.RigClips.GetValueOrDefault(defaultState) ?? clips[0].Name;
+        Player(d, ".", anims, anims.ContainsKey(auto) ? auto : clips[0].Name);
+    }
+
+    const double BakeMs = 1000 / 30.0;
+
+    /// <summary>
+    /// A clip as a Godot Animation, sampled 30 times a second so every curve (Bezier, ping-pong, reverse) plays as in
+    /// PixelForge. ponytail: baked keys, not Godot's own curves; editing in Godot means re-exporting.
+    /// </summary>
+    static string Baked(Doc d, AnimClip clip, IEnumerable<(string Path, Func<double, string> At)> tracks)
+    {
+        double period = Math.Max(1, clip.Play == AnimPlay.PingPong ? 2 * clip.DurationMs : clip.DurationMs);
+        int n = Math.Max(1, (int)Math.Ceiling(period / BakeMs));
+        var times = Enumerable.Range(0, n + 1).Select(k => Math.Min(period, k * BakeMs)).ToList();
+        var props = new List<string> { $"resource_name = {Q(clip.Name)}", $"length = {F(period / 1000)}", $"loop_mode = {(clip.Play == AnimPlay.Once ? 0 : 1)}" };
+        int i = 0;
+        foreach (var (path, at) in tracks)
+        {
+            props.Add($"tracks/{i}/type = \"value\"");
+            props.Add($"tracks/{i}/path = NodePath({Q(path)})");
+            props.Add($"tracks/{i}/interp = 1");
+            props.Add($"tracks/{i}/keys = {{\"times\": PackedFloat32Array({string.Join(", ", times.Select(t => F(t / 1000)))}), \"transitions\": PackedFloat32Array({string.Join(", ", times.Select(_ => "1.0"))}), \"update\": 0, \"values\": [{string.Join(", ", times.Select(at))}]}}");
+            i++;
+        }
+        return d.Sub("Animation", [.. props]);
+    }
+
+    /// <summary>The properties a clip animates on one target, as Godot node properties around a base position.</summary>
+    static IEnumerable<(string Path, Func<double, string> At)> Tracks(AnimClip c, string target, string node, double baseX, double baseY, double flip, string positionProp)
+    {
+        bool Has(AnimProperty p) => c.Tracks.Any(t => t.Target == target && t.Property == p && t.Keys.Count > 0);
+        if (Has(AnimProperty.X) || Has(AnimProperty.Y))
+            yield return ($"{node}:{positionProp}", t => $"Vector2({F(baseX + c.Value(target, AnimProperty.X, t))}, {F(baseY + c.Value(target, AnimProperty.Y, t))})");
+        if (Has(AnimProperty.ScaleX) || Has(AnimProperty.ScaleY))
+            yield return ($"{node}:scale", t => $"Vector2({F(flip * c.Value(target, AnimProperty.ScaleX, t))}, {F(c.Value(target, AnimProperty.ScaleY, t))})");
+        if (Has(AnimProperty.Rotation)) yield return ($"{node}:rotation", t => F(c.Value(target, AnimProperty.Rotation, t) * Math.PI / 180));
+        if (Has(AnimProperty.Opacity)) yield return ($"{node}:modulate", t => $"Color(1, 1, 1, {F(c.Value(target, AnimProperty.Opacity, t))})");
+    }
+
+    /// <summary>AnimationPlayer under a node (its root is that node) with the given animations, one autoplaying.</summary>
+    static void Player(Doc d, string parent, Dictionary<string, string> anims, string autoplay)
+    {
+        string lib = d.Sub("AnimationLibrary", $"_data = {{\n{string.Join(",\n", anims.Select(kv => $"&{Q(kv.Key)}: {kv.Value}"))}\n}}");
+        d.Body.Append($"[node name=\"AnimationPlayer\" type=\"AnimationPlayer\" parent={Q(parent)}]\nroot_node = NodePath(\"..\")\nlibraries = {{\n&\"\": {lib}\n}}\nautoplay = {Q(autoplay)}\n\n");
     }
 
     // ---------- levels ----------
@@ -276,6 +355,8 @@ public static class GodotExport
         b.Append($"[node name={Q(cam)} type=\"Camera2D\" parent=\".\"]\n");
         b.Append($"position = Vector2({F(s.CameraX + p.Settings.TargetWidth / 2.0)}, {F(s.CameraY + p.Settings.TargetHeight / 2.0)})\n");
         b.Append($"limit_left = 0\nlimit_top = 0\nlimit_right = {s.Width}\nlimit_bottom = {s.Height}\n\n");
+        if (s.CameraClipAssetId is Guid camClip && assets.Anim(camClip)?.Clip(s.CameraClip) is { } cc)
+            Player(d, cam, new() { [cc.Name] = Baked(d, cc, Tracks(cc, "", ".", 0, 0, 1, "offset")) }, cc.Name);
         if (s.MusicAssetId is Guid music)
             b.Append($"[node name={Q(Unique(areaNames, "Music"))} type=\"AudioStreamPlayer\" parent=\".\"]\nstream = {d.Ext("AudioStream", res(music) + ".wav")}\nautoplay = true\n\n");
         return d.ToString();
@@ -306,7 +387,9 @@ public static class GodotExport
         }
         foreach (var (k, v) in i.Properties.OrderBy(kv => kv.Key, StringComparer.Ordinal)) b.Append($"metadata/{NodeName(k)} = {Q(v)}\n");
         b.Append('\n');
-        if (i.Track is { Keys.Count: > 0 } t) Track(d, t, i, $"{parent}/{n}", type == AssetType.Character && i.FlipX);
+        if (assets.ClipOf(i) is { } clip)
+            Player(d, $"{parent}/{n}", new() { [clip.Name] = Baked(d, clip, Tracks(clip, "", ".", i.X, i.Y, type == AssetType.Character && i.FlipX ? -1 : 1, "position")) }, clip.Name);
+        else if (i.Track is { Keys.Count: > 0 } t) Track(d, t, i, $"{parent}/{n}", type == AssetType.Character && i.FlipX);
     }
 
     /// <summary>Movement track → AnimationPlayer with position, scale, rotation and opacity tracks (autoplay).</summary>

@@ -28,7 +28,16 @@ public static class SceneRenderer
                     foreach (var i in s.InstancesOf(l.Id).OrderBy(i => i.Z))
                     {
                         if (Look(i) is not { } look) continue;
-                        var pose = i.Track?.Sample(timeMs) ?? new Keyframe(0);
+                        var pose = a.ClipOf(i)?.Pose("", timeMs) ?? i.Track?.Sample(timeMs) ?? new Keyframe(0);
+                        if (look.Character is { Parts.Count: > 0 } rigged)
+                        {
+                            // ponytail: a rig follows the object's movement and flip; whole-rig scale and rotation are not applied
+                            int rf = look.From;
+                            if (!flat.TryGetValue((look.Sprite, rf), out var rpx)) flat[(look.Sprite, rf)] = rpx = Compositor.Flatten(look.Sprite, rf);
+                            Rig.Draw(o, w, h, rpx, look.Sprite.Width, look.Sprite.Height, rigged.Parts, a.RigClip(rigged, i.Animation ?? rigged.Animations.Keys.FirstOrDefault()), timeMs,
+                                i.X + pose.X + lx - l.OffsetX, i.Y + pose.Y + ly - l.OffsetY, i.FlipX);
+                            continue;
+                        }
                         int ox = i.FlipX ? look.Sprite.Width - look.OriginX : look.OriginX;
                         int dx = (int)Math.Round(i.X + pose.X) - ox + lx - l.OffsetX, dy = (int)Math.Round(i.Y + pose.Y) - look.OriginY + ly - l.OffsetY;
                         bool transformed = pose.ScaleX != 1 || pose.ScaleY != 1 || pose.Rotation != 0;
@@ -225,6 +234,7 @@ public sealed class Sandbox
             (CamX, CamY) = ((int)Math.Round(X - _viewW / 2.0), (int)Math.Round(Y - _viewH / 2.0));
             ClampCamera();
             (X, Y) = (CamX + _viewW / 2.0, CamY + _viewH / 2.0);
+            CameraMove();
             return;
         }
 
@@ -263,6 +273,16 @@ public sealed class Sandbox
         Sync();
         (CamX, CamY) = CameraFor(X, Y);
         ClampCamera();
+        CameraMove();
+    }
+
+    /// <summary>The scene's camera clip (shake, pans) on top of the camera position.</summary>
+    void CameraMove()
+    {
+        if (Scene.CameraClipAssetId is not Guid id || _assets.Anim(id)?.Clip(Scene.CameraClip) is not { } clip) return;
+        var pose = clip.Pose("", TimeMs);
+        CamX += (int)Math.Round(pose.X);
+        CamY += (int)Math.Round(pose.Y);
     }
 
     void Die()
@@ -305,17 +325,20 @@ public sealed class Sandbox
     uint[]? _overlay;
     bool _overlayTried;
 
-    /// <summary>The scene's UI screen at the view size (drawn once; it does not move with the camera).</summary>
+    bool _overlayMoves;
+
+    /// <summary>The scene's UI screen at the view size; drawn once unless some of its elements play a clip.</summary>
     uint[]? Overlay()
     {
-        if (_overlayTried) return _overlay;
+        if (_overlayTried && !_overlayMoves) return _overlay;
         _overlayTried = true;
         if (Scene.UiAssetId is not Guid id || _assets.Project.Resolve(id) is not string path) return null;
         try
         {
             var kit = UiKit.Load(path);
             var screen = kit.Screens.FirstOrDefault(s => s.Name == Scene.UiScreen) ?? kit.Screens.FirstOrDefault();
-            return _overlay = screen is null ? null : UiRender.Screen(kit, screen, _viewW, _viewH, _assets.Project);
+            _overlayMoves = screen?.Items.Any(i => i.ClipAssetId is not null) == true;
+            return _overlay = screen is null ? null : UiRender.Screen(kit, screen, _viewW, _viewH, _assets.Project, TimeMs);
         }
         catch (InvalidDataException) { return null; }   // Check scene reports it
     }

@@ -75,6 +75,18 @@ static class HelpWindow
             ("Del", "Delete selected object or area"), ("Space", "Play animations and movement tracks"),
             ("F5", "Game preview: ←→ move, Space jump, R reset, H hitboxes, M mute, P pause"),
             ("Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / fit"),
+            ("Motion clip / Camera motion", "Play a clip from an animation library instead of the object's track, or on the camera"),
+        ]),
+        ("Scene › Motion (Ctrl+2)", [
+            ("Double-click a row / drag a key", "Add a key / move it in time (10 ms steps)"),
+            ("Selected key", "Value, curve to the next key, Bezier handles (x1 y1 x2 y2 as in CSS)"),
+            ("Add track…", "Target: empty = object, camera or UI element; a body part's name for rigs"),
+            ("Space / Home / Del", "Play or stop / rewind / delete the selected key"),
+        ]),
+        ("Character › Rig (Ctrl+2)", [
+            ("Drag / right-click on the sprite", "Cut a body part / set the selected part's pivot"),
+            ("Enter / Del", "Edit the part (parent, offset, Z) / delete it"),
+            ("Clip per state", "Which clip of the animation library each state plays; Space plays the preview"),
         ]),
         ("Audio", [
             ("Space / L / Home", "Play or stop / loop region / playhead to start"),

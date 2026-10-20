@@ -230,3 +230,18 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Testi:** 183/183 (UI 5: začetni komplet in zavrnitve, različna stanja in ostri robovi, nine-slice in sidra, zasloni, prekrivni sloj v igri, Godot tema in scene, dodatne velikosti; regresija 4 novi primerki).
 - **Smoke:** način UI preverjen. Koraki, ki odpirajo menije (Device preview, paleta ukazov, delovni profil, predloge, zgodovina, izvoz), v tej seji niso tekli: okno aplikacije ni dobilo ospredja, ker je uporabnik delal na računalniku (sonda je potrdila, da se brez ospredja ne odpre noben meni v nobenem načinu). Skripta zdaj to sporoči kot »SMOKE INCOMPLETE« (izhod 2) namesto kot napake. Pritiskov tipk ne simulira, ker bi motili uporabnika.
 - **Ni ročno preizkušeno:** vlečenje elementov na zaslonu, okno predogleda naprave, uvoz teme in scen v Godot.
+
+## Faza 17: Animation & Motion Studio in deli telesa (končana, 20. 10. 2026)
+- **`.pxanim` v1 (`AnimLibrary`):** posnetki s sledmi za X, Y, vrtenje, merilo in prosojnost; krivulje Linear, EaseIn, EaseOut, EaseInOut, Step in Bezier (CSS); zanka, enkrat, ping-pong, obratno.
+- **Način Scene › Motion** (Ctrl+2): časovnica z vrsticami sledi, dodajanje ključev z dvoklikom, vlečenje po času, urejanje vrednosti, krivulje in ročic Bezier, graf vrednosti, predogled, posnetki (nov, preimenuj, podvoji, izbriši), undo.
+- **Uporaba posnetkov:**
+  - objekt v prizoru predvaja posnetek namesto svoje sledi (urejevalnik, predogled igre, izvoz); gumb »Save track as clip…« prenese obstoječo sled v knjižnico;
+  - kamera prizora (tresenje, premiki);
+  - UI elementi na zaslonu (`.pxui` v2), tudi v prekrivnem sloju igre.
+- **Način Character › Rig** (Ctrl+2, odprta točka C): izrez delov iz sprajta z vlečenjem, pivot z desnim klikom, starševski del, odmik, Z; knjižnica animacij in posnetek za vsako stanje; predogled; preverjanje (neznan starš, zanka, del zunaj sprajta). `.pxchar` v2.
+- **Izris:** `Rig.Pose` (hierarhija: vrtenje rame nese roko in dlan) in `Rig.Draw`; predogled igre riše lik iz delov.
+- **Izvoz Godot:** `AnimationPlayer` z vzorčenimi posnetki za objekte in kamero; cutout rig (`Sprite2D` z `AtlasTexture` v hierarhiji). Generični JSON: knjižnica, posnetki objektov in kamere, deli lika.
+- **Testi:** 192 (Motion 8: načini predvajanja in krivulje, knjižnica in zavrnitve, sled → posnetek, hierarhija riga, lik v2, prizor s posnetkom in rigom, izvoz Godot in generični, UI in kamera; regresija: 4 novi primerki). Pred zaklepom delovne postaje so vsi testi Core uspeli (191 pred zadnjim testom izvoza, ki je uspel posamič). Ob zadnjem zagonu je bila postaja zaklenjena in 5 testov, ki rišejo z WPF (`RenderTargetBitmap`: UI 2, Vector 2, Motion 1), je dobilo prazno sliko; enako se zgodi na commitu a643f92, torej ne gre za regresijo. Ponovi `dotnet test` in smoke ob odklenjeni seji.
+- **Smoke:** ni tekel (zaklenjena postaja).
+- **Poenostavitve (`ponytail`):** rig v prizoru sledi premiku in zrcaljenju objekta, merila in vrtenja celotnega riga ne upošteva; Godot dobi vzorčene ključe namesto lastnih krivulj; posnetki UI elementov v Godot sceni `Control` niso izvoženi; urejevalnik prizora prikaže lik z deli kot sličico sprajta.
+- **Ni ročno preizkušeno:** risanje delov z miško, časovnica z miško, uvoz v Godot.

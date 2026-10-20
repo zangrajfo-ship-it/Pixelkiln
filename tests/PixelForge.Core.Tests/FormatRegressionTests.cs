@@ -189,6 +189,30 @@ public class FormatRegressionTests
         Assert.Equal(UiAnchor.TopLeft, k.Screens[1].Items[0].Anchor);
     }
 
+    static readonly Guid AnimId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+
+    [Fact]
+    public void Anim_v1_and_rig_and_clip_fields()
+    {
+        var l = AnimLibrary.Load(Fixture("current/anim.v1.pxanim"));
+        Assert.Equal(["wave", "shake"], l.Clips.Select(c => c.Name));
+        Assert.Equal(new AnimKey(0, 0, AnimEase.Bezier, 0.42, 0, 0.58, 1), l.Clips[0].Tracks[0].Keys[0]);
+        Assert.Equal((AnimPlay.Once, true, "arm"), (l.Clips[1].Play, l.Clips[1].Reverse, l.Clips[0].Tracks[0].Target));
+
+        var c = Character.Load(Fixture("current/hero.v2.pxchar"));
+        Assert.Equal((2, "body", -4.0), (c.Parts.Count, c.Parts[1].Parent, c.Parts[1].OffsetY));
+        Assert.Equal((AnimId, "wave"), (c.RigAnimAssetId!.Value, c.RigClips["idle"]));
+        Assert.Empty(Character.Load(Fixture("current/hero.v1.pxchar")).Parts);       // v1: no rig
+
+        var s = Scene.Load(Fixture("current/level.v3.pxscene"));
+        Assert.Equal((AnimId, "wave", "shake"), (s.Instances[0].ClipAssetId!.Value, s.Instances[0].Clip, s.CameraClip));
+        Assert.Null(Scene.Load(Fixture("current/level.v2.pxscene")).Instances[0].ClipAssetId);
+
+        var k = UiKit.Load(Fixture("current/kit.v2.pxui"));
+        Assert.Equal("shake", k.Screens[0].Items[0].Clip);
+        Assert.All(UiKit.Load(Fixture("current/kit.v1.pxui")).Screens.SelectMany(x => x.Items), i => Assert.Null(i.ClipAssetId));
+    }
+
     /// <summary>Writes Fixtures/current with the current code (PF_WRITE_FIXTURES=1, PF_FIXTURES_DIR = the Fixtures folder).</summary>
     [Fact]
     public void WriteCurrentFixtures()
@@ -258,6 +282,39 @@ public class FormatRegressionTests
             var kit = UiKit.Starter(UiKit.Styles["Sci-fi"], ["Main menu", "HUD"], 320, 180);
             kit.Elements[0].Art[UiState.Hover] = SpriteId;
             UiKit.Save(kit, Path.Combine(dir, "kit.v1.pxui"));
+        }
+
+        // phase 17
+        if (New("anim.v1.pxanim"))
+            AnimLibrary.Save(new AnimLibrary
+            {
+                Clips =
+                [
+                    new AnimClip { Name = "wave", Play = AnimPlay.PingPong, Tracks = [new AnimTrack { Target = "arm", Property = AnimProperty.Rotation, Keys = [new AnimKey(0, 0, AnimEase.Bezier, 0.42, 0, 0.58, 1), new AnimKey(400, 45)] }] },
+                    new AnimClip { Name = "shake", Play = AnimPlay.Once, Reverse = true, Tracks = [new AnimTrack { Property = AnimProperty.X, Keys = [new AnimKey(0, 0), new AnimKey(100, 3, AnimEase.Step)] }] },
+                ],
+            }, Path.Combine(dir, "anim.v1.pxanim"));
+        if (New("hero.v2.pxchar"))
+        {
+            c.Parts = [new RigPart { Name = "body", W = 4, H = 6, PivotX = 2, PivotY = 6 }, new RigPart { Name = "arm", X = 4, W = 2, H = 4, Parent = "body", OffsetX = 1, OffsetY = -4, Z = 1 }];
+            c.RigAnimAssetId = AnimId;
+            c.RigClips["idle"] = "wave";
+            Character.Save(c, Path.Combine(dir, "hero.v2.pxchar"));
+        }
+        if (New("level.v3.pxscene"))
+        {
+            s.Instances[0].ClipAssetId = AnimId;
+            s.Instances[0].Clip = "wave";
+            s.CameraClipAssetId = AnimId;
+            s.CameraClip = "shake";
+            Scene.Save(s, Path.Combine(dir, "level.v3.pxscene"));
+        }
+        if (New("kit.v2.pxui"))
+        {
+            var kit = UiKit.Starter(UiKit.Styles["Sci-fi"], ["HUD"], 320, 180);
+            kit.Screens[0].Items[0].ClipAssetId = AnimId;
+            kit.Screens[0].Items[0].Clip = "shake";
+            UiKit.Save(kit, Path.Combine(dir, "kit.v2.pxui"));
         }
     }
 

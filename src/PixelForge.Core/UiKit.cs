@@ -48,6 +48,9 @@ public sealed class UiPlacement
     /// <summary>Fill of health bars and position of sliders (0–1).</summary>
     public double Value { get; set; } = 0.7;
     public UiState State { get; set; }
+    /// <summary>Motion from an animation library (offset, scale, rotation, opacity over time).</summary>
+    public Guid? ClipAssetId { get; set; }
+    public string? Clip { get; set; }
     public UiPlacement Clone() => (UiPlacement)MemberwiseClone();
 }
 
@@ -65,7 +68,8 @@ public sealed class UiScreen
 /// <summary>UI kit (.pxui): a style, the elements built with it, and screens laid out from them.</summary>
 public sealed class UiKit
 {
-    public const int Version = 1;
+    // v2: UiPlacement.ClipAssetId/Clip
+    public const int Version = 2;
     public UiStyle Style { get; set; } = new();
     public List<UiElement> Elements { get; set; } = [];
     public List<UiScreen> Screens { get; set; } = [];
@@ -74,7 +78,8 @@ public sealed class UiKit
 
     public UiKit Clone() => new() { Style = Style, Elements = [.. Elements.Select(e => e.Clone())], Screens = [.. Screens.Select(s => s.Clone())] };
 
-    public IEnumerable<Guid> ReferencedAssets() => Elements.SelectMany(e => e.Art.Values.Concat(e.IconAssetId is Guid g ? [g] : [])).Distinct();
+    public IEnumerable<Guid> ReferencedAssets() => Elements.SelectMany(e => e.Art.Values.Concat(e.IconAssetId is Guid g ? [g] : []))
+        .Concat(Screens.SelectMany(s => s.Items).Select(i => i.ClipAssetId).OfType<Guid>()).Distinct();
 
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
     sealed record Dto(int Version, UiStyle Style, List<UiElement> Elements, List<UiScreen> Screens);
@@ -388,17 +393,32 @@ public static class UiRender
     }
 
     /// <summary>A whole screen at a size (anchors applied); transparent background = an overlay.</summary>
-    public static uint[] Screen(UiKit kit, UiScreen s, int w, int h, Project? p = null) => Sta.Run(() =>   // one STA thread for all elements
+    public static uint[] Screen(UiKit kit, UiScreen s, int w, int h, Project? p = null, double timeMs = 0) => Sta.Run(() =>   // one STA thread for all elements
     {
         var o = new uint[w * h];
         if (s.Background >> 24 != 0) Array.Fill(o, s.Background);
+        var libs = new Dictionary<Guid, AnimLibrary?>();
         foreach (var i in s.Items)
         {
             if (kit.Element(i.ElementId) is not { } e) continue;
             var (x, y, iw, ih) = Resolve(i, s.Width, s.Height, w, h);
             if (iw <= 0 || ih <= 0) continue;
-            SceneRenderer.Blit(o, w, h, Sized(kit, e, i.State, iw, ih, i.Text, i.Value, p), iw, ih, x, y, false, 1);
+            var px = Sized(kit, e, i.State, iw, ih, i.Text, i.Value, p);
+            // an element with a clip moves, scales, turns and fades around its centre
+            if (i.ClipAssetId is Guid cid && p?.Resolve(cid) is string lp
+                && (libs.TryGetValue(cid, out var lib) ? lib : libs[cid] = TryLoad(lp))?.Clip(i.Clip) is { } clip)
+            {
+                var pose = clip.Pose("", timeMs);
+                SceneRenderer.BlitTransformed(o, w, h, px, iw, ih, iw / 2, ih / 2, x + iw / 2.0 + pose.X, y + ih / 2.0 + pose.Y, pose.ScaleX, pose.ScaleY, pose.Rotation, pose.Opacity);
+            }
+            else SceneRenderer.Blit(o, w, h, px, iw, ih, x, y, false, 1);
         }
         return o;
     });
+
+    static AnimLibrary? TryLoad(string path)
+    {
+        try { return AnimLibrary.Load(path); }
+        catch (InvalidDataException) { return null; }
+    }
 }

@@ -12,13 +12,15 @@ namespace PixelForge.App;
 public partial class MainWindow : Window
 {
     // order = autosave file index; new editors are appended, whatever their tab position
-    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd, AudioEd, PaintEd, VectorEd, TextureEd, UiEd];
+    IEditor[] Editors => [SpriteEd, MapEd, MusicEd, SfxEd, CharEd, SceneEd, AudioEd, PaintEd, VectorEd, TextureEd, UiEd, MotionEd];
 
     // modes added in code (they live inside a tab's ModeHost, not in the XAML)
     readonly PaintEditor PaintEd = new();
     readonly VectorEditor VectorEd = new();
     readonly TextureEditor TextureEd = new();
     readonly UiEditor UiEd = new();
+    readonly MotionEditor MotionEd = new();
+    RigEditor? RigEd;   // a view of the States mode's document, so not in Editors
 
     TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed || t.Content is ModeHost h && h.Contains(ed));
 
@@ -45,6 +47,8 @@ public partial class MainWindow : Window
         HostOf(SpriteEd).Add("Vector", VectorEd);
         HostOf(SpriteEd).Add("Texture", TextureEd);
         HostOf(SpriteEd).Add("UI", UiEd);
+        HostOf(CharEd).Add("Rig", RigEd = new RigEditor(CharEd));
+        HostOf(SceneEd).Add("Motion", MotionEd);
         TextureEd.OpenPainting = a => { OpenAsset(a); PaintEd.SetWrap(true); };
         PaintEd.SendToPixel = VectorEd.SendToPixel = (px, w, h) => { Reveal(SpriteEd); SpriteEd.LoadPixels(px, w, h); };
     }
@@ -247,6 +251,7 @@ public partial class MainWindow : Window
             AssetType.Vector => VectorEd,
             AssetType.Texture => TextureEd,
             AssetType.Ui => UiEd,
+            AssetType.Anim => MotionEd,
             _ => null,
         };
         if (a.Type == AssetType.Audio)   // a WAV is material: it goes onto a track

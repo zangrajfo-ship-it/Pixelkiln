@@ -30,7 +30,8 @@ public sealed class CharacterBox
 /// </summary>
 public sealed class Character
 {
-    public const int Version = 1;
+    // v2: Parts, RigAnimAssetId, RigClips (cut-out body parts)
+    public const int Version = 2;
     public static readonly string[] StandardStates = ["idle", "walk", "run", "jump", "attack", "hurt", "death"];
 
     public CharacterKind Kind { get; set; } = CharacterKind.Player;
@@ -45,6 +46,11 @@ public sealed class Character
     public List<CharacterBox> Boxes { get; set; } = [];
     /// <summary>Free game data (hp, speed …) passed through to exports.</summary>
     public Dictionary<string, string> Properties { get; set; } = [];
+    /// <summary>Cut-out body parts (empty = the character is drawn frame by frame from its sprite).</summary>
+    public List<RigPart> Parts { get; set; } = [];
+    /// <summary>Animation library with the parts' clips, and which clip plays in each state.</summary>
+    public Guid? RigAnimAssetId { get; set; }
+    public Dictionary<string, string> RigClips { get; set; } = [];
 
     /// <summary>Boxes active in a state's frame (frame index within the tag).</summary>
     public IEnumerable<CharacterBox> BoxesAt(string? state, int frame) =>
@@ -81,6 +87,8 @@ public sealed class Character
         c.Animations = new(Animations);
         c.Boxes = [.. Boxes.Select(b => b.Clone())];
         c.Properties = new(Properties);
+        c.Parts = [.. Parts.Select(p => p.Clone())];
+        c.RigClips = new(RigClips);
         return c;
     }
 
@@ -99,12 +107,15 @@ public sealed class Character
         public Facing Facing { get; set; }
         public List<CharacterBox>? Boxes { get; set; }
         public Dictionary<string, string>? Properties { get; set; }
+        public List<RigPart>? Parts { get; set; }
+        public Guid? RigAnimAssetId { get; set; }
+        public Dictionary<string, string>? RigClips { get; set; }
     }
 
     public static string Serialize(Character c) => JsonSerializer.Serialize(new Dto
     {
         Version = Version, Kind = c.Kind, SpriteAssetId = c.SpriteAssetId, Animations = c.Animations, OriginX = c.OriginX, OriginY = c.OriginY,
-        Facing = c.Facing, Boxes = c.Boxes, Properties = c.Properties,
+        Facing = c.Facing, Boxes = c.Boxes, Properties = c.Properties, Parts = c.Parts, RigAnimAssetId = c.RigAnimAssetId, RigClips = c.RigClips,
     }, Json);
 
     public static Character Deserialize(string json)
@@ -114,7 +125,10 @@ public sealed class Character
         {
             Kind = d.Kind, SpriteAssetId = d.SpriteAssetId, Animations = d.Animations ?? [], OriginX = d.OriginX, OriginY = d.OriginY,
             Facing = d.Facing, Boxes = d.Boxes ?? [], Properties = d.Properties ?? [],
+            Parts = d.Parts ?? [], RigAnimAssetId = d.RigAnimAssetId, RigClips = d.RigClips ?? [],   // v1: no rig
         };
+        if (c.Parts.Select(p => p.Name).Distinct().Count() != c.Parts.Count) throw new InvalidDataException("Two body parts have the same name.");
+        if (c.Parts.Any(p => p.W < 1 || p.H < 1)) throw new InvalidDataException("A body part has no size.");
         foreach (var b in c.Boxes)
             if (b.W < 1 || b.H < 1 || b.Category is < 0 or > 31) throw new InvalidDataException("A box has no size or an invalid collision category.");
         return c;
