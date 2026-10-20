@@ -203,3 +203,15 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Testi:** 169/169 (Vector 7: krožno shranjevanje, logične operacije po ploščini, poravnava, razporejanje, premik, skaliranje, SVG uvoz s transformacijami, gradienti, slogom in zavrnitvami, izvoz in ponovni uvoz, rasterizacija, risbe in slike v prizoru in izvozu). Smoke preveri način Vector.
 - **Popravki med delom:** SVG transformacije se niso zapekle v točke; »ostri robovi« so imeli polprosojne piksle (RenderTargetBitmap ne upošteva EdgeMode, zdaj prag); preslikava generičnega izvoza prizora bi slikam iz Paint in Vector dala končnico `.wav`; šahovnica prosojnosti se je večala s povečavo (tudi v Paint).
 - **Ni ročno preizkušeno:** risanje s peresom in urejanje vozlišč z miško, ročice skaliranja.
+
+## Faza 15: Texture & Material Studio (končana, 20. 10. 2026)
+- **Način Texture v zavihku Sprite** (Ctrl+4).
+- **`TextureDoc` (`.pxtex` v1)** in **`Textures`:**
+  - brezšivni materiali s semenom (kamen, opeka, trava, les, voda, pesek, kovina, zemlja) iz ponavljajočega se šuma z ločenima periodama po oseh in celičnega šuma;
+  - viri: recept, slika iz Paint načina ali poljubna slika projekta, s »Seam blend« za slike, ki se ne ponavljajo;
+  - izpeljane mape: višina, normale (Sobel s prehodom čez rob, po želji zelena navzdol), okluzija; predogled s svetlobo.
+- **Urejevalnik:** vir, material, seme in naključno seme, velikost, gostota, podrobnost, barvi, moč normal in okluzije; pogledi barva, višina, normale, okluzija, osvetljeno; ponovitev 4×4; gradnja v ozadju z zakasnitvijo; »Paint it…« ustvari ali odpre povezano sliko v Paint načinu z vklopljenim risanjem čez rob (nova možnost Wrap v Paint, tipka W).
+- **Povsod:** tekstura deluje kot slika (sloji prizorov, tileset), izvoz z normalami in Godot `CanvasTexture`, 8 predlog materialov (korak `texture`), reference iz teksture na sliko se preusmerijo s »Replace everywhere«.
+- **Testi:** 174/174 (Texture 5: vsi materiali brez šiva in ponovljivi, smer normal in zelena, okluzija v jamici, odprava šiva na sliki, risanje čez rob, naslikana tekstura in izvoz, predloge materialov). Smoke preveri način Texture in stanje »brez vidnega šiva«.
+- **Popravki med delom:** prvotne formule so lomile ponavljanje (šum, raztegnjen za neceli faktor; liho število vrst opek); smoke je po zaprtju predogleda igre odpiral meni, preden je bilo glavno okno spet aktivno.
+- **Ni ročno preizkušeno:** risanje teksture v Paint načinu z miško, uvoz `CanvasTexture` v Godot.

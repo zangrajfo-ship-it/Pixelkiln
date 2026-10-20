@@ -176,7 +176,7 @@ public static class Exporter
                 // assets only clash when their output files can (hero.pxf and hero.pxchar can share "hero")
                 string group = a.Type switch
                 {
-                    AssetType.Sprite or AssetType.Image or AssetType.Paint or AssetType.Vector => "picture", AssetType.Tilemap or AssetType.Scene => "scene", AssetType.Character => "character",
+                    AssetType.Sprite or AssetType.Image or AssetType.Paint or AssetType.Vector or AssetType.Texture => "picture", AssetType.Tilemap or AssetType.Scene => "scene", AssetType.Character => "character",
                     AssetType.Palette => "palette", _ => "audio",
                 };
                 string name = stem;
@@ -216,6 +216,19 @@ public static class Exporter
                 {
                     var (px, w, h) = AssetLoader.LoadImage(path);
                     Add(b + ".png", ImageIO.EncodePng(px, w, h));
+                    break;
+                }
+                case AssetType.Texture:
+                {
+                    var maps = Textures.Build(TextureDoc.Load(path), p);
+                    Add(b + ".png", ImageIO.EncodePng(maps.Albedo, maps.Width, maps.Height));
+                    Add(b + "_normal.png", ImageIO.EncodePng(maps.Normal, maps.Width, maps.Height));
+                    if (Godot) Add(b + "_material.tres", Textures.GodotCanvasTexture(Res(b + ".png"), Res(b + "_normal.png")));
+                    else
+                    {
+                        Add(b + "_height.png", ImageIO.EncodePng(Textures.Gray(maps.HeightMap), maps.Width, maps.Height));
+                        Add(b + "_ao.png", ImageIO.EncodePng(maps.Occlusion, maps.Width, maps.Height));
+                    }
                     break;
                 }
                 case AssetType.Vector:
@@ -295,7 +308,7 @@ public static class Exporter
         {
             string? File(Guid? id) => id is Guid g && p.Find(g) is { } e ? Rel(b, _base[g] + e.Type switch
             {
-                AssetType.Sprite => ".json", AssetType.Image or AssetType.Paint or AssetType.Vector => ".png", AssetType.Tilemap => ".tmj", AssetType.Character => "_character.json", _ => ".wav",
+                AssetType.Sprite => ".json", AssetType.Image or AssetType.Paint or AssetType.Vector or AssetType.Texture => ".png", AssetType.Tilemap => ".tmj", AssetType.Character => "_character.json", _ => ".wav",
             }) : null;
             return JsonSerializer.Serialize(new
             {

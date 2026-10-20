@@ -52,6 +52,11 @@ static class HelpWindow
             ("Nodes: double-click / Alt+drag handle / Del", "Smooth or corner / move one handle / delete point"),
             ("Ctrl+G / Ctrl+Shift+G / Ctrl+D", "Group / ungroup / duplicate"), ("Ctrl+Shift+] / [", "Bring to front / send to back"),
         ]),
+        ("Sprite › Texture (Ctrl+4)", [
+            ("1 2 3 4 5", "Show colour, height, normal, occlusion, lit"), ("T", "Repeat 4×4 on or off"),
+            ("R", "New random seed"), ("Ctrl+E", "Export colour, normal, height and occlusion PNGs"),
+            ("Paint it…", "Paint the texture in Paint mode; strokes wrap around the edges (W toggles wrap there)"),
+        ]),
         ("Tilemap", [
             ("B E G I", "Paint, erase, fill, pick"), ("A", "Auto-tile terrain"), ("O", "Objects"),
             ("Shift (objects)", "Snap to tiles"), ("Del", "Delete selected object"),

@@ -66,6 +66,19 @@ public static class AssetKinds
             (p, _) => VectorDoc.Load(p) is var d && Math.Max(d.Width, d.Height) is var longest && longest > 0
                 ? ((int)Math.Max(1, d.Width * 256 / longest), (int)Math.Max(1, d.Height * 256 / longest)) is var (w, h) ? (VectorGeometry.Rasterize(d, w, h), w, h) : null
                 : null),
+        new(AssetType.Texture, [".pxtex"], p => TextureDoc.Load(p), p => TextureDoc.Load(p) is var t
+                ? $"Texture {(t.Source == TextureSource.Procedural ? $"{t.Material} {t.Size}×{t.Size}" : $"from a {t.Source.ToString().ToLowerInvariant()}")}" : "",
+            (p, project) => TextureDoc.Load(p) is var t && (t.Source == TextureSource.Procedural || project is not null)
+                ? Textures.Build(t, project) is var m ? (m.Albedo, m.Width, m.Height) : null : null,
+            p => TextureDoc.Load(p).AssetId is Guid a ? [a] : [],
+            (p, map) =>
+            {
+                var t = TextureDoc.Load(p);
+                if (t.AssetId is not Guid g || map(g) == g) return false;
+                t.AssetId = map(g);
+                TextureDoc.Save(t, p);
+                return true;
+            }),
         new(AssetType.Mix, [".pxmix"], p => Mix.Load(p), p => DescribeMix(Mix.Load(p)), null,
             p => Mix.Load(p).ReferencedAssets(),
             (p, map) =>

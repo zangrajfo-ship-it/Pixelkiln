@@ -128,3 +128,6 @@ JSON prek `DocumentFile`: `Version` 1, `Width`, `Height` (umetniška površina),
 **SVG:** uvoz podmnožice (path, rect, circle, ellipse, line, polyline, polygon, g in a s transformacijami, fill, stroke, opacity, fill-rule, linearni in radialni gradienti z `href`; brez DTD). Loki postanejo kratke daljice, nepodprti elementi so v poročilu. Izvoz zapiše poti, pravokotnike, elipse, skupine in gradiente v `defs`.
 
 **Slika:** slike, sprajti, `.pxpaint` in `.pxvec` se lahko uporabljajo povsod, kjer je potrebna slika (sloj slike v prizoru, tileset, izvoz PNG; vektor še SVG).
+
+## `.pxtex`: tekstura (`TextureDoc`, Faza 15)
+JSON prek `DocumentFile`: `Version` 1, `Texture`: `Source` (Procedural, Painting, Picture), `Material` (Ground, Stone, Grass, Wood, Water, Sand, Brick, Metal), `Seed`, `Size` (4–2048), `Dark`, `Light` (ARGB), `Scale` (značilnosti na ploščico, 1–64), `Detail` (oktave 1–6), `AssetId` (slika ali risba za vira Painting in Picture), `SeamBlend` (px), `NormalStrength`, `FlipGreen` (zelena navzdol, slog DirectX), `OcclusionStrength`. Izpeljane mape (višina, normale po Sobelu, okluzija) se računajo ob uporabi in se ne shranjujejo. Izvoz: `ime.png` in `ime_normal.png`; Godot še `ime_material.tres` (`CanvasTexture` z `normal_texture`), Generic še `ime_height.png` in `ime_ao.png`.

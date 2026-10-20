@@ -114,6 +114,20 @@ public static class TemplateEngine
                     Core.Song.Save(song, f);
                     return p.Add(f);
                 }
+                case "texture":
+                {
+                    if (!Enum.TryParse<Material>(S("material", "Stone"), true, out var mat)) throw new InvalidDataException($"Step “{_s.Id}”: unknown material.");
+                    if (!ColorUtil.TryParseHex(S("dark", "3A3A44").TrimStart('#'), out uint dark) || !ColorUtil.TryParseHex(S("light", "A8A8B4").TrimStart('#'), out uint light))
+                        throw new InvalidDataException($"Step “{_s.Id}”: dark and light must be RRGGBB.");
+                    var tex = new TextureDoc
+                    {
+                        Material = mat, Seed = S("seed", "1"), Size = I("size", 256, 4, 2048), Dark = dark | 0xFF000000, Light = light | 0xFF000000,
+                        Scale = D("scale", 6), Detail = I("detail", 4, 1, 6), NormalStrength = D("normalStrength", 2),
+                    };
+                    string f = FileFor(Name("texture"), ".pxtex");
+                    TextureDoc.Save(tex, f);
+                    return p.Add(f);
+                }
                 case "file":
                 {
                     string src = Path.Combine(templateFolder!, s.File!);
