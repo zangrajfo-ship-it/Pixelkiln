@@ -7,7 +7,7 @@ public static class AssetLoader
     public static void Probe(AssetType type, string path) => AssetKinds.Of(type).Probe(path);
 
     /// <summary>Asset types that can stand in for a picture (tilesets, scene image layers, exports).</summary>
-    public static bool IsPicture(AssetType t) => t is AssetType.Image or AssetType.Sprite or AssetType.Paint or AssetType.Vector;
+    public static bool IsPicture(AssetType t) => t is AssetType.Image or AssetType.Sprite or AssetType.Paint or AssetType.Vector or AssetType.Texture;
 
     /// <summary>
     /// A picture of an image, sprite (first frame, all visible layers), painting (all visible layers) or vector drawing
@@ -28,6 +28,11 @@ public static class AssetLoader
                 int w = Math.Max(1, (int)Math.Ceiling(v.Width)), h = Math.Max(1, (int)Math.Ceiling(v.Height));
                 if ((long)w * h > 64L * 1024 * 1024) throw new InvalidDataException("The drawing is too large to use as a picture.");
                 return (VectorGeometry.Rasterize(v, w, h), w, h);
+            case ".pxtex":
+                var t = TextureDoc.Load(path);
+                if (t.Source != TextureSource.Procedural) throw new InvalidDataException("A painted texture is read through its project (Textures.Build).");
+                var (albedo, _) = Textures.Generate(t);
+                return (albedo, t.Size, t.Size);
             default:
                 return ImageIO.LoadImage(path);
         }

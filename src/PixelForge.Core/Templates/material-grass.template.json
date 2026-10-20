@@ -1,0 +1,67 @@
+{
+  "apiVersion": 1,
+  "id": "material-grass",
+  "name": "Grass",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "tex",
+  "tags": [
+    "material",
+    "texture",
+    "grass"
+  ],
+  "description": "Dense blades of grass.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "grass"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "grass"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "256",
+      "options": [
+        "64",
+        "128",
+        "256",
+        "512",
+        "1024"
+      ]
+    },
+    {
+      "key": "scale",
+      "label": "Features per tile",
+      "default": "4",
+      "options": [
+        "2",
+        "4",
+        "6",
+        "8",
+        "12",
+        "16"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "tex",
+      "type": "texture",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "material": "Grass",
+        "seed": "{seed}",
+        "size": "{size}",
+        "dark": "1E3A16",
+        "light": "7CC04A",
+        "scale": "{scale}"
+      }
+    }
+  ]
+}

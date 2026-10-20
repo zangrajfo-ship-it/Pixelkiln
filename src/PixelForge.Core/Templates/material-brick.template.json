@@ -1,0 +1,67 @@
+{
+  "apiVersion": 1,
+  "id": "material-brick",
+  "name": "Brick wall",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "tex",
+  "tags": [
+    "material",
+    "texture",
+    "brick"
+  ],
+  "description": "Offset bricks with mortar lines.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "brick"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "brick"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "256",
+      "options": [
+        "64",
+        "128",
+        "256",
+        "512",
+        "1024"
+      ]
+    },
+    {
+      "key": "scale",
+      "label": "Features per tile",
+      "default": "8",
+      "options": [
+        "2",
+        "4",
+        "6",
+        "8",
+        "12",
+        "16"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "tex",
+      "type": "texture",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "material": "Brick",
+        "seed": "{seed}",
+        "size": "{size}",
+        "dark": "3A2420",
+        "light": "B0603C",
+        "scale": "{scale}"
+      }
+    }
+  ]
+}

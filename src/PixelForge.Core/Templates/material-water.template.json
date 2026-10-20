@@ -1,0 +1,67 @@
+{
+  "apiVersion": 1,
+  "id": "material-water",
+  "name": "Water",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "tex",
+  "tags": [
+    "material",
+    "texture",
+    "water"
+  ],
+  "description": "Soft waves.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "water"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "water"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "256",
+      "options": [
+        "64",
+        "128",
+        "256",
+        "512",
+        "1024"
+      ]
+    },
+    {
+      "key": "scale",
+      "label": "Features per tile",
+      "default": "4",
+      "options": [
+        "2",
+        "4",
+        "6",
+        "8",
+        "12",
+        "16"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "tex",
+      "type": "texture",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "material": "Water",
+        "seed": "{seed}",
+        "size": "{size}",
+        "dark": "143A66",
+        "light": "68B8E8",
+        "scale": "{scale}"
+      }
+    }
+  ]
+}

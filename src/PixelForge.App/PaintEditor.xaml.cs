@@ -171,7 +171,11 @@ public partial class PaintEditor : UserControl, IEditor, IStyleSource, IToolSele
     string ToolName => (string)ToolsPanel.Children.OfType<RadioButton>().First(r => r.IsChecked == true).Tag;
 
     BrushSettings Brush => new(Tool ?? PaintTool.Brush, SizeSlider.Value, HardSlider.Value, SpacingSlider.Value, OpacitySlider.Value, FlowSlider.Value,
-        GrainSlider.Value, PressureSizeBox.IsChecked == true, PressureOpacityBox.IsChecked == true, (int)SmoothSlider.Value, SquareBox.IsChecked == true);
+        GrainSlider.Value, PressureSizeBox.IsChecked == true, PressureOpacityBox.IsChecked == true, (int)SmoothSlider.Value, SquareBox.IsChecked == true,
+        WrapBox.IsChecked == true);
+
+    /// <summary>Turns wrap-around painting on (Texture mode opens a texture's painting this way).</summary>
+    public void SetWrap(bool on) => WrapBox.IsChecked = on;
 
     void OnBrushChanged(object? sender, RoutedEventArgs? e)
     {
@@ -687,6 +691,7 @@ public partial class PaintEditor : UserControl, IEditor, IStyleSource, IToolSele
             case Key.I when !ctrl: SelectTool("Picker"); break;
             case Key.G when !ctrl: SelectTool("Gradient"); break;
             case Key.X when !ctrl: SwapColors(); break;
+            case Key.W when !ctrl: WrapBox.IsChecked = WrapBox.IsChecked != true; break;
             case Key.M when !ctrl && Layer.Mask is not null: EditMaskToggle.IsChecked = EditMaskToggle.IsChecked != true; OnEditMask(this, new RoutedEventArgs()); break;
             case Key.OemOpenBrackets: SizeSlider.Value = Math.Max(1, SizeSlider.Value * 0.8); break;
             case Key.OemCloseBrackets: SizeSlider.Value = Math.Min(500, SizeSlider.Value * 1.25 + 1); break;

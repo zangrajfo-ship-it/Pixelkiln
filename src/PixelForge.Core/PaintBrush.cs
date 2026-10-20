@@ -6,7 +6,7 @@ public enum PaintTool { Brush, Pencil, Eraser, Airbrush, Smudge }
 public sealed record BrushSettings(
     PaintTool Tool = PaintTool.Brush, double Size = 12, double Hardness = 0.7, double Spacing = 0.15,
     double Opacity = 1, double Flow = 1, double Grain = 0, bool PressureSize = true, bool PressureOpacity = false,
-    int Smoothing = 2, bool Square = false);
+    int Smoothing = 2, bool Square = false, bool Wrap = false);
 
 /// <summary>
 /// One stroke on one layer (or its mask). Dabs are placed along the path at the brush spacing. A coverage buffer per
@@ -73,7 +73,21 @@ public sealed class PaintStroke
 
     double SizeAt(double pressure) => Math.Max(1, _b.PressureSize ? _b.Size * (0.15 + 0.85 * pressure) : _b.Size);
 
+    /// <summary>One dab; with Wrap it is repeated across the opposite edges, so painted textures tile.</summary>
     void Dab(double cx, double cy, double pressure)
+    {
+        if (!_b.Wrap) { DabAt(cx, cy, pressure); return; }
+        double r = SizeAt(pressure) / 2 + 1;
+        foreach (int ox in new[] { 0, -_doc.Width, _doc.Width })
+            foreach (int oy in new[] { 0, -_doc.Height, _doc.Height })
+            {
+                double x = cx + ox, y = cy + oy;
+                if (x + r < 0 || y + r < 0 || x - r > _doc.Width || y - r > _doc.Height) continue;
+                DabAt(x, y, pressure);
+            }
+    }
+
+    void DabAt(double cx, double cy, double pressure)
     {
         double size = SizeAt(pressure), r = size / 2;
         double alpha = _b.Opacity * (_b.PressureOpacity ? pressure : 1);

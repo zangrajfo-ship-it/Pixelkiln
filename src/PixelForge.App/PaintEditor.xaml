@@ -74,6 +74,7 @@
                 <CheckBox x:Name="PressureSizeBox" Content="Pen pressure changes size" IsChecked="True" Margin="0,8,0,0" Click="OnBrushChanged" />
                 <CheckBox x:Name="PressureOpacityBox" Content="Pen pressure changes opacity" Click="OnBrushChanged" />
                 <CheckBox x:Name="SquareBox" Content="Square tip" Click="OnBrushChanged" />
+                <CheckBox x:Name="WrapBox" Content="Wrap around edges (seamless textures)" Click="OnBrushChanged" ToolTip="Strokes that leave one side continue on the opposite side (W)" />
 
                 <TextBlock Text="Layers (top = front)" FontWeight="SemiBold" Margin="0,16,0,0" />
                 <ListBox x:Name="LayersList" Height="150" Margin="0,4,0,0" SelectionChanged="OnLayerSelected" AutomationProperties.Name="Layers" />

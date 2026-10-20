@@ -1,0 +1,68 @@
+{
+  "apiVersion": 1,
+  "id": "material-sand",
+  "name": "Sand",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "tex",
+  "tags": [
+    "material",
+    "texture",
+    "sand",
+    "desert"
+  ],
+  "description": "Ripples and grains.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "sand"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "sand"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "256",
+      "options": [
+        "64",
+        "128",
+        "256",
+        "512",
+        "1024"
+      ]
+    },
+    {
+      "key": "scale",
+      "label": "Features per tile",
+      "default": "6",
+      "options": [
+        "2",
+        "4",
+        "6",
+        "8",
+        "12",
+        "16"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "tex",
+      "type": "texture",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "material": "Sand",
+        "seed": "{seed}",
+        "size": "{size}",
+        "dark": "9A7A44",
+        "light": "EED8A0",
+        "scale": "{scale}"
+      }
+    }
+  ]
+}

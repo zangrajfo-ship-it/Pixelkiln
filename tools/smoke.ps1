@@ -45,6 +45,8 @@ function Save-Shot($h, $file) {
 # opens a top-level menu and returns the item whose name matches (retries: menus open asynchronously)
 function Find-MenuItem($root, $top, $pattern) {
     for ($try = 0; $try -lt 5; $try++) {
+        try { $root.SetFocus() } catch { }   # after another window closes, the main window may not be active yet
+        Start-Sleep -Milliseconds (200 * $try)
         $bar = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
         $m = $bar.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | Where-Object { ($_.Current.Name -replace '_', '') -eq $top } | Select-Object -First 1
         $ec = $m.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
@@ -108,6 +110,16 @@ try {
             Write-Host ("Vector   menus: {0} | title: {1}" -f ($items -join ', '), $root.Current.Name)
             if ($items -notcontains 'Object' -or $root.Current.Name -notlike '*untitled drawing*') { $failures += 'Vector mode did not take over menus and title' }
             if ($ShotDir) { Save-Shot $p.MainWindowHandle (Join-Path $ShotDir 'Vector.png') }
+        }
+        $texMode = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq 'Texture mode' } | Select-Object -First 1
+        if (-not $texMode) { $failures += 'Texture mode button missing' }
+        else {
+            $texMode.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+            Start-Sleep -Milliseconds 2000
+            $status = (Find-All $root ([System.Windows.Automation.ControlType]::Text)) | Where-Object { $_.Current.Name -like '*px*tile*' -or $_.Current.Name -like '*seam*' } | Select-Object -First 1
+            Write-Host ("Texture  title: {0} | status: {1}" -f $root.Current.Name, $status.Current.Name)
+            if ($root.Current.Name -notlike '*untitled texture*' -or -not $status) { $failures += 'Texture mode did not build its maps' }
+            if ($ShotDir) { Save-Shot $p.MainWindowHandle (Join-Path $ShotDir 'Texture.png') }
         }
         $pixelMode = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq 'Pixel mode' } | Select-Object -First 1
         $pixelMode.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()

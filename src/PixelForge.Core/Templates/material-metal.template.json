@@ -1,0 +1,67 @@
+{
+  "apiVersion": 1,
+  "id": "material-metal",
+  "name": "Brushed metal",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "tex",
+  "tags": [
+    "material",
+    "texture",
+    "metal"
+  ],
+  "description": "Horizontal brushing.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "metal"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "metal"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "256",
+      "options": [
+        "64",
+        "128",
+        "256",
+        "512",
+        "1024"
+      ]
+    },
+    {
+      "key": "scale",
+      "label": "Features per tile",
+      "default": "4",
+      "options": [
+        "2",
+        "4",
+        "6",
+        "8",
+        "12",
+        "16"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "tex",
+      "type": "texture",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "material": "Metal",
+        "seed": "{seed}",
+        "size": "{size}",
+        "dark": "50545C",
+        "light": "C8CCD4",
+        "scale": "{scale}"
+      }
+    }
+  ]
+}

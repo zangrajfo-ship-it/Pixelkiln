@@ -35,7 +35,8 @@ public sealed class SceneAssets(Project project)
 
     public Tilemap? Tilemap(Guid id) => Get(id, Core.Tilemap.Load);
 
-    public (uint[] Pixels, int Width, int Height)? Image(Guid id) => Get(id, path => new Box<(uint[], int, int)>(AssetLoader.LoadImage(path)))?.Value;
+    public (uint[] Pixels, int Width, int Height)? Image(Guid id) => Get(id, path => new Box<(uint[], int, int)>(
+        path.EndsWith(".pxtex", StringComparison.OrdinalIgnoreCase) && Textures.Build(TextureDoc.Load(path), Project) is var m ? (m.Albedo, m.Width, m.Height) : AssetLoader.LoadImage(path)))?.Value;
 
     public Sprite? Sprite(Guid id) => Get(id, ProjectFile.Load);
 

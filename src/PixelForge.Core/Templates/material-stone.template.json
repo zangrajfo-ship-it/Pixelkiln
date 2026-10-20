@@ -1,0 +1,67 @@
+{
+  "apiVersion": 1,
+  "id": "material-stone",
+  "name": "Stone wall",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "tex",
+  "tags": [
+    "material",
+    "texture",
+    "stone"
+  ],
+  "description": "Irregular stones with dark mortar; normal map for 2D lights.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "stone"
+    },
+    {
+      "key": "seed",
+      "label": "Seed (number or word)",
+      "default": "stone"
+    },
+    {
+      "key": "size",
+      "label": "Size (px)",
+      "default": "256",
+      "options": [
+        "64",
+        "128",
+        "256",
+        "512",
+        "1024"
+      ]
+    },
+    {
+      "key": "scale",
+      "label": "Features per tile",
+      "default": "6",
+      "options": [
+        "2",
+        "4",
+        "6",
+        "8",
+        "12",
+        "16"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "tex",
+      "type": "texture",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "material": "Stone",
+        "seed": "{seed}",
+        "size": "{size}",
+        "dark": "2E2E36",
+        "light": "A4A4B0",
+        "scale": "{scale}"
+      }
+    }
+  ]
+}

@@ -66,6 +66,7 @@ public static class TemplateLoader
         ["tilemap"] = ["width", "height", "tilesetStep", "layout", "fill", "seed", "difficulty"],
         ["level"] = ["mapStep", "playerStep", "musicStep", "collectibleStep", "checkpoints", "hazards", "collectibles", "seed", "background", "genre"],
         ["song"] = ["seed", "bpm", "scale", "patterns"],
+        ["texture"] = ["material", "seed", "size", "dark", "light", "scale", "detail", "normalStrength"],
         ["file"] = [],
     };
 
