@@ -82,7 +82,8 @@ public sealed class Scene
 {
     // v2: UiAssetId + UiScreen (a UI kit screen drawn over the game view)
     // v3: SceneInstance.ClipAssetId/Clip and CameraClipAssetId/CameraClip (clips from an animation library)
-    public const int Version = 3;
+    // v4: Ambient, Lights, Occluders, TileShadows, Emitters (2D lighting and particles)
+    public const int Version = 4;
 
     public int Width { get; set; } = 640;
     public int Height { get; set; } = 360;
@@ -103,6 +104,13 @@ public sealed class Scene
     /// <summary>Camera move from an animation library (X, Y added to the camera; null = none).</summary>
     public Guid? CameraClipAssetId { get; set; }
     public string? CameraClip { get; set; }
+    /// <summary>Light where no lamp shines; white with no lights = lighting off.</summary>
+    public uint Ambient { get; set; } = 0xFFFFFFFF;
+    public List<SceneLight> Lights { get; set; } = [];
+    public List<SceneOccluder> Occluders { get; set; } = [];
+    /// <summary>Solid tiles of world-speed tilemap layers cast shadows.</summary>
+    public bool TileShadows { get; set; } = true;
+    public List<SceneEmitter> Emitters { get; set; } = [];
 
     public IEnumerable<Guid> ReferencedAssets() =>
         Layers.Select(l => l.AssetId).OfType<Guid>().Concat(Instances.Select(i => i.AssetId)).Concat(Instances.Select(i => i.ClipAssetId).OfType<Guid>())
@@ -124,6 +132,8 @@ public sealed class Scene
     {
         Width = Width, Height = Height, Background = Background, Level = Level, Order = Order, CameraX = CameraX, CameraY = CameraY, MusicAssetId = MusicAssetId,
         UiAssetId = UiAssetId, UiScreen = UiScreen, CameraClipAssetId = CameraClipAssetId, CameraClip = CameraClip,
+        Ambient = Ambient, TileShadows = TileShadows,
+        Lights = [.. Lights.Select(l => l.Clone())], Occluders = [.. Occluders.Select(o => o.Clone())], Emitters = [.. Emitters.Select(e => e.Clone())],
         Layers = [.. Layers.Select(l => l.Clone())],
         Instances = [.. Instances.Select(i => i.Clone())],
         Areas = [.. Areas.Select(a => a.Clone())],
@@ -148,6 +158,11 @@ public sealed class Scene
         public string? UiScreen { get; set; }
         public Guid? CameraClipAssetId { get; set; }
         public string? CameraClip { get; set; }
+        public uint? Ambient { get; set; }
+        public bool? TileShadows { get; set; }
+        public List<SceneLight>? Lights { get; set; }
+        public List<SceneOccluder>? Occluders { get; set; }
+        public List<SceneEmitter>? Emitters { get; set; }
         public List<SceneLayer>? Layers { get; set; }
         public List<SceneInstance>? Instances { get; set; }
         public List<SceneArea>? Areas { get; set; }
@@ -158,6 +173,7 @@ public sealed class Scene
         Version = Version, Width = s.Width, Height = s.Height, Background = s.Background, Level = s.Level, Order = s.Order,
         CameraX = s.CameraX, CameraY = s.CameraY, MusicAssetId = s.MusicAssetId, UiAssetId = s.UiAssetId, UiScreen = s.UiScreen,
         CameraClipAssetId = s.CameraClipAssetId, CameraClip = s.CameraClip,
+        Ambient = s.Ambient, TileShadows = s.TileShadows, Lights = s.Lights, Occluders = s.Occluders, Emitters = s.Emitters,
         Layers = s.Layers, Instances = s.Instances, Areas = s.Areas,
     }, Json);
 
@@ -169,6 +185,8 @@ public sealed class Scene
             Level = d.Level ?? "", Order = d.Order, Background = d.Background, MusicAssetId = d.MusicAssetId,
             UiAssetId = d.UiAssetId, UiScreen = d.UiScreen,   // absent in v1 files: no overlay
             CameraClipAssetId = d.CameraClipAssetId, CameraClip = d.CameraClip,   // absent before v3
+            Ambient = d.Ambient ?? 0xFFFFFFFF, TileShadows = d.TileShadows ?? true,   // before v4: unlit
+            Lights = d.Lights ?? [], Occluders = d.Occluders ?? [], Emitters = d.Emitters ?? [],
             Layers = d.Layers ?? [], Instances = d.Instances ?? [], Areas = d.Areas ?? [],
         };
         s.Resize(d.Width, d.Height);
@@ -177,6 +195,12 @@ public sealed class Scene
         var ids = s.Layers.Select(l => l.Id).Concat(s.Instances.Select(i => i.Id)).Concat(s.Areas.Select(a => a.Id)).ToList();
         if (ids.Count != ids.Distinct().Count()) throw new InvalidDataException("The scene uses an id twice.");
         if (s.Areas.Any(a => a.W < 1 || a.H < 1)) throw new InvalidDataException("An area has no size.");
+        if (s.Lights.Any(l => l.Radius is < 1 or > 4096 || l.Intensity is < 0 or > 16 || l.Cone is < 1 or > 360)) throw new InvalidDataException("A light has a radius outside 1–4096, an intensity outside 0–16 or a cone outside 1–360°.");
+        if (s.Occluders.Any(o => o.Points.Count < 6 || o.Points.Count % 2 != 0)) throw new InvalidDataException("An occluder needs at least three points.");
+        if (s.Emitters.Any(e => e.Rate is < 0 or > 2000 || e.LifeMs is < 1 or > 60000 || e.W < 0 || e.H < 0))
+            throw new InvalidDataException("An emitter has a rate outside 0–2000 per second, a life outside 1–60000 ms or a negative area.");
+        var fx = s.Lights.Select(l => l.Id).Concat(s.Occluders.Select(o => o.Id)).Concat(s.Emitters.Select(e => e.Id)).ToList();
+        if (fx.Count != fx.Distinct().Count()) throw new InvalidDataException("The scene uses an id twice.");
         return s;
     }
 

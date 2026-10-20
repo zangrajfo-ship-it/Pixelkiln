@@ -105,6 +105,7 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         UiScreenBox.ItemsSource = screens;
         UiScreenBox.SelectedItem = screens.FirstOrDefault(s => s == _scene.UiScreen);
         UiScreenBox.IsEnabled = screens.Length > 0;
+        RefreshEffects();
         CameraClipBox.ItemsSource = ClipItems("(none)");
         SelectClip(CameraClipBox, _scene.CameraClipAssetId, _scene.CameraClip);
         PlaceList.ItemsSource = p?.Assets.Where(a => a.Type is AssetType.Sprite or AssetType.Character).OrderBy(a => a.Type).ThenBy(a => a.Path)
@@ -139,6 +140,7 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
     /// <summary>Rebuilds every element of the canvas from the scene (after edits, undo, load).</summary>
     void Rebuild()
     {
+        _litImage = null;
         SceneCanvas.Children.Clear();
         _live.Clear();
         _frames.Clear();
@@ -177,6 +179,7 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         var (tw, th) = Target;
         Place(new Rectangle { Width = tw, Height = th, Stroke = Brushes.White, StrokeThickness = 1 / _zoom, StrokeDashArray = [6, 4], IsHitTestVisible = false }, _scene.CameraX, _scene.CameraY);
         Animate(0);
+        DrawEffects();
         DrawSelection();
     }
 
@@ -218,6 +221,7 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
             if (pose.Rotation != 0) tg.Children.Add(new RotateTransform(pose.Rotation, look.OriginX, look.OriginY));
             img.RenderTransform = tg;
         }
+        if (t > 0) UpdateLit(t);   // playing: particles and flicker move
     }
 
     static Color AreaColor(AreaKind k) => k switch

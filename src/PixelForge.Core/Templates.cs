@@ -64,7 +64,7 @@ public static class TemplateLoader
         ["character"] = ["spriteStep", "kind", "facing", "origin"],
         ["tileset"] = ["tileSize", "pattern", "baseColor", "variants", "seed", "asset"],
         ["tilemap"] = ["width", "height", "tilesetStep", "layout", "fill", "seed", "difficulty"],
-        ["level"] = ["mapStep", "playerStep", "musicStep", "collectibleStep", "checkpoints", "hazards", "collectibles", "seed", "background", "genre"],
+        ["level"] = ["mapStep", "playerStep", "musicStep", "collectibleStep", "checkpoints", "hazards", "collectibles", "seed", "background", "genre", "ambient", "torches", "weather"],
         ["song"] = ["seed", "bpm", "scale", "patterns"],
         ["ui"] = ["style", "screens", "width", "height", "pixel"],
         ["texture"] = ["material", "seed", "size", "dark", "light", "scale", "detail", "normalStrength"],

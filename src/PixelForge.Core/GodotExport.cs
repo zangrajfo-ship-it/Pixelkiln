@@ -284,7 +284,8 @@ public static class GodotExport
     /// parallax layers inside Parallax2D), movement tracks as AnimationPlayers, areas as Area2D in groups named
     /// after their kind, the start camera and the music.
     /// </summary>
-    public static string LevelScene(Scene s, string name, Project p, SceneAssets assets, Func<Guid, string> res, List<string> warnings)
+    public static string LevelScene(Scene s, string name, Project p, SceneAssets assets, Func<Guid, string> res, List<string> warnings,
+        Func<string, uint[], int, int, string>? picture = null)
     {
         var d = new Doc("[gd_scene load_steps={steps} format=3]");
         var b = d.Body;
@@ -351,6 +352,7 @@ public static class GodotExport
                 b.Append($"[node name={Q(NodeName(screen.Name))} parent={Q(layer)} instance={d.Ext("PackedScene", UiExport.ScreenFile(res(ui), screen.Name))}]\n\n");
             }
         }
+        Effects(d, s, assets, areaNames, picture, warnings);
         string cam = Unique(areaNames, "Camera2D");
         b.Append($"[node name={Q(cam)} type=\"Camera2D\" parent=\".\"]\n");
         b.Append($"position = Vector2({F(s.CameraX + p.Settings.TargetWidth / 2.0)}, {F(s.CameraY + p.Settings.TargetHeight / 2.0)})\n");
@@ -360,6 +362,82 @@ public static class GodotExport
         if (s.MusicAssetId is Guid music)
             b.Append($"[node name={Q(Unique(areaNames, "Music"))} type=\"AudioStreamPlayer\" parent=\".\"]\nstream = {d.Ext("AudioStream", res(music) + ".wav")}\nautoplay = true\n\n");
         return d.ToString();
+    }
+
+    static string Col(uint c) => $"Color({F((c >> 16 & 0xFF) / 255.0)}, {F((c >> 8 & 0xFF) / 255.0)}, {F((c & 0xFF) / 255.0)}, {F((c >> 24) / 255.0)})";
+
+    /// <summary>
+    /// Lighting and particles: CanvasModulate for the ambient light, PointLight2D (radial gradient texture; spots get a
+    /// cone texture written next to the level), LightOccluder2D for polygons and merged rows of solid tiles, and
+    /// CPUParticles2D. ponytail: glow and flicker are metadata; Godot needs a WorldEnvironment glow or a script for them.
+    /// </summary>
+    static void Effects(Doc d, Scene s, SceneAssets assets, HashSet<string> names, Func<string, uint[], int, int, string>? picture, List<string> warnings)
+    {
+        var b = d.Body;
+        if (Lighting.IsOn(s)) b.Append($"[node name={Q(Unique(names, "Ambient"))} type=\"CanvasModulate\" parent=\".\"]\ncolor = {Col(s.Ambient | 0xFF000000)}\n\n");
+        string? radial = null;
+        int spot = 0;
+        foreach (var l in s.Lights)
+        {
+            string tex;
+            if (l.Kind == LightKind.Spot && picture is not null)
+            {
+                const int size = 256;
+                var px = new uint[size * size];
+                var cone = new Scene { Ambient = 0xFF000000, Lights = [new SceneLight { X = size / 2, Y = size / 2, Radius = size / 2, Kind = LightKind.Spot, Direction = 0, Cone = l.Cone, Color = 0xFFFFFFFF, Shadows = false }] };
+                Array.Fill(px, 0xFFFFFFFF);
+                Lighting.Apply(px, size, size, 0, 0, cone, [], 0);
+                tex = d.Ext("Texture2D", picture($"_spot{++spot}.png", px, size, size));
+            }
+            else
+            {
+                if (l.Kind == LightKind.Spot) warnings.Add($"Spot light “{l.Name}” exported as a point light.");
+                radial ??= d.Sub("GradientTexture2D", $"gradient = {d.Sub("Gradient", "offsets = PackedFloat32Array(0, 0.5, 1)", "colors = PackedColorArray(1, 1, 1, 1, 0.25, 0.25, 0.25, 1, 0, 0, 0, 1)")}",
+                    "width = 256", "height = 256", "fill = 1", "fill_from = Vector2(0.5, 0.5)", "fill_to = Vector2(1, 0.5)");
+                tex = radial;
+            }
+            b.Append($"[node name={Q(Unique(names, l.Name))} type=\"PointLight2D\" parent=\".\"]\nposition = Vector2({F(l.X)}, {F(l.Y)})\n");
+            if (l.Kind == LightKind.Spot) b.Append($"rotation = {F(l.Direction * Math.PI / 180)}\n");
+            b.Append($"color = {Col(l.Color | 0xFF000000)}\nenergy = {F(l.Intensity)}\ntexture = {tex}\ntexture_scale = {F(l.Radius / 128.0)}\n");
+            if (l.Shadows) b.Append("shadow_enabled = true\n");
+            if (l.Glow > 0) b.Append($"metadata/glow = {F(l.Glow)}\n");
+            if (l.Flicker > 0) b.Append($"metadata/flicker = {F(l.Flicker)}\n");
+            b.Append('\n');
+        }
+        void Occluder(string name, IEnumerable<(int X, int Y)> pts)
+        {
+            string poly = d.Sub("OccluderPolygon2D", $"polygon = PackedVector2Array({string.Join(", ", pts.Select(q => $"{F(q.X)}, {F(q.Y)}"))})");
+            b.Append($"[node name={Q(Unique(names, name))} type=\"LightOccluder2D\" parent=\".\"]\noccluder = {poly}\n\n");
+        }
+        foreach (var o in s.Occluders) Occluder(o.Name, o.Points.Chunk(2).Select(c => (c[0], c[1])));
+        if (s.TileShadows && s.Lights.Any(l => l.Shadows))
+            // neighbouring solid tiles of a row become one occluder
+            foreach (var row in assets.Solids(s).Where(c => !c.OneWay).GroupBy(c => (c.Y, c.H)).OrderBy(g => g.Key.Y))
+            {
+                var xs = row.OrderBy(c => c.X).ToList();
+                for (int i = 0; i < xs.Count;)
+                {
+                    int j = i, end = xs[i].X + xs[i].W;
+                    while (j + 1 < xs.Count && xs[j + 1].X <= end) end = Math.Max(end, xs[++j].X + xs[j].W);
+                    int y = row.Key.Y, h = row.Key.H;
+                    Occluder("TileShadow", [(xs[i].X, y), (end, y), (end, y + h), (xs[i].X, y + h)]);
+                    i = j + 1;
+                }
+            }
+        foreach (var e in s.Emitters)
+        {
+            string ramp = d.Sub("Gradient", "offsets = PackedFloat32Array(0, 1)", $"colors = PackedColorArray({Col(e.Color)[6..^1]}, {Col(e.EndColor)[6..^1]})");
+            double endScale = e.Size > 0 ? e.EndSize / e.Size : 1;
+            string curve = d.Sub("Curve", $"_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, {F(endScale)}), 0.0, 0.0, 0, 0]", "point_count = 2");
+            b.Append($"[node name={Q(Unique(names, e.Name))} type=\"CPUParticles2D\" parent=\".\"]\nposition = Vector2({F(e.X + e.W / 2.0)}, {F(e.Y + e.H / 2.0)})\n");
+            if (e.Additive) b.Append($"material = {d.Sub("CanvasItemMaterial", "blend_mode = 1")}\n");
+            double rad = e.Direction * Math.PI / 180;
+            b.Append($"amount = {Math.Max(1, (int)Math.Round(e.Rate * e.LifeMs / 1000))}\nlifetime = {F(e.LifeMs / 1000.0)}\npreprocess = {F(e.LifeMs / 1000.0)}\n");
+            if (e.W > 0 || e.H > 0) b.Append($"emission_shape = 3\nemission_rect_extents = Vector2({F(e.W / 2.0)}, {F(e.H / 2.0)})\n");
+            b.Append($"direction = Vector2({F(Math.Cos(rad))}, {F(Math.Sin(rad))})\nspread = {F(e.Spread / 2)}\ngravity = Vector2(0, {F(e.Gravity)})\n");
+            b.Append($"initial_velocity_min = {F(e.Speed * 0.6)}\ninitial_velocity_max = {F(e.Speed)}\nscale_amount_min = {F(e.Size)}\nscale_amount_max = {F(e.Size)}\n");
+            b.Append($"scale_amount_curve = {curve}\ncolor_ramp = {ramp}\nseed = {(uint)e.Seed}\nuse_fixed_seed = true\nmetadata/preset = {Q(e.Preset.ToString())}\n\n");
+        }
     }
 
     static void Instance(Doc d, SceneInstance i, string n, string parent, Project p, SceneAssets assets, Func<Guid, string> res)

@@ -213,6 +213,20 @@ public class FormatRegressionTests
         Assert.All(UiKit.Load(Fixture("current/kit.v1.pxui")).Screens.SelectMany(x => x.Items), i => Assert.Null(i.ClipAssetId));
     }
 
+    [Fact]
+    public void Scene_v4_with_lights_and_particles_and_v3_stays_unlit()
+    {
+        var s = Scene.Load(Fixture("current/level.v4.pxscene"));
+        Assert.Equal((0xFF203040u, false), (s.Ambient, s.TileShadows));
+        Assert.Equal((LightKind.Spot, 70, 45.0, 0.5), (s.Lights[0].Kind, s.Lights[0].Radius, s.Lights[0].Direction, s.Lights[0].Flicker));
+        Assert.Equal([0, 0, 10, 0, 5, 8], s.Occluders[0].Points);
+        Assert.Equal((EmitterPreset.Smoke, 7, true, -4.0), (s.Emitters[0].Preset, s.Emitters[0].Seed, s.Emitters[0].Additive, s.Emitters[0].Gravity));
+        Assert.Equal(2, s.Instances[0].Track!.Keys.Count);                          // older fields kept
+        var v3 = Scene.Load(Fixture("current/level.v3.pxscene"));
+        Assert.False(Lighting.IsOn(v3));
+        Assert.True(v3.TileShadows);
+    }
+
     /// <summary>Writes Fixtures/current with the current code (PF_WRITE_FIXTURES=1, PF_FIXTURES_DIR = the Fixtures folder).</summary>
     [Fact]
     public void WriteCurrentFixtures()
@@ -308,6 +322,15 @@ public class FormatRegressionTests
             s.CameraClipAssetId = AnimId;
             s.CameraClip = "shake";
             Scene.Save(s, Path.Combine(dir, "level.v3.pxscene"));
+        }
+        if (New("level.v4.pxscene"))   // phase 18
+        {
+            s.Ambient = 0xFF203040;
+            s.TileShadows = false;
+            s.Lights.Add(new SceneLight { Name = "torch", Kind = LightKind.Spot, X = 30, Y = 40, Radius = 70, Color = 0xFFFFA040, Intensity = 1.5, Direction = 45, Cone = 50, Glow = 0.3, Flicker = 0.5 });
+            s.Occluders.Add(new SceneOccluder { Name = "rock", Points = [0, 0, 10, 0, 5, 8] });
+            s.Emitters.Add(new SceneEmitter { Name = "smoke", Preset = EmitterPreset.Smoke, X = 3, Y = 4, W = 5, Rate = 12, LifeMs = 900, Gravity = -4, Color = 0xB0808080, EndColor = 0x00606060, Additive = true, Seed = 7 });
+            Scene.Save(s, Path.Combine(dir, "level.v4.pxscene"));
         }
         if (New("kit.v2.pxui"))
         {
