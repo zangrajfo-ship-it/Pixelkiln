@@ -294,3 +294,13 @@ Uporabnik je želel pripravljene primere za učenje, preprostejše vzorce za gla
 - **Help › Getting started:** sedem lekcij, vsaka z gumbom »Open example«.
 - **Testi:** 220/220 (bobni slišni, omejeni in enkratni, kick nižji od hi-hata; ritmi; ustvarjena pesem ni tiha; stare pesmi brez kompleta; v3 zlati primerek; vzorčna grafika; vzorčni projekt: brez napak, igranje pobere kovance, izhod s petimi kovanci odpre jamo, izvoz Godot in generični).
 - **Ni ročno preizkušeno:** zvok bobnov na zvočnikih (sam ga ne slišim), okna z miško.
+
+## Faze 23 in 24: prenova videza in poenostavitev (21. 10. 2026)
+- **Faza 23:** tema Modern (žetoni, Fluent preslikan na barve zasnove, Inter in JetBrains Mono, ADR-0005), privzeta za nove namestitve.
+- **Faza 24:**
+  - okno: zgornja vrstica z logotipom, meniji, zavihki kot segmentni gumbi, čipom dokumenta (pika za neshranjeno), undo in redo, gumb Export; skupna vrstica stanja (stanje urejevalnika in »Autosaved«);
+  - Sprite: tirnica orodij z ikonami, kontekstna vrstica (ikona, ime in tipka orodja, samo njegove nastavitve), plavajoča zoom in pogled, časovnica (predvajanje, številke sličic, barvne oznake), desni panel COLOR, PALETTE, LAYERS;
+  - skupni slogi (IconButton, PrimaryButton, RailTool, Segment, FloatPanel …) in `PathIcon` z ikonami iz zasnove;
+  - zapis `crash.log` ob nepričakovani napaki (lokalno, v mapi nastavitev).
+- **Poenostavitev po želji uporabnika:** ostanejo samo Sprite (Pixel), Character (States) in Tilemap: risanje, animacija iz risbe in mape ploščic. Drugi zavihki in načini (Scene, Audio, Music, SFX, Paint, Vector, Texture, UI, Rig, Motion, Logic), Optimize, Style guide, Device preview in delovni profili so izklopljeni s komentarjem v `MainWindow.xaml.cs` (`Shown`, `HostModes`), koda in testi ostanejo. Sredstva izklopljenih vrst se ne odprejo (sporočilo). Getting started ima tri lekcije, vzorčna igra odpre `art/hero.pxf`. Smoke preverja tri zavihke, izklopljeni koraki so v `if ($false)`.
+- **Preverjanje:** Debug in Release brez opozoril, testi Core uspešni, smoke OK (vsi koraki, tudi meniji).

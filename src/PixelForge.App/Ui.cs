@@ -247,7 +247,7 @@ static class Ui
     }
 
     /// <summary>Checkable menu item that stays in sync with a toolbar CheckBox and runs its Click handler.</summary>
-    public static MenuItem Toggle(string header, string? gesture, CheckBox box)
+    public static MenuItem Toggle(string header, string? gesture, ToggleButton box)
     {
         var m = new MenuItem { Header = header, InputGestureText = gesture ?? "", IsCheckable = true };
         m.SetBinding(MenuItem.IsCheckedProperty, new System.Windows.Data.Binding(nameof(CheckBox.IsChecked)) { Source = box, Mode = System.Windows.Data.BindingMode.TwoWay });

@@ -82,8 +82,9 @@ try {
     Write-Host "assets in browser: $count (expected $expectedAssets)"
     if ($count -ne $expectedAssets) { $failures += "asset browser shows $count assets, expected $expectedAssets" }
     if (-not (Test-Path (Join-Path $projectDir 'game.pfproj'))) { $failures += 'project file was not created from the folder' }
-    $tabs = Find-All $root ([System.Windows.Automation.ControlType]::TabItem)
-    if ($tabs.Count -lt 5) { $failures += "expected at least 5 tabs, found $($tabs.Count)" }
+    # the editors are mode tabs (radio buttons) in the top bar
+    $tabs = @(Find-All $root ([System.Windows.Automation.ControlType]::RadioButton) | Where-Object { $_.Current.Name -in 'Sprite', 'Character', 'Tilemap' })
+    if ($tabs.Count -ne 3) { $failures += "expected 3 tabs (Sprite, Character, Tilemap), found $($tabs.Count)" }
     foreach ($t in $tabs) {
         $name = $t.Current.Name
         $t.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
@@ -96,6 +97,8 @@ try {
         Write-Host ("{0,-8} menus: {1}" -f $name, ($items -join ', '))
         if ($ShotDir) { New-Item -ItemType Directory -Force $ShotDir | Out-Null; Save-Shot $p.MainWindowHandle (Join-Path $ShotDir "$name.png") }
     }
+    # simplified app (21. 10. 2026): switched off with the parts it tests; set to $true to run it again
+    if ($false) {
     # modes: the Sprite tab has a Paint mode with its own menus
     $spriteTab = $tabs | Where-Object { $_.Current.Name -eq 'Sprite' } | Select-Object -First 1
     $spriteTab.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
@@ -161,6 +164,9 @@ try {
         $pixelMode.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
         Start-Sleep -Milliseconds 500
     }
+    }
+    # simplified app (21. 10. 2026): switched off with the parts it tests; set to $true to run it again
+    if ($false) {
     # game preview opens from the Scene tab, renders and closes
     $sceneTab = $tabs | Where-Object { $_.Current.Name -eq 'Scene' } | Select-Object -First 1
     if ($sceneTab) {
@@ -203,8 +209,9 @@ try {
         $back = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq $m[4] } | Select-Object -First 1
         if ($back) { $back.GetCurrentPattern($SIP).Select(); Start-Sleep -Milliseconds 400 }
     }
-    # project windows of phase 19 open and close
-    foreach ($mw in @(@('Project', 'Optimize assets'), @('Project', 'Style guide'), @('Help', 'Getting started'))) {
+    }
+    # project windows open and close (Optimize assets and Style guide are switched off in the simplified app)
+    foreach ($mw in @(, @('Help', 'Getting started'))) {
         $w = $mw[1]
         $item = Find-MenuItem $root $mw[0] "$w*"
         if (-not $item) { Missing "$($mw[0]) > $w"; continue }
@@ -245,6 +252,8 @@ try {
             Start-Sleep -Milliseconds 500
         }
     }
+    # simplified app (21. 10. 2026): switched off with the parts it tests; set to $true to run it again
+    if ($false) {
     # workspace: Options > Workspace > Levels selects the Scene tab
     $ws = Find-MenuItem $root 'Options' 'Workspace*'
     if (-not $ws) { Missing 'Options > Workspace' }
@@ -257,9 +266,10 @@ try {
             ForEach-Object { Find-All $_ ([System.Windows.Automation.ControlType]::MenuItem) } | Where-Object { $_.Current.Name -eq 'Levels' } | Select-Object -First 1
         if ($levels) { $levels.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() } else { $failures += 'Workspace > Levels not found' }
         Start-Sleep -Milliseconds 700
-        $sel = (Find-All $root ([System.Windows.Automation.ControlType]::TabItem)) | Where-Object { $_.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Current.IsSelected } | Select-Object -First 1
+        $sel = @(Find-All $root ([System.Windows.Automation.ControlType]::RadioButton) | Where-Object { $_.Current.Name -in 'Sprite', 'Character', 'Tilemap' }) | Where-Object { $_.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Current.IsSelected } | Select-Object -First 1
         Write-Host "workspace Levels -> tab $($sel.Current.Name)"
         if ($sel.Current.Name -ne 'Scene') { $failures += 'workspace Levels did not select the Scene tab' }
+    }
     }
     # templates: Project > New from template, create the first template (starting point), new assets appear
     $tplItem = Find-MenuItem $root 'Project' 'New from template*'

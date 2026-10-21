@@ -24,7 +24,7 @@ static class GettingStarted
             "A character (Character tab) is a sprite plus game data: its kind (Player, Enemy …), states (idle, run, jump) and the frames each state uses.",
             "The origin is the point that stands on the ground (usually the feet).",
             "Boxes: Hurt (where it can be hit), Hit (where it hits), Solid (what collides with walls). Drag on the preview to draw one.",
-            "Properties such as speed and jump tune the game preview. In Rig mode (Ctrl+2) a sprite can also be cut into body parts.",
+            "Properties such as speed and jump are kept with the character and exported with it.",
         ]),
         new("3. Paint a tilemap", "levels/meadow.pxm",
         [
@@ -33,6 +33,7 @@ static class GettingStarted
             "Tiles can collide: select tiles in the tileset, then Tileset > Make selected tiles solid (ground, walls) or one-way platforms (planks you jump through from below).",
             "Auto-tile (A) places the right edge and corner tiles for you once a terrain is set up.",
         ]),
+        /* simplified app: lessons for the switched-off parts
         new("4. Build a level", "levels/meadow.pxscene",
         [
             "A scene (Scene tab, Layout mode) stacks layers: tilemaps, pictures and objects. A layer with parallax below 1 moves slower (the clouds).",
@@ -61,6 +62,7 @@ static class GettingStarted
             "The Audio tab mixes songs and sounds on a timeline (music/soundtrack.pxmix).",
             "Project > Export writes everything for Godot 4 or as PNG, JSON and WAV files.",
         ]),
+        */
     ];
 
     /// <param name="openExample">Opens a file of the sample game by its path inside the sample (creating the sample first if needed).</param>

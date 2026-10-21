@@ -351,11 +351,14 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
             var thumb = new Image { Width = 48, Height = 48, Stretch = Stretch.Uniform, Source = ImageIO.ToBitmap(Compositor.Flatten(_sprite, f), _sprite.Width, _sprite.Height) };
             RenderOptions.SetBitmapScalingMode(thumb, BitmapScalingMode.NearestNeighbor);
             System.Windows.Automation.AutomationProperties.SetName(thumb, $"Frame {f + 1}, {_sprite.Frames[f].DurationMs} ms");
-            FramesList.Items.Add(new StackPanel
+            // a numbered pill; the picture of the frame shows as its tooltip
+            var pill = new TextBlock
             {
-                Tag = thumb,
-                Children = { new Border { Background = Brushes.LightGray, Child = thumb }, new TextBlock { Text = $"{f + 1}", HorizontalAlignment = HorizontalAlignment.Center } },
-            });
+                Text = $"{f + 1}", Tag = thumb, FontFamily = (FontFamily)FindResource("MonoFont"), FontSize = 12,
+                ToolTip = new Border { Background = Brushes.LightGray, Child = thumb },
+            };
+            System.Windows.Automation.AutomationProperties.SetName(pill, $"Frame {f + 1}, {_sprite.Frames[f].DurationMs} ms");
+            FramesList.Items.Add(pill);
         }
         FramesList.SelectedIndex = _frame;
         DurationBox.Text = _sprite.Frames[_frame].DurationMs.ToString();
@@ -417,6 +420,17 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
 
     void OnOnionToggle(object sender, RoutedEventArgs e) => Render();
 
+    void OnFirstFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame(0); }
+    void OnLastFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame(_sprite.Frames.Count - 1); }
+    void OnPrevFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame((_frame + _sprite.Frames.Count - 1) % _sprite.Frames.Count); }
+    void OnNextFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame((_frame + 1) % _sprite.Frames.Count); }
+
+    void OnSwapColors(object sender, RoutedEventArgs e)
+    {
+        (_primary, _secondary) = (_secondary, _primary);
+        RefreshSwatches();
+    }
+
     void OnPlay(object? sender, RoutedEventArgs? e)
     {
         if (_playTimer.IsEnabled) { StopPlaying(); return; }
@@ -428,7 +442,7 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         _playTimer.Interval = TimeSpan.FromMilliseconds(_sprite.Frames[_frame].DurationMs);
         _playTimer.Start();
         PlayBtn.IsChecked = true;
-        PlayBtn.Content = "■ Stop";
+        PlayIcon.Kind = "stop";
         Render();
     }
 
@@ -444,7 +458,7 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         if (!_playTimer.IsEnabled) return;
         _playTimer.Stop();
         PlayBtn.IsChecked = false;
-        PlayBtn.Content = "▶ Play";
+        PlayIcon.Kind = "play";
         Render();
     }
 

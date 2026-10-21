@@ -131,16 +131,26 @@ public partial class SpriteEditor : IEditor
         [Tool.Wand] = "Click to select pixels of one color; Shift+click adds. Move them with Select (M).",
     };
 
-    /// <summary>Shows only the options the current tool uses (like LibreSprite's context bar).</summary>
+    static readonly Dictionary<Tool, (string Icon, string Name, string Key)> ToolLooks = new()
+    {
+        [Tool.Pencil] = ("pencil", "Pencil", "B"), [Tool.Eraser] = ("eraser", "Eraser", "E"), [Tool.Fill] = ("bucket", "Paint bucket", "G"),
+        [Tool.Picker] = ("picker", "Eyedropper", "I"), [Tool.Line] = ("line", "Line", "L"), [Tool.Rect] = ("rect", "Rectangle", "U"),
+        [Tool.Ellipse] = ("ellipse", "Ellipse", "O"), [Tool.Select] = ("marquee", "Rectangular marquee", "M"), [Tool.Wand] = ("wand", "Magic wand", "W"),
+    };
+
+    /// <summary>The context bar: the current tool's icon, name and key, then only the options it uses.</summary>
     void UpdateToolOptions()
     {
         var t = CurrentTool;
-        ToolHint.Text = ToolHints[t];
+        (ToolIcon.Kind, ToolName.Text, ToolKey.Text) = ToolLooks[t];
         static Visibility V(bool show) => show ? Visibility.Visible : Visibility.Collapsed;
         SizeOption.Visibility = V(t is Tool.Pencil or Tool.Eraser or Tool.Line);
         FilledToggle.Visibility = V(t is Tool.Rect or Tool.Ellipse);
         PixelPerfectToggle.Visibility = V(t is Tool.Pencil);
         ContiguousToggle.Visibility = V(t is Tool.Wand);
-        MirrorXToggle.Visibility = MirrorYToggle.Visibility = V(t is Tool.Pencil or Tool.Eraser or Tool.Line or Tool.Rect or Tool.Ellipse);
+        MirrorOption.Visibility = V(t is Tool.Pencil or Tool.Eraser or Tool.Line or Tool.Rect or Tool.Ellipse);
+        // tools without options get a sentence instead
+        ToolHint.Text = t is Tool.Fill or Tool.Picker or Tool.Select or Tool.Wand or Tool.Line or Tool.Rect or Tool.Ellipse ? ToolHints[t] : "";
+        ToolHint.Visibility = V(ToolHint.Text.Length > 0);
     }
 }
