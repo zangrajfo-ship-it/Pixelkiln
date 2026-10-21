@@ -32,6 +32,12 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // a crash leaves its reason next to the settings (local file only), so it can be found and fixed
+        AppDomain.CurrentDomain.UnhandledException += (_, ev) =>
+        {
+            try { File.WriteAllText(Path.Combine(Core.Settings.Folder, "crash.log"), $"{DateTime.Now:O}{Environment.NewLine}{ev.ExceptionObject}"); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        };
         StartupPath = e.Args.FirstOrDefault();
         LoadPlugins();
         ApplyTheme();   // after App.xaml resources are loaded, before the main window opens

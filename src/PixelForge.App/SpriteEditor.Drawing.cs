@@ -25,8 +25,8 @@ public partial class SpriteEditor
 
     int BrushSize
     {
-        get => SizeBox.SelectedIndex + 1;
-        set => SizeBox.SelectedIndex = Math.Clamp(value, 1, 8) - 1;
+        get => (int)SizeSlider.Value;
+        set => SizeSlider.Value = Math.Clamp(value, 1, 8);
     }
 
     // ---------- stroke state ----------

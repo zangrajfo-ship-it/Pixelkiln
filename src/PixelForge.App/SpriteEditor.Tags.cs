@@ -22,6 +22,8 @@ public partial class SpriteEditor
         return idx.Count == 0 ? (_frame, _frame) : (idx.Min(), idx.Max());
     }
 
+    static readonly (uint Back, uint Fore)[] TagColors = [(0x386AA1FF, 0xFFC2D8FF), (0x38F0A44A, 0xFFF6C98D), (0x385AD18A, 0xFFB5EBCB), (0x38C08BFF, 0xFFE0C8FF)];
+
     void RefreshTags()
     {
         if (ActiveTag is null) _activeTag = null;
@@ -30,10 +32,14 @@ public partial class SpriteEditor
         {
             var t = _sprite.Tags[i];
             int index = i;
+            // coloured tag bars: blue and orange in turn, like the timeline of the redesign
+            var (back, fore) = TagColors[i % TagColors.Length];
             var chip = new ToggleButton
             {
-                Content = $"{t.Name}  {t.From + 1}–{t.To + 1}", IsChecked = i == _activeTag, Margin = new Thickness(0, 0, 4, 0), Padding = new Thickness(8, 2, 8, 2),
+                Content = $"{t.Name}  {t.From + 1}–{t.To + 1}", IsChecked = i == _activeTag, Margin = new Thickness(0, 0, 4, 0), Padding = new Thickness(8, 1, 8, 1),
                 ToolTip = "Play and export only these frames. Click again to use all frames.",
+                Style = (Style)FindResource("Segment"), Height = 20, FontSize = 11, FontWeight = FontWeights.Medium,
+                Background = Ui.BrushOf(back), Foreground = Ui.BrushOf(fore),
             };
             AutomationProperties.SetName(chip, $"Tag {t.Name}, frames {t.From + 1} to {t.To + 1}");
             chip.Click += (_, _) =>

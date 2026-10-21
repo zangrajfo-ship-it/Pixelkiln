@@ -56,6 +56,13 @@ static class Theme
             app.Resources[key + "Brush"] = brush;
             app.Resources[key + "Color"] = brush.Color;
         }
+        var accent = (Color)app.Resources["AccentColor"];
+        foreach (var (key, alpha) in new[] { ("AccentRow", 0x1F), ("AccentFaint", 0x24), ("AccentSoft", 0x2E), ("AccentRing", 0x66) })
+        {
+            var b = new SolidColorBrush(Color.FromArgb((byte)alpha, accent.R, accent.G, accent.B));
+            b.Freeze();
+            app.Resources[key + "Brush"] = b;
+        }
         app.Resources["UiFont"] = modern ? Inter : Segoe;
         app.Resources["MonoFont"] = modern ? Mono : Consolas;
         app.Resources["MutedText"] = app.Resources["Text2Brush"];   // older name used across the editors
@@ -133,7 +140,7 @@ static class Theme
             0xFFFFFF when c.A == 0x87 => Opaque(0x8A8D94),
             0xFFFFFF when c.A == 0x5D => Opaque(0x6B6E75),
             // black text on accent surfaces
-            0x000000 when c.A == 0xFF => Opaque(0x0F1115),
+            0x000000 when c.A == 0xFF && (key.Contains("Accent") || key.Contains("Glyph") || key.Contains("Today")) => Opaque(0x0F1115),
             _ => null,
         };
     }
@@ -153,6 +160,7 @@ static class Theme
 
     static void ApplyFont(Window w)
     {
+        w.SetResourceReference(Control.ForegroundProperty, "TextBrush");   // labels and plain text inherit the text token
         if (_font is null) w.ClearValue(TextElement.FontFamilyProperty);
         else w.FontFamily = _font;
     }

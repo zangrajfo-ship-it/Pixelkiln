@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -21,7 +22,7 @@ public partial class MainWindow : Window
     readonly UiEditor UiEd = new();
     readonly MotionEditor MotionEd = new();
     readonly LogicEditor LogicEd = new();
-    RigEditor? RigEd;   // a view of the States mode's document, so not in Editors
+    // RigEditor? RigEd;   // a view of the States mode's document, so not in Editors (simplified app: switched off)
 
     TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed || t.Content is ModeHost h && h.Contains(ed));
 
@@ -41,16 +42,18 @@ public partial class MainWindow : Window
             var tab = TabOf((IEditor)ed);
             tab.Content = null;   // detach before re-parenting
             var host = new ModeHost((name, (IEditor)ed));
-            host.ModeChanged += BuildMenu;
+            host.ModeChanged += () => { BuildMenu(); MirrorStatus(); };
             tab.Content = host;
         }
-        HostOf(SpriteEd).Add("Paint", PaintEd);
-        HostOf(SpriteEd).Add("Vector", VectorEd);
-        HostOf(SpriteEd).Add("Texture", TextureEd);
-        HostOf(SpriteEd).Add("UI", UiEd);
-        HostOf(CharEd).Add("Rig", RigEd = new RigEditor(CharEd));
-        HostOf(SceneEd).Add("Motion", MotionEd);
-        HostOf(SceneEd).Add("Logic", LogicEd);
+        // Simplified app (21. 10. 2026): only art (Sprite › Pixel), animation from art (Character › States) and tilemaps.
+        // The other modes are switched off here, not deleted; remove the // to bring one back.
+        // HostOf(SpriteEd).Add("Paint", PaintEd);
+        // HostOf(SpriteEd).Add("Vector", VectorEd);
+        // HostOf(SpriteEd).Add("Texture", TextureEd);
+        // HostOf(SpriteEd).Add("UI", UiEd);
+        // HostOf(CharEd).Add("Rig", RigEd = new RigEditor(CharEd));
+        // HostOf(SceneEd).Add("Motion", MotionEd);
+        // HostOf(SceneEd).Add("Logic", LogicEd);
         TextureEd.OpenPainting = a => { OpenAsset(a); PaintEd.SetWrap(true); };
         PaintEd.SendToPixel = VectorEd.SendToPixel = (px, w, h) => { Reveal(SpriteEd); SpriteEd.LoadPixels(px, w, h); };
     }
@@ -64,6 +67,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         HostModes();
+        BuildShell();
         MapEd.SpriteImage = () => SpriteEd.CurrentImage;
         CharEd.IsSpriteOpenDirty = path => SpriteEd.IsDirty && string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase);
         CharEd.SpriteFileChanged = path =>
@@ -85,6 +89,7 @@ public partial class MainWindow : Window
         {
             OfferRecovery();
             ReopenLastProject();
+            MirrorStatus();
         };
         Closed += (_, _) =>
         {
@@ -106,7 +111,10 @@ public partial class MainWindow : Window
 
     void OnTabChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (e.OriginalSource == Tabs) BuildMenu();
+        if (e.OriginalSource != Tabs) return;
+        BuildMenu();
+        SyncModeTabs();
+        MirrorStatus();
     }
 
     void BuildMenu()
@@ -117,15 +125,15 @@ public partial class MainWindow : Window
         MainMenu.Items.Add(ProjectMenu());
         MainMenu.Items.Add(Ui.Menu("_Options",
             Ui.Item("_Command palette…", "Ctrl+Shift+P", ShowCommandPalette),
-            Ui.Item("_Device preview…", "Ctrl+Shift+D", ShowDevicePreview),
+            // Ui.Item("_Device preview…", "Ctrl+Shift+D", ShowDevicePreview),   // simplified app
             Ui.Item("P_lugins…", null, () => PluginsWindow.Show(this)),
-            WorkspaceMenu(),
+            // WorkspaceMenu(),   // simplified app: the profiles open tabs that are switched off
             Ui.Item("Copy st_yle", "Ctrl+Alt+C", CopyStyle),
             Ui.Item("Paste s_tyle", "Ctrl+Alt+V", PasteStyle),
             Ui.Item("_Preferences…", "Ctrl+,", () => PreferencesWindow.Show(this))));
         MainMenu.Items.Add(Ui.Menu("_Help",
             Ui.Item("_Getting started…", null, () => GettingStarted.Show(this, OpenSampleAsset)),
-            Ui.Item("Open _sample game…", null, () => OpenSampleAsset("levels/meadow.pxscene")),
+            Ui.Item("Open _sample game…", null, () => OpenSampleAsset("art/hero.pxf")),
             Ui.Item("_Keyboard shortcuts", "F1", () => HelpWindow.Show(this)),
             Ui.Item("_About PixelForge", null, () => MessageBox.Show(this,
                 "PixelForge — sprites, tilemaps, music and sound effects for your games.", "About PixelForge"))));
@@ -147,19 +155,19 @@ public partial class MainWindow : Window
             Ui.Item("_Open project…", null, () => ProjectCommands.Open(this)),
             recent,
             Ui.Item("Make project from _folder…", null, () => ProjectCommands.FromFolder(this)),
-            Ui.Item("Open _sample game…", null, () => OpenSampleAsset("levels/meadow.pxscene")),
+            Ui.Item("Open _sample game…", null, () => OpenSampleAsset("art/hero.pxf")),
             Ui.Item("_Close project", null, ProjectCommands.Close, open),
             new Separator(),
             Ui.Item("New from _template…", "Ctrl+T", ShowTemplateStudio, open),
             Ui.Item("C_heck project…", null, () => { if (App.Project is { } p) HealthWindow.Show(this, p); }, open),
-            Ui.Item("Optimi_ze assets…", null, () => { if (App.Project is { } p) OptimizeWindow.Show(this, p, App.NotifyProjectChanged); }, open),
-            Ui.Item("St_yle guide…", null, () => { if (App.Project is { } p) StyleGuideWindow.Show(this, p); }, open),
+            // simplified app:
+            // Ui.Item("Optimi_ze assets…", null, () => { if (App.Project is { } p) OptimizeWindow.Show(this, p, App.NotifyProjectChanged); }, open),
+            // Ui.Item("St_yle guide…", null, () => { if (App.Project is { } p) StyleGuideWindow.Show(this, p); }, open),
             Ui.Item("Project _settings and collisions…", null, () => { if (App.Project is { } p) ProjectSettingsWindow.Show(this, p); }, open),
             Ui.Item("_History of selected asset…", "Ctrl+H", Assets.ShowHistory, open),
             Ui.Item("_Export…", "Ctrl+Shift+E", () =>
             {
-                if (App.Project is { } p)
-                    ExportWindow.Show(this, p, [.. Editors.Where(ed => ed.IsDirty).Select(ed => ed.CurrentPath ?? "untitled")]);
+                ShowExport();
             }, open),
             Ui.Item("_Palette studio…", null, () =>
             {
@@ -275,6 +283,11 @@ public partial class MainWindow : Window
             return;
         }
         if (target is null) { Ui.Error(new NotSupportedException($"{a.Type} assets open in their own studio.")); return; }
+        if (!Shown.Contains((string)TabOf(target).Header) || TabOf(target).Content is ModeHost h && !h.Contains(target))
+        {
+            MessageBox.Show(this, $"“{a.Path}” is a {a.Type} asset. This version only edits sprites, characters and tilemaps.", "PixelForge");
+            return;
+        }
         Reveal(target);
         target.OpenPath(path);
     }
@@ -311,6 +324,7 @@ public partial class MainWindow : Window
                 }
                 else { File.Delete(file); File.Delete(file + ".path"); }
             }
+            ShowAutosaved();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }   // next tick tries again
     }
@@ -358,7 +372,7 @@ public partial class MainWindow : Window
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         if (e.Key == Key.P && ctrl && shift) { ShowCommandPalette(); e.Handled = true; return; }
         if (e.Key == Key.B && ctrl && shift) { SetAssetsVisible(!AssetsVisible); e.Handled = true; return; }
-        if (e.Key == Key.D && ctrl && shift) { ShowDevicePreview(); e.Handled = true; return; }
+        // if (e.Key == Key.D && ctrl && shift) { ShowDevicePreview(); e.Handled = true; return; }   // simplified app
         if (e.Key == Key.H && ctrl && !shift && App.Project is not null) { Assets.ShowHistory(); e.Handled = true; return; }
         if (e.Key == Key.T && ctrl && !shift && App.Project is not null) { ShowTemplateStudio(); e.Handled = true; return; }
         if (e.Key == Key.E && ctrl && shift && App.Project is { } project)
