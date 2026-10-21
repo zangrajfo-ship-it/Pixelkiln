@@ -274,3 +274,12 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Testi:** 211 (logika 6: preverjanje, pogoji in dejanja, časovniki, čakanje, enkratni dogodki in sprememba stanja v isti sličici, menjava prizora in meja korakov, predogled igre z dotikom, skrivanjem, zvokom in menjavo prizora, izvoz GDScript in JSON; regresija: logika v1 in prizor v5). 5 testov z izrisom WPF še pade zaradi zaklenjene postaje.
 - **Poenostavitve:** GDScript ni preverjen v Godotu (ni nameščen); dotik v Godotu je razdalja 12 px med izhodiščema; `PlayClip` v Godotu predvaja samo posnetke, ki jih je objekt dobil že ob izvozu.
 - **Ni ročno preizkušeno:** urejevalnik grafa z miško, skripta v Godotu. Smoke ni tekel (zaklenjena postaja).
+
+## Faza 21: stabilizacija (končana, 21. 10. 2026)
+- **Obremenitveni testi** za nove formate: knjižnica 200 posnetkov s 30 sledmi, rig s 30 deli (300 sličic), graf logike z 2000 vozlišči (preverjanje in 600 sličic). Prej že: poteza na velikem platnu, pakiranje 1000 sprajtov, 2000 delcev s štirimi lučmi.
+- **Zlati primerki** vseh novih formatov in različic: `.pxpaint`, `.pxvec`, `.pxtex`, `.pxui` v1 in v2, `.pxanim`, `.pxlogic`, `.pxchar` v2, `.pxscene` v2 do v5.
+- **Smoke:** novi koraki za načine Motion, Logic in Rig ter okni Optimize assets in Style guide.
+- **Dokumentacija:** README (vsi načini, okna in izvozi), `formats.md`, `docs/templates.md`, `.ai/context/logic.md`.
+- **Stanje preverjanja:** Debug in Release brez opozoril; **213/213 testov** (tudi 5 testov z izrisom WPF, ki so med zaklepom postaje v fazah 17 do 20 padali zaradi prazne slike, ne zaradi napake).
+- **Smoke:** vsi koraki brez menijev uspešni, tudi novi načini Motion, Logic in Rig ter predogled igre. Koraki z meniji (Device preview, Optimize assets, Style guide, paleta ukazov, delovni profil, predloge, zgodovina, izvoz) niso tekli, ker okno ni dobilo ospredja (izhod 2).
+- **Za uporabnika:** smoke znova, ko računalnik ni v uporabi; ročno preizkusiti risanje z miško v novih načinih, okna in uvoz izvoza v Godot.

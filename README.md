@@ -13,21 +13,21 @@ Za razvoj: `dotnet build`, `dotnet test`, `powershell -File tools/smoke.ps1` (UI
 ## Kaj zna
 | Zavihek ali okno | Za kaj |
 |---|---|
-| **Sprite** | risanje po plasteh in sličicah, oznake animacij, onion skin, palete, izbor, preoblikovanje, ponavljajoče ploščice, uvoz in izvoz listov sprajtov (Aseprite JSON), GIF, generator sprajtov s semenom |
-| **Character** | lik na sprajtu: stanja (idle, run …), izhodišče, smer, škatle Hurt/Hit/Solid/Trigger po sličicah, lastnosti, predogled, izvoz |
+| **Sprite** | načini (Ctrl+1 … 5): **Pixel** (plasti, sličice, oznake animacij, onion skin, palete, izbor, preoblikovanje, Aseprite JSON, GIF, generator s semenom), **Paint** (digitalno slikanje: čopiči, pritisk pisala, načini mešanja, maske, platna do 8192²), **Vector** (poti Bezier, oblike, gradienti, združevanje oblik, SVG), **Texture** (brezšivni materiali z normalno, višinsko in okluzijsko mapo), **UI** (gumbi, okna, vrstice v štirih stanjih, nine-slice, zasloni s sidri) |
+| **Character** | **States**: lik na sprajtu, stanja, izhodišče, škatle Hurt/Hit/Solid/Trigger, lastnosti; **Rig**: deli telesa iz sprajta s pivotom, starševskim delom in Z, posnetek za vsako stanje |
 | **Tilemap** | plasti ploščic, objekti, samodejni tereni (16 in 47 ploščic, različice), kolizije ploščic (trdne, enosmerne, kategorije), podvojene ploščice, generator ploščic in postavitev (jame, platforme), izvoz Tiled TMJ |
-| **Scene** | stopnje iz map, slik, sprajtov in likov: paralaksa, gibalne sledi, območja (spawn, checkpoint, trigger, camera, kill), kamera, glasba, preverjanje, **predogled igre (F5)** |
+| **Scene** | **Layout**: stopnje iz map, slik, sprajtov in likov, paralaksa, gibalne sledi in posnetki, območja, kamera in njeni premiki, glasba, UI nad igro, **luči, sence in delci**, preverjanje, **predogled igre (F5)**; **Motion**: knjižnice animacij s časovnico in krivuljami Bezier; **Logic**: vizualna logika (dogodki, pogoji, dejanja), ki teče v predogledu igre |
 | **Audio** | mešalnik projektnih zvokov: sledi, rez, pojemanje, ponovitve, združevanje, zanka za glasbo, predvajalni seznami, izvoz WAV |
 | **Music, SFX** | sekvencer v slogu čipovske glasbe, generator zvočnih učinkov |
-| **Projekt** | brskalnik sredstev (iskanje, oznake, priljubljeni, predogledi, varno preimenovanje), preverjanje projekta, nastavitve in matrika trkov, Palette studio, **zgodovina različic** (Ctrl+H), **izvoz** (Ctrl+Shift+E) |
-| **Povsod** | paleta ukazov (Ctrl+Shift+P), vtičniki s podatki, samodejno shranjevanje in obnovitev, temna/svetla tema, tipkovnica in bralniki zaslona (F1 = bližnjice) |
+| **Projekt** | Template Studio (Ctrl+T, 34 vgrajenih predlog za like, stopnje, sredstva, materiale, UI in glasbo), Optimize assets (velikosti, neuporabljena in enaka sredstva, atlas), Style guide (pravila sloga in preverjanje), brskalnik sredstev (iskanje, oznake, priljubljeni, predogledi, varno preimenovanje), preverjanje projekta, nastavitve in matrika trkov, Palette studio, **zgodovina različic** (Ctrl+H), **izvoz** (Ctrl+Shift+E) |
+| **Povsod** | predogled naprave (Ctrl+Shift+D), ravnila, vodila in referenčna slika, kopiranje sloga (Ctrl+Alt+C/V), delovni profili, paketna obdelava v brskalniku, paleta ukazov (Ctrl+Shift+P), vtičniki s podatki, samodejno shranjevanje in obnovitev, temna/svetla tema, tipkovnica in bralniki zaslona (F1 = bližnjice) |
 
 ## Projekt
 **Project → New project** ali **Make project from folder** ustvari `.pfproj` v mapi z vsebinami. Sredstva dobijo stalne ID-je, zato preimenovanje in premikanje ne pokvarita referenc. Izbrisana sredstva gredo v `.trash`, različice v `.history`, izvozi v `export/`.
 
 ## Izvoz
-- **Godot 4** (4.3+): `SpriteFrames`, `TileSet` s kolizijami, `TileMap`, scene likov in stopenj z `Parallax2D`, `AnimationPlayer`, območji, kamero in glasbo. Izvozno mapo kopiraj v Godot projekt (`res://assets/…`).
-- **Generic:** PNG, Aseprite JSON, Tiled TMJ, JSON likov in prizorov, WAV, `project.json`.
+- **Godot 4** (4.3+): `SpriteFrames`, `TileSet` s kolizijami, `TileMap`, scene likov (tudi cutout rig) in stopenj z `Parallax2D`, `AnimationPlayer`, območji, kamero, glasbo, UI (`Theme`, scene `Control`), lučmi (`PointLight2D`, `LightOccluder2D`), delci (`CPUParticles2D`) in logiko (ustvarjen GDScript). Izvozno mapo kopiraj v Godot projekt (`res://assets/…`).
+- **Generic:** PNG (tudi v več velikostih), Aseprite JSON, Tiled TMJ, JSON likov, prizorov, animacij, UI in logike, WAV, `project.json`, po izbiri atlas (`atlas/atlas.json`).
 - Izvoz je determinističen, pred zapisom preveri projekt in nikoli ne pusti napol zapisanih datotek. Poročilo je v `export-report.txt`.
 
 Izvoz za Godot še ni preizkušen v pravem Godotu, zato ob prvi rabi preveri uvoz; seznam vseh datotek je v `export-report.txt`.

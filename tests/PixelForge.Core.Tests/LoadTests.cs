@@ -75,6 +75,55 @@ public sealed class LoadTests : IDisposable
         var sb = new Sandbox(s, new SceneAssets(p), 320, 180);
         Assert.InRange(Ms(() => sb.Render(boxes: true)), 0, 100);
     }
+
+    // ---------- formats of phases 17–20 ----------
+
+    [Fact]
+    public void Big_animation_library_and_rig_stay_fast()
+    {
+        var lib = new AnimLibrary();
+        for (int c = 0; c < 200; c++)
+            lib.Clips.Add(new AnimClip
+            {
+                Name = $"c{c}",
+                Tracks = [.. Enumerable.Range(0, 30).Select(t => new AnimTrack { Target = $"p{t}", Property = AnimProperty.Rotation,
+                    Keys = [.. Enumerable.Range(0, 20).Select(k => new AnimKey(k * 50, k, AnimEase.Bezier, 0.42, 0, 0.58, 1))] })],
+            });
+        Assert.InRange(Ms(() => AnimLibrary.Deserialize(AnimLibrary.Serialize(lib))), 0, 3000);
+        var parts = Enumerable.Range(0, 30).Select(i => new RigPart { Name = $"p{i}", W = 4, H = 4, Parent = i == 0 ? "" : $"p{i - 1}", OffsetX = 2 }).ToList();
+        var frame = Enumerable.Repeat(0xFFFF0000u, 64 * 64).ToArray();
+        var dst = new uint[320 * 180];
+        Assert.InRange(Ms(() => { for (int t = 0; t < 300; t++) Rig.Draw(dst, 320, 180, frame, 64, 64, parts, lib.Clips[7], t * 16, 100, 90); }), 0, 3000);
+    }
+
+    [Fact]
+    public void Big_logic_graph_checks_and_runs_fast()
+    {
+        var g = new LogicGraph();
+        for (int e = 0; e < 200; e++)
+        {
+            var ev = LogicGraph.NewNode(LogicKind.Timer, $"t{e}");
+            ev.Params["repeat"] = "yes";
+            ev.Params["ms"] = $"{100 + e}";
+            g.Nodes.Add(ev);
+            string prev = ev.Id;
+            for (int k = 0; k < 9; k++)
+            {
+                var n = LogicGraph.NewNode(k % 3 == 1 ? LogicKind.Compare : LogicKind.SetVariable, $"n{e}_{k}");
+                g.Nodes.Add(n);
+                g.Links.Add(new LogicLink(prev, "out", n.Id));
+                prev = n.Id;
+            }
+        }
+        // compare nodes continue on their true port
+        g.Links = [.. g.Links.Select(l => g.Node(l.From)!.Kind == LogicKind.Compare ? l with { Port = "true" } : l)];
+        Assert.InRange(Ms(() => g.Check()), 0, 2000);
+        Assert.InRange(Ms(() =>
+        {
+            var r = new LogicRuntime(g);
+            for (int f = 0; f < 600; f++) r.Step(f * 16, new LogicEvents([], []));
+        }), 0, 3000);
+    }
 }
 
 /// <summary>Timings are only meaningful when nothing else runs at the same time.</summary>
