@@ -9,7 +9,7 @@ namespace PixelForge.App;
 /// <summary>Piano-roll for one pattern: rows = notes (high at top), columns = steps, volume lane below.</summary>
 sealed class StepGrid : FrameworkElement
 {
-    public const double CellW = 28, CellH = 14, LabelW = 40, VolGap = 8, VolH = 64;
+    public const double CellW = 28, CellH = 14, LabelW = 56, VolGap = 8, VolH = 64;
 
     public static readonly Brush[] ChannelBrushes =
         [Frozen(0xFFE8833A), Frozen(0xFFE8C73A), Frozen(0xFF4FA3E8), Frozen(0xFFB0B0B0)];
@@ -23,6 +23,8 @@ sealed class StepGrid : FrameworkElement
     public int Pattern { get; set; }
     public int Channel { get; set; }
     public int Playhead { get; set; } = -1;
+    /// <summary>The selected channel plays the drum kit: rows show drum names, other rows are dimmed.</summary>
+    public bool DrumKit { get; set; }
     /// <summary>Keyboard cursor (step, note); drawn while the grid has keyboard focus.</summary>
     public (int Step, int Note) KeyCursor { get; set; } = (0, 60);
 
@@ -66,6 +68,13 @@ sealed class StepGrid : FrameworkElement
         {
             bool black = (n % 12) is 1 or 3 or 6 or 8 or 10;
             double y = RowY(n);
+            if (DrumKit)
+            {
+                bool drum = Enum.IsDefined((Drum)n);
+                dc.DrawRectangle(drum ? WhiteRow : BlackRow, Thin, new Rect(LabelW, y, w - LabelW, CellH));
+                if (drum) dc.DrawText(Text(Drums.Name((Drum)n), Brushes.White, dpi), new Point(2, y));
+                continue;
+            }
             dc.DrawRectangle(black ? BlackRow : WhiteRow, Thin, new Rect(LabelW, y, w - LabelW, CellH));
             dc.DrawText(Text(SongT.NoteName(n), n % 12 == 0 ? Brushes.White : Label, dpi), new Point(4, y));
         }

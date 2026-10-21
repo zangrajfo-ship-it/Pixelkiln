@@ -33,8 +33,9 @@ Predloga vsebuje samo podatke in ne izvaja kode. Koraki uporabljajo vgrajene gen
 | `character` | `spriteStep`, `kind`, `facing`, `origin` (`feet`, `center`); `boxes[]` (`kind`, `rect` = `full`, `body`, `feet`, `head`, `front` ali štirje deleži `x y w h`, `state`, `category`); `properties{}` |
 | `tileset` | `tileSize`, `pattern`, `baseColor`, `variants`, `seed`, `asset` (slika iz projekta namesto generiranja) |
 | `tilemap` | `width`, `height`, `tilesetStep`, `layout` (`Platforms`, `Cave`, `Rooms`, `Flat`), `fill`, `seed`, `difficulty` |
+| `art` | `art`: ime ročno narisanega primera (`hero`, `slime`, `coin`, `chest`, `items`, `tree`, `cloud`, `tiles`) |
 | `level` | `mapStep`, `playerStep`, `collectibleStep`, `musicStep` (zadnji trije niso obvezni), `checkpoints`, `hazards`, `collectibles`, `seed`, `background`, `genre` (`platformer`, `top-down`, `puzzle`); neobvezno `ambient` (barva RRGGBB), `torches` (`checkpoints` = bakla na začetku in pri vsaki kontrolni točki), `weather` (`Rain` ali `Snow` čez vso širino) |
-| `song` | `seed`, `bpm`, `scale` (`major`, `minor`, `pentatonic`), `patterns` |
+| `song` | `seed`, `bpm`, `scale` (`major`, `minor`, `pentatonic`), `patterns`; neobvezno `beat` (ritem bobnov v vseh vzorcih: Rock, Four on the floor, Hip-hop, Breakbeat, Half-time, Disco, March, Tom fill) in `drumsOnly` (`yes` = samo bobni) |
 | `file` | `file` (kopija iz mape predloge), `originalId` (za preusmeritev referenc) |
 
 Vrednosti lahko vsebujejo `{parameter}`. Neznan ključ, neznan korak, sklic na kasnejši korak ali neobstoječi parameter je napaka. Taka predloga se ne naloži, razlog pa je izpisan v oknu.

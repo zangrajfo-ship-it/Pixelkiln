@@ -102,6 +102,14 @@ public static class TemplateEngine
             switch (s.Type)
             {
                 case "sprite": return MakeSprite();
+                case "art":
+                {
+                    string art = S("art", "");
+                    if (!SampleArt.Names.Contains(art)) throw new InvalidDataException($"Step “{_s.Id}”: unknown art “{art}” (use {string.Join(", ", SampleArt.Names)}).");
+                    string f = FileFor(Name(art), ".pxf");
+                    ProjectFile.Save(SampleArt.Make(art), f);
+                    return p.Add(f);
+                }
                 case "items": return MakeItems();
                 case "character": return MakeCharacter();
                 case "tileset": return MakeTileset();
@@ -110,6 +118,14 @@ public static class TemplateEngine
                 case "song":
                 {
                     var song = Procedural.Song(Seed(), I("bpm", 120, 40, 300), S("scale", "major"), I("patterns", 4, 1, 16));
+                    if (S("beat", "") is { Length: > 0 } beat)
+                    {
+                        if (!DrumBeats.Names.Contains(beat)) throw new InvalidDataException($"Step “{_s.Id}”: unknown beat “{beat}” (use {string.Join(", ", DrumBeats.Names)}).");
+                        foreach (var pat in song.Patterns) DrumBeats.Apply(pat, beat);
+                    }
+                    if (S("drumsOnly", "no") == "yes")   // a beat to learn from or to build a song on
+                        foreach (var pat in song.Patterns)
+                            for (int ch = 0; ch < (int)Channel.Noise; ch++) Array.Fill(pat.Notes[ch], Pattern.Off);
                     string f = FileFor(Name("music"), ".pxs");
                     Core.Song.Save(song, f);
                     return p.Add(f);

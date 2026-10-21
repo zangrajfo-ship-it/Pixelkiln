@@ -1,0 +1,55 @@
+{
+  "apiVersion": 1,
+  "id": "sample-props",
+  "name": "Sample: props and items",
+  "version": "1.0",
+  "kind": "Pack",
+  "primary": "chest",
+  "tags": [
+    "sample",
+    "learn",
+    "props",
+    "items",
+    "pixel art"
+  ],
+  "description": "A chest (closed and open), heart, key and gem, a tree and a cloud, all in one palette.",
+  "parameters": [],
+  "steps": [
+    {
+      "id": "chest",
+      "type": "art",
+      "name": "chest",
+      "core": true,
+      "settings": {
+        "art": "chest"
+      }
+    },
+    {
+      "id": "items",
+      "type": "art",
+      "name": "items",
+      "core": true,
+      "settings": {
+        "art": "items"
+      }
+    },
+    {
+      "id": "tree",
+      "type": "art",
+      "name": "tree",
+      "core": true,
+      "settings": {
+        "art": "tree"
+      }
+    },
+    {
+      "id": "cloud",
+      "type": "art",
+      "name": "cloud",
+      "core": true,
+      "settings": {
+        "art": "cloud"
+      }
+    }
+  ]
+}

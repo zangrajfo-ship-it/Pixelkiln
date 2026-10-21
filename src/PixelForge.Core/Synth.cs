@@ -15,6 +15,9 @@ public sealed class SongStream(Func<Song> song, IReadOnlyList<int>? order = null
         public int Note;
         public double Velocity;
         public float Noise;
+        // drum kit: which drum, seconds since the hit, its oscillator and the previous noise value
+        public Drum Hit;
+        public double Age, DrumPhase, PrevNoise;
     }
 
     readonly Voice[] _voices = [.. Enumerable.Range(0, Song.Channels).Select(_ => new Voice())];
@@ -67,6 +70,12 @@ public sealed class SongStream(Func<Song> song, IReadOnlyList<int>? order = null
         {
             var v = _voices[ch];
             int n = st < pat.Notes[ch].Length ? pat.Notes[ch][st] : Pattern.Off;
+            if (ch == (int)Channel.Noise && s.Instruments[ch].Kit)
+            {
+                // drums are one-shots: a note starts a hit, Off and Hold change nothing
+                if (n >= 0) (v.Hit, v.Age, v.DrumPhase, v.Stage, v.Velocity) = (Drums.Of(n), 0, 0, Stage.Sustain, pat.Volumes[ch][st] / (double)Pattern.MaxVolume);
+                continue;
+            }
             if (n >= 0)
             {
                 (v.Note, v.Stage, v.Velocity) = (n, Stage.Attack, pat.Volumes[ch][st] / (double)Pattern.MaxVolume);   // level continues: no click
@@ -92,6 +101,15 @@ public sealed class SongStream(Func<Song> song, IReadOnlyList<int>? order = null
             var v = _voices[ch];
             if (v.Stage == Stage.Idle) continue;
             var ins = s.Instruments[ch];
+            if (ch == (int)Channel.Noise && ins.Kit)
+            {
+                double noise = _rnd.NextDouble() * 2 - 1, bright = (noise - v.PrevNoise) * 0.5;
+                v.PrevNoise = noise;
+                sum += Drums.Sample(v.Hit, v.Age, ref v.DrumPhase, noise, bright) * v.Velocity * ins.Volume * 0.35;
+                v.Age += 1.0 / Synth.SampleRate;
+                if (v.Age >= Drums.Length(v.Hit)) v.Stage = Stage.Idle;
+                continue;
+            }
             Envelope(v, ins);
             double inc = Song.Frequency(v.Note) / Synth.SampleRate;
             double p = v.Phase;

@@ -1,0 +1,34 @@
+{
+  "apiVersion": 1,
+  "id": "sample-coin",
+  "name": "Sample: spinning coin",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "art",
+  "tags": [
+    "sample",
+    "learn",
+    "pickup",
+    "pixel art",
+    "animation"
+  ],
+  "description": "Four frames of a spinning coin: a simple animation to study in the Sprite tab (play it with the onion skin on).",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "coin"
+    }
+  ],
+  "steps": [
+    {
+      "id": "art",
+      "type": "art",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "art": "coin"
+      }
+    }
+  ]
+}
