@@ -227,6 +227,15 @@ public class FormatRegressionTests
         Assert.True(v3.TileShadows);
     }
 
+    [Fact]
+    public void Song_v3_with_drum_kit()
+    {
+        var s = Song.Load(Fixture("current/song.v3.pxs"));
+        Assert.Equal((110, true, 0.9), (s.Bpm, s.Instruments[(int)Channel.Noise].Kit, s.Instruments[(int)Channel.Noise].Volume));
+        Assert.Equal((int)Drum.Kick, s.Patterns[0].Notes[(int)Channel.Noise][0]);
+        Assert.Equal(45, s.Patterns[0].Notes[(int)Channel.Triangle][0]);
+    }
+
     static readonly Guid LogicId = Guid.Parse("77777777-7777-7777-7777-777777777777");
 
     [Fact]
@@ -345,6 +354,14 @@ public class FormatRegressionTests
             s.Occluders.Add(new SceneOccluder { Name = "rock", Points = [0, 0, 10, 0, 5, 8] });
             s.Emitters.Add(new SceneEmitter { Name = "smoke", Preset = EmitterPreset.Smoke, X = 3, Y = 4, W = 5, Rate = 12, LifeMs = 900, Gravity = -4, Color = 0xB0808080, EndColor = 0x00606060, Additive = true, Seed = 7 });
             Scene.Save(s, Path.Combine(dir, "level.v4.pxscene"));
+        }
+        if (New("song.v3.pxs"))   // phase 22: drum kit
+        {
+            var song = new Song { Bpm = 110 };
+            DrumBeats.Apply(song.Patterns[0], "Hip-hop");
+            song.Patterns[0].SetNote((int)Channel.Triangle, 0, 45, 8);
+            song.Instruments[(int)Channel.Noise].Volume = 0.9;
+            Song.Save(song, Path.Combine(dir, "song.v3.pxs"));
         }
         if (New("logic.v1.pxlogic"))   // phase 20
         {

@@ -204,9 +204,10 @@ try {
         if ($back) { $back.GetCurrentPattern($SIP).Select(); Start-Sleep -Milliseconds 400 }
     }
     # project windows of phase 19 open and close
-    foreach ($w in 'Optimize assets', 'Style guide') {
-        $item = Find-MenuItem $root 'Project' "$w*"
-        if (-not $item) { Missing "Project > $w"; continue }
+    foreach ($mw in @(@('Project', 'Optimize assets'), @('Project', 'Style guide'), @('Help', 'Getting started'))) {
+        $w = $mw[1]
+        $item = Find-MenuItem $root $mw[0] "$w*"
+        if (-not $item) { Missing "$($mw[0]) > $w"; continue }
         $item.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 3
         $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
@@ -215,7 +216,8 @@ try {
         if (-not $win) { $failures += "$w window did not open" }
         else {
             $report = (Find-All $win ([System.Windows.Automation.ControlType]::Edit)) | Select-Object -Last 1
-            Write-Host ("{0}: {1}" -f $w, (($report.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -split "`n")[0]))
+            $first = if ($report) { ($report.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -split "`n")[0] } else { 'opened' }
+            Write-Host ("{0}: {1}" -f $w, $first)
             $win.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
             Start-Sleep -Milliseconds 500
         }

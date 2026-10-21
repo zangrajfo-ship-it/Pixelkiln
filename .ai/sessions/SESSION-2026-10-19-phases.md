@@ -283,3 +283,14 @@ Začetek načrta Faz 11–21 (razširitev po predlogu uporabnika; plan v `~/.cla
 - **Stanje preverjanja:** Debug in Release brez opozoril; **213/213 testov** (tudi 5 testov z izrisom WPF, ki so med zaklepom postaje v fazah 17 do 20 padali zaradi prazne slike, ne zaradi napake).
 - **Smoke:** vsi koraki brez menijev uspešni, tudi novi načini Motion, Logic in Rig ter predogled igre. Koraki z meniji (Device preview, Optimize assets, Style guide, paleta ukazov, delovni profil, predloge, zgodovina, izvoz) niso tekli, ker okno ni dobilo ospredja (izhod 2).
 - **Za uporabnika:** smoke znova, ko računalnik ni v uporabi; ročno preizkusiti risanje z miško v novih načinih, okna in uvoz izvoza v Godot.
+
+## Faza 22: vzorci, bobni in vodič (končana, 21. 10. 2026)
+Uporabnik je želel pripravljene primere za učenje, preprostejše vzorce za glasbo (hi-hat, bobni) in preverjanje, ali glasba deluje.
+- **Ugotovitev:** glasba je delovala, a kanal 4 je bil samo šum s tonsko višino, generator ni pisal hi-hata (komentar je to obljubljal) in noben test ni preveril, da ustvarjena pesem ni tiha.
+- **Boben komplet** (`Drums`, `.pxs` v3 z migracijo): kick, snare, clap, hi-hat, open hat, dva toma, crash, sintetizirani brez vzorcev. Ritmi `DrumBeats` (Rock, Four on the floor, Hip-hop, Breakbeat, Half-time, Disco, March, Tom fill). Generator pesmi uporablja bobne in na koncu doda prehod.
+- **Urejevalnik glasbe:** vrstice kanala 4 so imena bobnov, klik na katerokoli vrstico postavi najbližji boben, stikalo »Drum kit«, meni Pattern › Drum beat in Pattern › Generate song…, pomoč.
+- **`SampleArt`:** ročno narisan junak (idle z mežikom, run 4, jump), slime (squash and stretch), kovanec (vrtenje), skrinja, srce, ključ, dragulj, drevo, oblak in 8 ploščic, vse v eni paleti. Korak predloge `art`, predloge Sample: pixel hero, slime enemy, spinning coin, props and items, 16 px tileset in Drum beat (`beat`, `drumsOnly` pri koraku `song`).
+- **`SampleProject`:** igra z dvema stopnjama (travnik s kovanci, ribnikom, bodicami, platformami, polžem s patruljo in logiko kovancev; jama z bakljami, ognjem in skrinjo), liki, dve pesmi z bobni, trije zvoki, mix, HUD in `README.txt`. Help/Project › Open sample game (privzeto `Dokumenti\PixelForge samples\Sample game`, ali izbrana mapa).
+- **Help › Getting started:** sedem lekcij, vsaka z gumbom »Open example«.
+- **Testi:** 220/220 (bobni slišni, omejeni in enkratni, kick nižji od hi-hata; ritmi; ustvarjena pesem ni tiha; stare pesmi brez kompleta; v3 zlati primerek; vzorčna grafika; vzorčni projekt: brez napak, igranje pobere kovance, izhod s petimi kovanci odpre jamo, izvoz Godot in generični).
+- **Ni ročno preizkušeno:** zvok bobnov na zvočnikih (sam ga ne slišim), okna z miško.

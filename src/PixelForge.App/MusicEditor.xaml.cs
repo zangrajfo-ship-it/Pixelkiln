@@ -77,6 +77,7 @@ public partial class MusicEditor : UserControl
         StepsGrid.Song = _song;
         StepsGrid.Pattern = _pattern;
         StepsGrid.Channel = _channel;
+        StepsGrid.DrumKit = Kit;
         StepsGrid.InvalidateMeasure();
         StepsGrid.InvalidateVisual();
         Status.Text = $"Pattern {_pattern + 1}/{_song.Patterns.Count}   {_song.Steps} steps";
@@ -113,6 +114,7 @@ public partial class MusicEditor : UserControl
             return;
         }
         if (StepsGrid.Hit(p) is not var (step, note)) return;
+        note = Snap(note);
         StepsGrid.KeyCursor = (step, note);
         int start = Pat.NoteStart(_channel, step);
 
@@ -180,6 +182,7 @@ public partial class MusicEditor : UserControl
             case Key.Up: n = Math.Min(Song.MaxNote, n + 1); break;
             case Key.Down: n = Math.Max(Song.MinNote, n - 1); break;
             case Key.Enter:
+                n = Snap(n);
                 Snapshot();
                 if (start >= 0 && Pat.Notes[_channel][start] == n) Pat.RemoveNote(_channel, start);
                 else { Pat.SetNote(_channel, st, n, 1); Preview(n); }
@@ -229,6 +232,40 @@ public partial class MusicEditor : UserControl
         ((RadioButton)FindName($"Ch{ch}")).IsChecked = true;
         RefreshInstrument();
         RedrawGrid();
+        if (Kit) Scroller.ScrollToVerticalOffset(StepsGrid.YOf((int)Drum.Crash) - 20);   // the drum rows are at the bottom
+    }
+
+    /// <summary>The drum channel with the kit on: rows are drums.</summary>
+    bool Kit => _channel == (int)Channel.Noise && _song.Instruments[_channel].Kit;
+
+    /// <summary>On the drum kit a click on any row places the nearest drum.</summary>
+    int Snap(int note) => Kit ? (int)Drums.Of(note) : note;
+
+    void OnDrumBeat(string name)
+    {
+        Snapshot();
+        _song.Instruments[(int)Channel.Noise].Kit = true;
+        DrumBeats.Apply(Pat, name);
+        RefreshAll();
+        SelectChannel((int)Channel.Noise);
+        Status.Text = $"Drum beat “{name}” in pattern {_pattern + 1}. Press Space to hear it.";
+    }
+
+    void OnGenerateSong()
+    {
+        var v = Ui.AskFields(this, "Generate song",
+            ("Seed (word or number)", "tune", null), ("Tempo (BPM)", _song.Bpm.ToString(), null),
+            ("Scale", "major", ["major", "minor", "pentatonic"]), ("Bars", "4", ["2", "4", "8", "16"]));
+        if (v is null) return;
+        if (!int.TryParse(v[1], out int bpm) || bpm is < 40 or > 300) { Ui.Error(new FormatException("Tempo must be a whole number from 40 to 300.")); return; }
+        if (_song.Patterns.Any(p => p.Notes.Any(c => c.Any(n => n >= 0)))
+            && MessageBox.Show(Window.GetWindow(this), "Replace the current song with a generated one? (Ctrl+Z brings it back.)", "Generate song",
+                MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        Snapshot();
+        _song = Procedural.Song(Rng.Seed(v[0]), bpm, v[2], int.Parse(v[3]));
+        _pattern = 0;
+        RefreshAll();
+        Status.Text = "Generated: melody on Pulse 1, chords on Pulse 2, bass on Triangle, drums on channel 4. Press Space to play.";
     }
 
     void OnChannel(object sender, RoutedEventArgs e) => SelectChannel(((FrameworkElement)sender).Name[2] - '0');
@@ -236,6 +273,7 @@ public partial class MusicEditor : UserControl
     // ---------- instrument (per channel) ----------
 
     readonly List<(Slider Slider, TextBlock Value, Func<Instrument, double> Get, string Unit)> _instSliders = [];
+    CheckBox _kitBox = null!;
     ComboBox _dutyBox = null!;
     StackPanel _dutyRow = null!;
     bool _refreshingInstrument;
@@ -257,6 +295,16 @@ public partial class MusicEditor : UserControl
             Children = { new TextBlock { Text = "Duty ", Width = 54, VerticalAlignment = VerticalAlignment.Center }, _dutyBox },
         };
         InstrumentPanel.Children.Add(_dutyRow);
+        _kitBox = new CheckBox { Content = "Drum kit (rows are drums)", Margin = new Thickness(2, 0, 0, 6),
+            ToolTip = "On: kick, snare, hi-hat … Off: the old pitched noise" };
+        _kitBox.Click += (_, _) =>
+        {
+            Snapshot();
+            _song.Instruments[(int)Channel.Noise].Kit = _kitBox.IsChecked == true;
+            RedrawGrid();
+            if (Kit) Scroller.ScrollToVerticalOffset(StepsGrid.YOf((int)Drum.Crash) - 20);
+        };
+        InstrumentPanel.Children.Add(_kitBox);
 
         AddSlider("Attack", 0, 500, i => i.AttackMs, (i, v) => i.AttackMs = v, "ms");
         AddSlider("Decay", 0, 1000, i => i.DecayMs, (i, v) => i.DecayMs = v, "ms");
@@ -292,6 +340,8 @@ public partial class MusicEditor : UserControl
             value.Text = $"{slider.Value:0} {unit}";
         }
         _dutyRow.Visibility = _channel is (int)Channel.Pulse1 or (int)Channel.Pulse2 ? Visibility.Visible : Visibility.Collapsed;
+        _kitBox.Visibility = _channel == (int)Channel.Noise ? Visibility.Visible : Visibility.Collapsed;
+        _kitBox.IsChecked = ins.Kit;
         _dutyBox.SelectedIndex = Array.IndexOf(Duties, Duties.MinBy(d => Math.Abs(d - ins.Duty)));
         _refreshingInstrument = false;
     }

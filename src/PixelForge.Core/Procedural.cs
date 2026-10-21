@@ -224,7 +224,7 @@ public static class Procedural
 
     /// <summary>
     /// A short chiptune loop: chord roots on the triangle, an arpeggio on pulse 2, a melody that walks the scale on
-    /// pulse 1, and kick/snare/hat on noise. One pattern per bar; same seed, same song.
+    /// pulse 1, and a drum kit beat on noise (a fill in the last bar). One pattern per bar; same seed, same song.
     /// </summary>
     public static Song Song(ulong seed, int bpm, string scale, int patterns)
     {
@@ -249,8 +249,7 @@ public static class Procedural
                 melody = Math.Clamp(melody + r.Next(5) - 2, -2, 9);
                 st += len;
             }
-            foreach (int st in new[] { 0, 8 }) pat.SetNote((int)Channel.Noise, st, 40, 1);    // kick
-            foreach (int st in new[] { 4, 12 }) pat.SetNote((int)Channel.Noise, st, 60, 1);   // snare
+            DrumBeats.Apply(pat, bar == Math.Clamp(patterns, 1, 16) - 1 && bar > 0 ? "Tom fill" : bpm >= 130 ? "Four on the floor" : "Rock");
             s.Patterns.Add(pat);
             s.Order.Add(bar);
         }

@@ -65,6 +65,8 @@ public sealed class Instrument
     public double Sustain { get; set; } = 0.7;
     public double ReleaseMs { get; set; } = 40;
     public double Volume { get; set; } = 1;
+    /// <summary>Noise channel only: play drums (each row is a drum, see <see cref="Drum"/>) instead of pitched noise.</summary>
+    public bool Kit { get; set; }
 
     public Instrument Clone() => (Instrument)MemberwiseClone();
 
@@ -73,7 +75,7 @@ public sealed class Instrument
         Channel.Pulse1 => new() { Duty = 0.25 },
         Channel.Pulse2 => new() { Duty = 0.5 },
         Channel.Triangle => new() { Sustain = 1, DecayMs = 0 },
-        _ => new() { DecayMs = 120, Sustain = 0.1, ReleaseMs = 30, Volume = 0.8 },   // drum-like noise
+        _ => new() { DecayMs = 120, Sustain = 0.1, ReleaseMs = 30, Volume = 0.8, Kit = true },   // new songs: drum kit
     };
 }
 
@@ -127,10 +129,10 @@ public sealed class Song
     // ---------- .pxs file ----------
 
     record PatternDto(int[][] Notes, int[][] Volumes);
-    // v1 stored notes only, under "Patterns"; v2 uses "PatternData" + "Instruments"
+    // v1 stored notes only, under "Patterns"; v2 uses "PatternData" + "Instruments"; v3 adds Instrument.Kit (drums)
     record SongDto(int Version, int Bpm, int Steps, int[] Order, int[][][]? Patterns = null, PatternDto[]? PatternData = null, Instrument[]? Instruments = null);
 
-    public const int Version = 2;
+    public const int Version = 3;
 
     public static string Serialize(Song s) => JsonSerializer.Serialize(new SongDto(
         Version, s.Bpm, s.Steps, [.. s.Order],
@@ -156,6 +158,7 @@ public sealed class Song
         s.Order.AddRange(d.Order);
         if (d.Instruments is { Length: Channels } inst)
             for (int i = 0; i < Channels; i++) s.Instruments[i] = Sanitize(inst[i]);
+        if (d.Version < 3) s.Instruments[(int)Channel.Noise].Kit = false;   // older songs keep their pitched noise
         return s;
     }
 
@@ -167,6 +170,7 @@ public sealed class Song
         Sustain = Math.Clamp(i.Sustain, 0, 1),
         ReleaseMs = Math.Clamp(i.ReleaseMs, 0, 5000),
         Volume = Math.Clamp(i.Volume, 0, 1),
+        Kit = i.Kit,
     };
 
     public static void Save(Song s, string path) => DocumentFile.Save(path, Serialize(s), Version);

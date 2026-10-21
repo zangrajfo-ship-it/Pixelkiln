@@ -31,7 +31,8 @@ public sealed class DocumentFileTests : IDisposable
         Song.Save(song, file);                                       // second save: no new backup
         Assert.True(File.Exists(file + ".v1.bak"));
         Assert.Equal(File.ReadAllText(Fixture("song.v1.pxs")), File.ReadAllText(file + ".v1.bak"));
-        Assert.Equal(2, DocumentFile.PeekVersion(File.ReadAllText(file)));
+        Assert.Equal(Song.Version, DocumentFile.PeekVersion(File.ReadAllText(file)));
+        Assert.False(Song.Load(file).Instruments[(int)Channel.Noise].Kit);   // migrated: keeps its pitched noise
         Assert.Single(Directory.GetFiles(_dir, "*.bak"));
         Assert.Equal(140, Song.Load(file).Bpm);                      // data survived the migration
     }

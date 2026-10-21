@@ -1,0 +1,65 @@
+{
+  "apiVersion": 1,
+  "id": "music-drum-beats",
+  "name": "Drum beat",
+  "version": "1.0",
+  "kind": "Music",
+  "primary": "song",
+  "tags": [
+    "music",
+    "drums",
+    "beat",
+    "learn",
+    "sample"
+  ],
+  "description": "Only drums (kick, snare, hi-hat …) on channel 4: open it in the Music tab, press Space, then add a bass line on the triangle channel.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "beat"
+    },
+    {
+      "key": "beat",
+      "label": "Beat",
+      "default": "Rock",
+      "options": [
+        "Rock",
+        "Four on the floor",
+        "Hip-hop",
+        "Breakbeat",
+        "Half-time",
+        "Disco",
+        "March"
+      ]
+    },
+    {
+      "key": "bpm",
+      "label": "Tempo (BPM)",
+      "default": "110",
+      "options": [
+        "80",
+        "95",
+        "110",
+        "120",
+        "130",
+        "150"
+      ]
+    }
+  ],
+  "steps": [
+    {
+      "id": "song",
+      "type": "song",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "seed": "{name}",
+        "bpm": "{bpm}",
+        "patterns": "1",
+        "beat": "{beat}",
+        "drumsOnly": "yes"
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "apiVersion": 1,
+  "id": "sample-tiles",
+  "name": "Sample: 16 px tileset",
+  "version": "1.0",
+  "kind": "Asset",
+  "primary": "art",
+  "tags": [
+    "sample",
+    "learn",
+    "tileset",
+    "tiles",
+    "pixel art"
+  ],
+  "description": "Eight hand-made tiles (grass, dirt, stone, brick, ladder, water, platform, spikes). Use it as the tileset of a new tilemap.",
+  "parameters": [
+    {
+      "key": "name",
+      "label": "Name",
+      "default": "tiles"
+    }
+  ],
+  "steps": [
+    {
+      "id": "art",
+      "type": "art",
+      "name": "{name}",
+      "core": true,
+      "settings": {
+        "art": "tiles"
+      }
+    }
+  ]
+}

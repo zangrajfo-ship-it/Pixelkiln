@@ -172,3 +172,6 @@ JSON prek `DocumentFile`: `Version` 1, `Nodes[]` (`Id` edinstven in neprazen, `K
 Doda neobvezni `LogicAssetId` (graf, ki teče v prizoru). Zlati primerek `current/level.v5.pxscene`, logika `current/logic.v1.pxlogic`.
 
 **Izvoz:** Godot zapiše `ime_logic.gd` za vsak prizor z logiko in v sceno doda vozlišče `Logic` s to skripto; generični izvoz zapiše `ime_logic.json`, JSON prizora pa `logic`.
+
+## `.pxs` v3: boben komplet (Faza 22)
+`Instruments[3].Kit` (bool): kanal 4 igra bobne namesto šuma s tonsko višino. Nota izbere boben (36 kick, 38 snare, 39 clap, 42 hi-hat, 45 low tom, 46 open hat, 48 high tom, 49 crash; druge note najbližji boben). Udarec je enkraten in traja svojo dolžino, `Off` in `Hold` ga ne spremenita, ADSR se ne uporablja (glasnost še). Nove pesmi imajo `Kit = true`, pesmi v1 in v2 se naložijo s `Kit = false` in zvenijo kot prej. Zlati primerek `current/song.v3.pxs`.

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using PixelForge.Core;
 
 namespace PixelForge.App;
 
@@ -8,6 +9,13 @@ public partial class MusicEditor : IEditor
     IReadOnlyList<MenuItem>? _menus;
 
     Action Do(RoutedEventHandler handler) => () => handler(this, new RoutedEventArgs());
+
+    MenuItem DrumBeatMenu()
+    {
+        var m = new MenuItem { Header = "Drum _beat" };
+        foreach (var name in DrumBeats.Names) m.Items.Add(Ui.Item(name.Replace("_", "__"), null, () => OnDrumBeat(name)));
+        return m;
+    }
 
     public IReadOnlyList<MenuItem> Menus => _menus ??=
     [
@@ -27,7 +35,10 @@ public partial class MusicEditor : IEditor
         Ui.Menu("_Pattern",
             Ui.Item("_New pattern", null, Do(OnAddPattern)),
             Ui.Item("_Duplicate pattern", null, Do(OnDuplicatePattern)),
-            Ui.Item("De_lete pattern", null, Do(OnDeletePattern))),
+            Ui.Item("De_lete pattern", null, Do(OnDeletePattern)),
+            new Separator(),
+            DrumBeatMenu(),
+            Ui.Item("_Generate song…", null, OnGenerateSong)),
         Ui.Menu("P_lay",
             Ui.Item("Play _song", "Space", Do(OnPlaySong)),
             Ui.Item("Play _pattern", null, Do(OnPlayPattern)),

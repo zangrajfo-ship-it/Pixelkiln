@@ -124,6 +124,8 @@ public partial class MainWindow : Window
             Ui.Item("Paste s_tyle", "Ctrl+Alt+V", PasteStyle),
             Ui.Item("_Preferences…", "Ctrl+,", () => PreferencesWindow.Show(this))));
         MainMenu.Items.Add(Ui.Menu("_Help",
+            Ui.Item("_Getting started…", null, () => GettingStarted.Show(this, OpenSampleAsset)),
+            Ui.Item("Open _sample game…", null, () => OpenSampleAsset("levels/meadow.pxscene")),
             Ui.Item("_Keyboard shortcuts", "F1", () => HelpWindow.Show(this)),
             Ui.Item("_About PixelForge", null, () => MessageBox.Show(this,
                 "PixelForge — sprites, tilemaps, music and sound effects for your games.", "About PixelForge"))));
@@ -145,6 +147,7 @@ public partial class MainWindow : Window
             Ui.Item("_Open project…", null, () => ProjectCommands.Open(this)),
             recent,
             Ui.Item("Make project from _folder…", null, () => ProjectCommands.FromFolder(this)),
+            Ui.Item("Open _sample game…", null, () => OpenSampleAsset("levels/meadow.pxscene")),
             Ui.Item("_Close project", null, ProjectCommands.Close, open),
             new Separator(),
             Ui.Item("New from _template…", "Ctrl+T", ShowTemplateStudio, open),
@@ -274,6 +277,14 @@ public partial class MainWindow : Window
         if (target is null) { Ui.Error(new NotSupportedException($"{a.Type} assets open in their own studio.")); return; }
         Reveal(target);
         target.OpenPath(path);
+    }
+
+    /// <summary>Opens (or creates) the sample game and shows one of its files.</summary>
+    void OpenSampleAsset(string relPath)
+    {
+        if (ProjectCommands.OpenSample(this) is not { } p) return;
+        if (p.FindByPath(Path.Combine(p.Root, relPath)) is { } a) OpenAsset(a);
+        else Ui.Error(new FileNotFoundException($"The sample game has no “{relPath}”. Make a fresh copy with Help › Open sample game in another folder."));
     }
 
     // ---------- command palette ----------

@@ -104,11 +104,15 @@ static class HelpWindow
             ("Library: Enter", "Add to the selected track at the playhead"), ("Ctrl+E", "Export WAV"),
         ]),
         ("Music", [
-            ("Space", "Play / stop song"), ("1 2 3 4", "Pulse 1, pulse 2, triangle, noise"),
+            ("Space", "Play / stop song"), ("1 2 3 4", "Pulse 1 (melody), pulse 2 (chords), triangle (bass), drum kit"),
+            ("Channel 4", "Each row is a drum: kick, snare, clap, hi-hat, open hat, toms, crash (Drum kit box off = old pitched noise)"),
+            ("Pattern › Drum beat", "Write a ready beat (rock, hip-hop, four on the floor …) into the current pattern"),
+            ("Pattern › Generate song…", "A whole song from a seed: melody, chords, bass and drums"),
             ("Piano roll: arrows", "Move cursor"), ("Enter", "Add / remove note"),
             ("Shift+← →", "Shorter / longer note"), ("+ / −", "Note volume"), ("Del", "Remove note"),
         ]),
-        ("SFX", [("Space", "Play sound")]),
+        ("SFX", [("Space", "Play sound"), ("Preset buttons / Mutate", "Coin, jump, hit … / a variation of the current sound")]),
+        ("Learning", [("Help › Getting started", "Seven short lessons; each opens part of the sample game"), ("Help › Open sample game", "A small finished game to look inside and change")]),
     ];
 
     public static void Show(Window owner)
