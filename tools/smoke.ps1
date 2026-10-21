@@ -184,6 +184,42 @@ try {
             }
         }
     }
+    # modes of phases 17 and 20: each takes over the menus (and the title where it owns a file)
+    $SIP = [System.Windows.Automation.SelectionItemPattern]::Pattern
+    foreach ($m in @(@('Scene', 'Motion mode', '*untitled animations*', 'Play', 'Layout mode'), @('Scene', 'Logic mode', '*untitled logic*', 'Edit', 'Layout mode'), @('Character', 'Rig mode', '*', 'Rig', 'States mode'))) {
+        $tab = $tabs | Where-Object { $_.Current.Name -eq $m[0] } | Select-Object -First 1
+        if (-not $tab) { continue }
+        $tab.GetCurrentPattern($SIP).Select()
+        Start-Sleep -Milliseconds 500
+        $modeBtn = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq $m[1] } | Select-Object -First 1
+        if (-not $modeBtn) { $failures += "$($m[1]) button missing"; continue }
+        $modeBtn.GetCurrentPattern($SIP).Select()
+        Start-Sleep -Milliseconds 800
+        $menu = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))[0]
+        $items = $menu.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | ForEach-Object { $_.Current.Name -replace '_', '' }
+        Write-Host ("{0,-12} title: {1} | menus: {2}" -f $m[1], $root.Current.Name, ($items -join ', '))
+        if ($items -notcontains $m[3] -or $root.Current.Name -notlike $m[2]) { $failures += "$($m[1]) did not take over menus and title" }
+        if ($ShotDir) { Save-Shot $p.MainWindowHandle (Join-Path $ShotDir ($m[1] -replace ' mode', '') + '.png') }
+        $back = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq $m[4] } | Select-Object -First 1
+        if ($back) { $back.GetCurrentPattern($SIP).Select(); Start-Sleep -Milliseconds 400 }
+    }
+    # project windows of phase 19 open and close
+    foreach ($w in 'Optimize assets', 'Style guide') {
+        $item = Find-MenuItem $root 'Project' "$w*"
+        if (-not $item) { Missing "Project > $w"; continue }
+        $item.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep 3
+        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
+        $win = $wins | Where-Object { $_.Current.Name -like "$w*" } | Select-Object -First 1
+        if (-not $win) { $failures += "$w window did not open" }
+        else {
+            $report = (Find-All $win ([System.Windows.Automation.ControlType]::Edit)) | Select-Object -Last 1
+            Write-Host ("{0}: {1}" -f $w, (($report.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -split "`n")[0]))
+            $win.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+            Start-Sleep -Milliseconds 500
+        }
+    }
     # command palette: commands of every tab and of the sample plugin are listed
     $palItem = Find-MenuItem $root 'Options' 'Command palette*'
     if (-not $palItem) { Missing 'Options > Command palette' }
