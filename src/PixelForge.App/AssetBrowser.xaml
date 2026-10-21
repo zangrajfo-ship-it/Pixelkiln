@@ -25,7 +25,7 @@
             </DockPanel>
 
             <!-- details of the selected asset -->
-            <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="#3A3A3A" Padding="0,6,0,0">
+            <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource LineBrush}" Padding="0,6,0,0">
                 <StackPanel x:Name="DetailPanel" Visibility="Collapsed">
                     <DockPanel>
                         <Button x:Name="PreviewButton" DockPanel.Dock="Right" Content="▶" ToolTip="Play preview (Space)" Click="OnPreview" VerticalAlignment="Top" />

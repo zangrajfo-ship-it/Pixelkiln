@@ -102,14 +102,12 @@ public partial class App : Application
 #pragma warning disable WPF0001   // Fluent ThemeMode is marked experimental
     void ApplyTheme()
     {
-        bool light = Settings.Theme == "Light"
-            || Settings.Theme == "System" && Microsoft.Win32.Registry.GetValue(
-                @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 0) is 1;
+        bool systemLight = Microsoft.Win32.Registry.GetValue(
+            @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 0) is 1;
         ThemeMode = Settings.Theme switch { "Light" => ThemeMode.Light, "System" => ThemeMode.System, _ => ThemeMode.Dark };
-        // secondary text with at least 7:1 contrast on either background (WCAG 1.4.3)
-        Resources["MutedText"] = new System.Windows.Media.SolidColorBrush(light
-            ? System.Windows.Media.Color.FromRgb(0x55, 0x55, 0x55)
-            : System.Windows.Media.Color.FromRgb(0xB8, 0xB8, 0xB8));
+        // tokens, Fluent colours (Modern) and fonts; secondary text keeps at least 4.5:1 contrast (WCAG 1.4.3)
+        Theme.HookWindows();
+        Theme.Apply(this, Settings.Theme, systemLight);
     }
 #pragma warning restore WPF0001
 }

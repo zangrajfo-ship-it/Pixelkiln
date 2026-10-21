@@ -18,6 +18,12 @@
     <Using Include="System.IO" />
   </ItemGroup>
 
+  <!-- Inter and JetBrains Mono (SIL Open Font License 1.1), used by the Modern theme -->
+  <ItemGroup>
+    <Resource Include="Fonts\*.otf;Fonts\*.ttf" />
+    <None Include="Fonts\*.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="NAudio.WinMM" Version="2.2.1" />
   </ItemGroup>

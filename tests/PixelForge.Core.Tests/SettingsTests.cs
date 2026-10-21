@@ -16,7 +16,8 @@ public class SettingsTests
         Assert.Equal(64, t.CheckerSize);        // clamped down
         Assert.Equal(0, t.AutosaveMinutes);
         Assert.Equal((8, 16, 0, 3), (t.TileGridWidth, t.TileGridHeight, t.TileGridOffsetX, t.TileGridOffsetY));
-        Assert.Equal("Dark", Settings.Deserialize("""{"Theme":"Neon"}""").Theme);
+        Assert.Equal("Modern", Settings.Deserialize("""{"Theme":"Neon"}""").Theme);
+        Assert.Equal("Dark", Settings.Deserialize("""{"Theme":"Dark"}""").Theme);   // older choices stay
     }
 
     [Fact]
@@ -38,7 +39,7 @@ public class SettingsTests
         try
         {
             File.WriteAllText(bad, "{ not json");
-            Assert.Equal("Dark", Settings.Load(bad).Theme);
+            Assert.Equal("Modern", Settings.Load(bad).Theme);
         }
         finally { File.Delete(bad); }
     }

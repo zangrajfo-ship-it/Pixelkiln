@@ -27,7 +27,7 @@
                 <Button x:Name="PaintButton" Content="Paint it…" Click="OnPaint" ToolTip="Open the texture's painting in Paint mode with wrap-around strokes (or make a new painting)" />
             </ToolBar>
         </ToolBarTray>
-        <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="#3A3A3A">
+        <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource LineBrush}">
             <TextBlock x:Name="Status" />
         </Border>
 
@@ -85,7 +85,7 @@
                 <TextBlock Text="Light" Margin="12,0,6,0" VerticalAlignment="Center" />
                 <Slider x:Name="LightSlider" Width="140" Minimum="0" Maximum="360" Value="225" VerticalAlignment="Center" AutomationProperties.Name="Light direction" />
             </WrapPanel>
-            <Border Background="#202020" SizeChanged="OnPreviewSize">
+            <Border Background="{DynamicResource Bg0Brush}" SizeChanged="OnPreviewSize">
                 <Rectangle x:Name="PreviewRect" AutomationProperties.Name="Texture preview" />
             </Border>
         </DockPanel>

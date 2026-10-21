@@ -11,7 +11,7 @@ public sealed class Settings
     public const int MaxRecent = 12;
 
     /// <summary>Dark, Light or System.</summary>
-    public string Theme { get; set; } = "Dark";
+    public string Theme { get; set; } = "Modern";
     /// <summary>1 = 100 %.</summary>
     public double UiScale { get; set; } = 1;
     /// <summary>ARGB of the pixel grid lines.</summary>
@@ -63,7 +63,7 @@ public sealed class Settings
     /// <summary>Clamps every value into a usable range (hand-edited or old files).</summary>
     public Settings Sanitized() => new()
     {
-        Theme = Theme is "Dark" or "Light" or "System" ? Theme : "Dark",
+        Theme = Theme is "Modern" or "Dark" or "Light" or "System" ? Theme : "Modern",
         UiScale = Math.Clamp(UiScale, 0.75, 2),
         GridColor = GridColor,
         CheckerLight = CheckerLight | 0xFF000000,
