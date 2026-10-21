@@ -14,7 +14,7 @@ static class PreferencesWindow
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(210) });
         grid.ColumnDefinitions.Add(new ColumnDefinition());
 
-        var theme = new ComboBox { ItemsSource = new[] { "Dark", "Light", "System" }, SelectedItem = s.Theme };
+        var theme = new ComboBox { ItemsSource = Theme.Names, SelectedItem = s.Theme };
         double[] scales = [0.75, 1, 1.25, 1.5, 1.75, 2];
         var scale = new ComboBox { ItemsSource = scales.Select(x => $"{x * 100:0} %").ToArray(), SelectedIndex = Math.Max(0, Array.IndexOf(scales, s.UiScale)) };
         var gridColor = new TextBox { Text = ColorUtil.ToHex(s.GridColor) };
@@ -28,7 +28,7 @@ static class PreferencesWindow
 
         (string Label, Control Field, string Help)[] rows =
         [
-            ("_Theme", theme, "Dark, light, or follow Windows."),
+            ("_Theme", theme, "Modern (the redesigned dark look), dark, light, or follow Windows."),
             ("Interface _scale", scale, "Makes all text and controls bigger."),
             ("Pixel _grid color", gridColor, "AARRGGBB, e.g. #99000000 (black, 60 %)."),
             ("Checkerboard _light", checkLight, "Transparency background, light squares."),

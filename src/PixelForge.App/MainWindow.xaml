@@ -13,7 +13,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <local:AssetBrowser x:Name="Assets" Grid.Column="0" />
-            <GridSplitter x:Name="AssetsSplitter" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#2A2A2A"
+            <GridSplitter x:Name="AssetsSplitter" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource LineBrush}"
                           AutomationProperties.Name="Resize asset browser" />
             <TabControl x:Name="Tabs" Grid.Column="2" SelectionChanged="OnTabChanged">
                 <TabItem Header="Sprite">

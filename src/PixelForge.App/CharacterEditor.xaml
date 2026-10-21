@@ -16,7 +16,7 @@
                 <Button Content="Export JSON…" Click="OnExport" ToolTip="Character JSON + sprite sheet PNG for a game" />
             </ToolBar>
         </ToolBarTray>
-        <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="#3A3A3A">
+        <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource LineBrush}">
             <TextBlock x:Name="Status" />
         </Border>
 
@@ -78,7 +78,7 @@
                 <Slider x:Name="FrameSlider" Minimum="0" IsSnapToTickEnabled="True" TickFrequency="1" ValueChanged="OnFrameSlider"
                         AutomationProperties.Name="Frame in the state" />
             </DockPanel>
-            <ScrollViewer x:Name="PreviewScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#2B2B2B">
+            <ScrollViewer x:Name="PreviewScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="{DynamicResource Bg0Brush}">
                 <Grid x:Name="PreviewHost" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24" Cursor="Cross" Focusable="True"
                       AutomationProperties.Name="Character preview"
                       MouseLeftButtonDown="OnPreviewDown" MouseMove="OnPreviewMove" MouseLeftButtonUp="OnPreviewUp" KeyDown="OnPreviewKey">

@@ -30,7 +30,7 @@
                 <Button Content="Check scene…" Click="OnCheck" ToolTip="Missing assets, objects outside, spawn points inside walls, overlaps" />
             </ToolBar>
         </ToolBarTray>
-        <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="#3A3A3A">
+        <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource LineBrush}">
             <TextBlock x:Name="Status" />
         </Border>
 
@@ -162,7 +162,7 @@
             </StackPanel>
         </ScrollViewer>
 
-        <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#1E1E1E"
+        <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="{DynamicResource Bg0Brush}"
                       PreviewMouseWheel="OnWheel" BorderThickness="2" BorderBrush="Transparent" AutomationProperties.Name="Scene canvas">
             <Canvas x:Name="SceneCanvas" Margin="40" HorizontalAlignment="Left" VerticalAlignment="Top" ClipToBounds="True"
                     MouseDown="OnCanvasDown" MouseMove="OnCanvasMove" MouseUp="OnCanvasUp" Background="Transparent" />

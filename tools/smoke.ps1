@@ -199,7 +199,7 @@ try {
         $items = $menu.FindAll('Children', [System.Windows.Automation.Condition]::TrueCondition) | ForEach-Object { $_.Current.Name -replace '_', '' }
         Write-Host ("{0,-12} title: {1} | menus: {2}" -f $m[1], $root.Current.Name, ($items -join ', '))
         if ($items -notcontains $m[3] -or $root.Current.Name -notlike $m[2]) { $failures += "$($m[1]) did not take over menus and title" }
-        if ($ShotDir) { Save-Shot $p.MainWindowHandle (Join-Path $ShotDir ($m[1] -replace ' mode', '') + '.png') }
+        if ($ShotDir) { Save-Shot $p.MainWindowHandle (Join-Path $ShotDir (($m[1] -replace ' mode', '') + '.png')) }
         $back = (Find-All $root ([System.Windows.Automation.ControlType]::RadioButton)) | Where-Object { $_.Current.Name -eq $m[4] } | Select-Object -First 1
         if ($back) { $back.GetCurrentPattern($SIP).Select(); Start-Sleep -Milliseconds 400 }
     }
