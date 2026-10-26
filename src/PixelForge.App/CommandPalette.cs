@@ -25,7 +25,7 @@ public static class CommandRegistry
             string title = path.Length == 0 ? header : $"{path} › {header}";
             if (mi.Items.Count > 0)
             {
-                foreach (var c in FromMenu(mi, title)) yield return c;   // submenu (skip dynamic ones like Open recent: they fill on open)
+                foreach (var c in FromMenu(mi, title)) yield return c;   // submenu; Open recent holds only its "(none)" placeholder until opened, skipped below
                 continue;
             }
             if (header.Length == 0 || header.StartsWith('(')) continue;

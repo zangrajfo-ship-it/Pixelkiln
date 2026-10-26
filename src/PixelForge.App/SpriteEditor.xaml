@@ -4,12 +4,6 @@
              xmlns:local="clr-namespace:PixelForge.App"
              Focusable="True" FocusVisualStyle="{x:Null}">
     <UserControl.Resources>
-        <Style x:Key="RailSep" TargetType="Rectangle">
-            <Setter Property="Height" Value="1" />
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Fill" Value="{DynamicResource LineBrush}" />
-            <Setter Property="Margin" Value="0,5" />
-        </Style>
         <Style x:Key="Lbl" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource Text2Brush}" />
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -28,9 +22,9 @@
                 <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Center">
                     <Grid Width="44" Height="48" ToolTip="Left/right mouse colors. Click to change.">
                         <Button x:Name="SecondarySwatch" Width="28" Height="28" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                Template="{StaticResource SwatchTemplate}" BorderBrush="{DynamicResource OutlineBrush}" BorderThickness="1" Click="OnSecondarySwatch" ToolTip="Right mouse color. Click to edit it in the color picker." />
+                                Template="{StaticResource SwatchTemplate}" Click="OnSecondarySwatch" ToolTip="Right mouse color. Click to edit it in the color picker." />
                         <Button x:Name="PrimarySwatch" Width="28" Height="28" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                Template="{StaticResource SwatchTemplate}" BorderBrush="{DynamicResource OutlineHoverBrush}" BorderThickness="1" Click="OnPrimarySwatch" ToolTip="Left mouse color. Click to edit it in the color picker." />
+                                Template="{StaticResource SwatchTemplate}" Click="OnPrimarySwatch" ToolTip="Left mouse color. Click to edit it in the color picker." />
                     </Grid>
                     <Button Style="{StaticResource IconButton}" Width="44" Height="28" ToolTip="Swap colors  X" AutomationProperties.Name="Swap colors" Click="OnSwapColors">
                         <local:PathIcon Kind="swap" Width="16" Height="16" />
@@ -65,7 +59,7 @@
                 <Border DockPanel.Dock="Top" Style="{StaticResource PanelSection}">
                     <StackPanel>
                         <DockPanel Margin="0,0,0,10">
-                            <Button x:Name="PaletteMenuBtn" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Width="28" Height="28" ToolTip="Palette: load, save, reset"
+                            <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Width="28" Height="28" ToolTip="Palette: load, save, reset"
                                     AutomationProperties.Name="Palette menu" Click="OnPaletteMenu">
                                 <local:PathIcon Kind="more" Width="15" Height="15" StrokeWidth="3" />
                                 <Button.ContextMenu>
@@ -222,7 +216,7 @@
                     <Rectangle x:Name="TiledChecker" Visibility="Collapsed" />
                     <Rectangle x:Name="TiledBg" Opacity="0.55" Visibility="Collapsed" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                     <Grid x:Name="CanvasCore">
-                    <Rectangle x:Name="Checker" Stroke="Black" StrokeThickness="0" />
+                    <Rectangle x:Name="Checker" />
                     <Image x:Name="CanvasImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                     <Rectangle x:Name="GridOverlay" IsHitTestVisible="False" />
                     <Rectangle x:Name="TileGridOverlay" IsHitTestVisible="False" />

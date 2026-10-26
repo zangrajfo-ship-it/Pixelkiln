@@ -31,8 +31,17 @@ sealed class LogicEditor : UserControl, IEditor
     readonly StackPanel _props = new() { Margin = new Thickness(10) };
     readonly ListBox _problems = new() { Height = 90, Margin = new Thickness(10, 0, 10, 6) };
 
-    static Brush GroupBrush(LogicKind k) => LogicGraph.IsEvent(k) ? new SolidColorBrush(Color.FromRgb(0x3A, 0x7B, 0xD5))
-        : LogicGraph.IsCondition(k) ? new SolidColorBrush(Color.FromRgb(0xC9, 0x8A, 0x1E)) : new SolidColorBrush(Color.FromRgb(0x3C, 0x9A, 0x5F));
+    // node colours: events blue, conditions orange, actions green (frozen: shared by every node of every redraw)
+    static readonly Brush EventBrush = Frozen(0x3A, 0x7B, 0xD5), ConditionBrush = Frozen(0xC9, 0x8A, 0x1E), ActionBrush = Frozen(0x3C, 0x9A, 0x5F);
+
+    static Brush Frozen(byte r, byte g, byte b)
+    {
+        var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+        brush.Freeze();
+        return brush;
+    }
+
+    static Brush GroupBrush(LogicKind k) => LogicGraph.IsEvent(k) ? EventBrush : LogicGraph.IsCondition(k) ? ConditionBrush : ActionBrush;
 
     public LogicEditor()
     {
@@ -101,11 +110,7 @@ sealed class LogicEditor : UserControl, IEditor
         UpdateTitle();
     }
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled logic" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled logic");
 
     string NewId(LogicKind k)
     {
@@ -348,8 +353,17 @@ sealed class LogicEditor : UserControl, IEditor
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException) { Ui.Error(ex); return false; }
     }
 
-    void Undo() { if (_history.Undo(_doc) is { } g) { _doc = g; _dirty = true; Redraw(); UpdateTitle(); } }
-    void Redo() { if (_history.Redo(_doc) is { } g) { _doc = g; _dirty = true; Redraw(); UpdateTitle(); } }
+    void Undo() => Restore(_history.Undo(_doc));
+    void Redo() => Restore(_history.Redo(_doc));
+
+    void Restore(LogicGraph? g)
+    {
+        if (g is null) return;
+        _doc = g;
+        _dirty = true;
+        Redraw();
+        UpdateTitle();
+    }
 
     // ---------- IEditor ----------
 
@@ -357,12 +371,7 @@ sealed class LogicEditor : UserControl, IEditor
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current logic?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "logic", () => Save(_path));
 
     public void OpenPath(string path, bool confirmed = false)
     {

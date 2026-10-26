@@ -18,6 +18,7 @@ sealed class GamePreview : Window
 {
     Sandbox _sb;
     readonly Project _project;
+    readonly AudioLibrary _audio;   // one library, so each sound is rendered once and replayed from its cache
     Scene _scene;
     readonly WriteableBitmap _bmp;
     readonly TextBlock _status = new() { Margin = new Thickness(8, 4, 8, 4), TextWrapping = TextWrapping.Wrap };
@@ -38,6 +39,7 @@ sealed class GamePreview : Window
     GamePreview(Scene scene, Project project, Sandbox sb)
     {
         (_scene, _project, _sb) = (scene, project, sb);
+        _audio = new AudioLibrary(project);
         (_w, _h) = (project.Settings.TargetWidth, project.Settings.TargetHeight);
         _bmp = new WriteableBitmap(_w, _h, 96, 96, PixelFormats.Bgra32, null);
         var img = new Image { Source = _bmp, Stretch = Stretch.Uniform };
@@ -68,7 +70,7 @@ sealed class GamePreview : Window
         if (_muted || _scene.MusicAssetId is not Guid id) return;
         try
         {
-            var s = new AudioLibrary(_project).Samples(id);
+            var s = _audio.Samples(id);
             if (s.Length == 0) return;
             var loop = _project.Find(id)?.Type == AssetType.Mix && Mix.Load(_project.Resolve(id)!) is { LoopStartMs: int a, LoopEndMs: int b }
                 ? (AudioEdit.Samples(a), Math.Min(AudioEdit.Samples(b), s.Length)) : (0, s.Length);
@@ -89,13 +91,13 @@ sealed class GamePreview : Window
         {
             _lastEvent = $"{a.Kind} “{a.Name}”" + (a.Properties.Count > 0 ? " · " + string.Join(", ", a.Properties.Select(kv => $"{kv.Key}={kv.Value}")) : "");
             if (!_muted && a.Properties.TryGetValue("sound", out var sound) && _project.Assets.FirstOrDefault(x => string.Equals(x.Path, sound, StringComparison.OrdinalIgnoreCase) || x.Name == sound) is { } asset)
-                try { AudioOut.Shared.PlayOnce(new AudioLibrary(_project).Samples(asset.Id)); }
+                try { AudioOut.Shared.PlayOnce(_audio.Samples(asset.Id)); }
                 catch (InvalidDataException ex) { _lastEvent += $" (sound not played: {ex.Message})"; }
         }
         // what the scene's logic asked for
         if (!_muted)
             foreach (var id in _sb.SoundsToPlay)
-                try { AudioOut.Shared.PlayOnce(new AudioLibrary(_project).Samples(id)); }
+                try { AudioOut.Shared.PlayOnce(_audio.Samples(id)); }
                 catch (InvalidDataException ex) { _lastEvent = $"sound not played: {ex.Message}"; }
         if (_sb.RequestedScene is Guid next && _project.Resolve(next) is string path)
             try

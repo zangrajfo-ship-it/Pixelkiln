@@ -10,7 +10,7 @@
         <Border DockPanel.Dock="Top" Height="49" Background="{DynamicResource Bg1Brush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1"
                 Padding="10,0">
             <DockPanel LastChildFill="True">
-                <Button x:Name="LogoBtn" DockPanel.Dock="Left" Width="32" Height="32" Cursor="Hand" ToolTip="Start screen" Click="OnLogo"
+                <Button DockPanel.Dock="Left" Width="32" Height="32" Cursor="Hand" ToolTip="Start screen" Click="OnLogo"
                         AutomationProperties.Name="Start screen" FocusVisualStyle="{x:Null}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -60,7 +60,7 @@
                         </StackPanel>
                     </Button>
                 </StackPanel>
-                <Border />
+                <Border />   <!-- fills the middle (LastChildFill), so undo, redo and Export stay on the right -->
             </DockPanel>
         </Border>
 

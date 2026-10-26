@@ -31,7 +31,7 @@ public partial class MainWindow
         Home.OpenFileDialog = OpenDocumentDialog;
         Home.OpenProject = () => ProjectCommands.Open(this);
         Home.NewProject = () => ProjectCommands.New(this);
-        Home.OpenSample = () => OpenSampleAsset("art/hero.pxf");
+        Home.OpenSample = () => OpenSampleAsset(SampleStart);
         Home.Learn = () => GettingStarted.Show(this, OpenSampleAsset);
         Home.Closed = () => (Current as UIElement)?.Focus();
     }
@@ -47,8 +47,7 @@ public partial class MainWindow
     {
         if (path.EndsWith(Core.Project.Extension, StringComparison.OrdinalIgnoreCase)) { ProjectCommands.OpenPath(path); return true; }
         string ext = Path.GetExtension(path).ToLowerInvariant();
-        if (Editors.FirstOrDefault(ed => ed.FileExtensions.Contains(ext) && Tabs.Items.Cast<TabItem>()
-                .Any(t => (t.Content == ed || t.Content is ModeHost h && h.Contains(ed)) && Shown.Contains((string)t.Header))) is not { } editor) return false;
+        if (Editors.FirstOrDefault(ed => ed.FileExtensions.Contains(ext) && IsShown(ed)) is not { } editor) return false;
         // linked sprites and tilesets resolve through the project
         if (App.Project is not { } open || !path.StartsWith(open.Root, StringComparison.OrdinalIgnoreCase))
             try
@@ -91,7 +90,7 @@ public partial class MainWindow
     /// <summary>The active editor's own status line moves into the window's status bar.</summary>
     void MirrorStatus()
     {
-        var ed = Current is ModeHost h ? h.Active : Current;
+        var ed = ActiveEditor;
         if (ed is FrameworkElement fe && fe.FindName("Status") is TextBlock status)
         {
             if (status.Parent is FrameworkElement bar && bar != fe) bar.Visibility = Visibility.Collapsed;
@@ -120,7 +119,6 @@ public partial class MainWindow
 
     void OnUndo(object sender, RoutedEventArgs e) => InvokeMenu("_Undo");
     void OnRedo(object sender, RoutedEventArgs e) => InvokeMenu("_Redo");
-    void OnGettingStarted(object sender, RoutedEventArgs e) => GettingStarted.Show(this, OpenSampleAsset);
     void OnLogo(object sender, RoutedEventArgs e) => ShowHome();
 
     void OnExport(object sender, RoutedEventArgs e) => ShowExport();
