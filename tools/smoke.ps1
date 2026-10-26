@@ -44,12 +44,12 @@ function Save-Shot($h, $file) {
     [PfWin]::PrintWindow($h, $hdc, 2) | Out-Null; $g.ReleaseHdc($hdc); $bmp.Save($file); $bmp.Dispose()
 }
 
-# opens a top-level menu and returns the item whose name matches (retries: menus open asynchronously)
 # menu steps need the app in the foreground; Windows refuses that while someone else is using the PC
 $script:background = $false
 $script:skipped = @()
 function Missing($what) { if ($script:background) { $script:skipped += $what } else { $script:failures += $what } }
 
+# opens a top-level menu and returns the item whose name matches (retries: menus open asynchronously)
 function Find-MenuItem($root, $top, $pattern) {
     for ($try = 0; $try -lt 5; $try++) {
         [void][PfWin]::SetForegroundWindow([IntPtr]$root.Current.NativeWindowHandle)   # menus only open in the foreground window
@@ -64,9 +64,20 @@ function Find-MenuItem($root, $top, $pattern) {
         $item = (Find-All $root ([System.Windows.Automation.ControlType]::MenuItem)) | Where-Object { ($_.Current.Name -replace '_', '') -like $pattern } | Select-Object -First 1
         if ($item) { return $item }
     }
-    $bar = (Find-All $root ([System.Windows.Automation.ControlType]::Menu))
     if ([PfWin]::GetForegroundWindow() -ne [IntPtr]$root.Current.NativeWindowHandle) { $script:background = $true }
     return $null
+}
+
+# a window of the app (its own top-level window or one owned by the main window) whose title matches the wildcard pattern
+function Find-AppWindow($pattern) {
+    $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
+    $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
+    $wins | Where-Object { $_.Current.Name -like $pattern } | Select-Object -First 1
+}
+
+function Close-AppWindow($w) {
+    $w.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
+    Start-Sleep -Milliseconds 500
 }
 
 if (-not (Test-Path $Exe)) { throw "Build first: $Exe not found." }
@@ -217,16 +228,13 @@ try {
         if (-not $item) { Missing "$($mw[0]) > $w"; continue }
         $item.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 3
-        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
-        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
-        $win = $wins | Where-Object { $_.Current.Name -like "$w*" } | Select-Object -First 1
+        $win = Find-AppWindow "$w*"
         if (-not $win) { $failures += "$w window did not open" }
         else {
             $report = (Find-All $win ([System.Windows.Automation.ControlType]::Edit)) | Select-Object -Last 1
             $first = if ($report) { ($report.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -split "`n")[0] } else { 'opened' }
             Write-Host ("{0}: {1}" -f $w, $first)
-            $win.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
-            Start-Sleep -Milliseconds 500
+            Close-AppWindow $win
         }
     }
     # start screen: the logo opens it, it lists presets, its close button hides it again
@@ -250,9 +258,7 @@ try {
     else {
         $palItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 2
-        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
-        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
-        $pal = $wins | Where-Object { $_.Current.Name -eq 'Command palette' } | Select-Object -First 1
+        $pal = Find-AppWindow 'Command palette'
         if (-not $pal) { $failures += 'command palette did not open' }
         else {
             $box = (Find-All $pal ([System.Windows.Automation.ControlType]::Edit))[0]
@@ -263,8 +269,7 @@ try {
                 Write-Host ("palette '{0}': {1}" -f $q, (($names | Select-Object -First 2) -join ' | '))
                 if (-not $names) { $failures += "command palette found nothing for '$q'" }
             }
-            $pal.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
-            Start-Sleep -Milliseconds 500
+            Close-AppWindow $pal
         }
     }
     # simplified app (21. 10. 2026): switched off with the parts it tests; set to $true to run it again
@@ -293,9 +298,7 @@ try {
         $before = (Find-All $list ([System.Windows.Automation.ControlType]::ListItem)).Count
         $tplItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 3
-        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
-        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
-        $studio = $wins | Where-Object { $_.Current.Name -eq 'Template Studio' } | Select-Object -First 1
+        $studio = Find-AppWindow 'Template Studio'
         if (-not $studio) { $failures += 'Template Studio did not open' }
         else {
             $tpls = (Find-All $studio ([System.Windows.Automation.ControlType]::ListItem)) | Where-Object { $_.Current.Name -like '*BuiltIn' }
@@ -320,17 +323,14 @@ try {
     else {
         $histItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 2
-        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
-        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
-        $hist = $wins | Where-Object { $_.Current.Name -like 'History*' } | Select-Object -First 1
+        $hist = Find-AppWindow 'History*'
         if (-not $hist) { $failures += 'history window did not open' }
         else {
             $versions = (Find-All $hist ([System.Windows.Automation.ControlType]::ListItem)).Count
             Write-Host "history: $versions version(s)"
             if ($versions -lt 1) { $failures += 'history shows no versions' }
             if (-not (Test-Path (Join-Path $projectDir '.history\index.json'))) { $failures += '.history/index.json missing' }
-            $hist.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
-            Start-Sleep -Milliseconds 500
+            Close-AppWindow $hist
         }
     }
     # export: Project > Export, run the default Godot profile on the fixture project
@@ -339,9 +339,7 @@ try {
     else {
         $exportItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 2
-        $cond = New-Object System.Windows.Automation.PropertyCondition $A::ProcessIdProperty, $p.Id
-        $wins = @([System.Windows.Automation.AutomationElement]::RootElement.FindAll('Children', $cond)) + @(Find-All $root ([System.Windows.Automation.ControlType]::Window))
-        $exp = $wins | Where-Object { $_.Current.Name -like 'Export*' } | Select-Object -First 1
+        $exp = Find-AppWindow 'Export*'
         if (-not $exp) { $failures += 'export window did not open' }
         else {
             $go = (Find-All $exp ([System.Windows.Automation.ControlType]::Button)) | Where-Object { $_.Current.Name -eq 'Export' } | Select-Object -First 1
@@ -349,12 +347,11 @@ try {
             Start-Sleep 3
             $rep = (Find-All $exp ([System.Windows.Automation.ControlType]::Edit)) | Where-Object { $_.Current.Name -eq 'Export report' } | Select-Object -First 1
             $text = $rep.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
-            $first = ($text -split "`n")[0]
-            Write-Host "export: $first"
+            $firstLine = ($text -split "`n")[0]
+            Write-Host "export: $firstLine"
             if ($text -notlike 'Exported*') { $failures += "export failed: $text" }
             if (-not (Test-Path (Join-Path $projectDir 'export\godot\project.json'))) { $failures += 'export folder missing project.json' }
-            $exp.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern).Close()
-            Start-Sleep -Milliseconds 500
+            Close-AppWindow $exp
         }
     }
     $p.CloseMainWindow() | Out-Null

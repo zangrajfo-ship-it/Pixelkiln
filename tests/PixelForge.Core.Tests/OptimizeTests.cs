@@ -3,14 +3,9 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class OptimizeTests : IDisposable
+public sealed class OptimizeTests() : TempDirTest("opt")
 {
     const uint R = 0xFFFF0000, B = 0xFF0000FF, K = 0xFF000000;
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-opt-" + Guid.NewGuid().ToString("N"));
-
-    public OptimizeTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-    string P(string name) => Path.Combine(_dir, name);
 
     static void NoOverlap(IReadOnlyList<(int X, int Y, int W, int H)> r, int binW, int binH)
     {
@@ -115,7 +110,7 @@ public sealed class OptimizeTests : IDisposable
         var e = Exporter.Plan(p, new ExportProfile { Target = ExportTarget.Generic, Atlas = true });
         Assert.True(e.Ok, string.Join("\n", e.Errors));
         Assert.Contains("atlas/atlas0.png", e.Files.Keys);
-        Assert.Contains("\"key\": \"hero#1\"", System.Text.Encoding.UTF8.GetString(e.Files["atlas/atlas.json"]));
+        Assert.Contains("\"key\": \"hero#1\"", e.Text("atlas/atlas.json"));
     }
 
     [Fact]

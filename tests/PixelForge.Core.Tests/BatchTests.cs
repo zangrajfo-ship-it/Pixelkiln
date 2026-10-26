@@ -2,13 +2,8 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class BatchTests : IDisposable
+public sealed class BatchTests() : TempDirTest("batch")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-batch-" + Guid.NewGuid().ToString("N"));
-
-    public BatchTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
     (Project P, List<AssetEntry> Sprites) Setup(int n)
     {
         var p = Project.Create(_dir, "G");

@@ -3,13 +3,9 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class PaintTests : IDisposable
+public sealed class PaintTests() : TempDirTest("paint")
 {
     const uint Red = 0xFFFF0000, White = 0xFFFFFFFF, Blue = 0xFF0000FF;
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-paint-" + Guid.NewGuid().ToString("N"));
-
-    public PaintTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
 
     static uint A(uint p) => p >> 24;
 

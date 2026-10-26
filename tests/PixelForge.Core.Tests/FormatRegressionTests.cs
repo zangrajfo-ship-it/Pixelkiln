@@ -1,4 +1,5 @@
 using PixelForge.Core;
+using static PixelForge.Core.Tests.TestFiles;
 
 namespace PixelForge.Core.Tests;
 
@@ -10,8 +11,6 @@ namespace PixelForge.Core.Tests;
 public class FormatRegressionTests
 {
     const uint R = 0xFFFF0000, B = 0xFF0000FF;
-
-    static string Fixture(string name) => Path.Combine(AppContext.BaseDirectory, "Fixtures", name);
 
     [Fact]
     public void Sprite_v1()
@@ -251,6 +250,7 @@ public class FormatRegressionTests
     }
 
     /// <summary>Writes Fixtures/current with the current code (PF_WRITE_FIXTURES=1, PF_FIXTURES_DIR = the Fixtures folder).</summary>
+    [Trait("Category", "Tool")]   // a helper for people, not a check: without its variable it passes doing nothing
     [Fact]
     public void WriteCurrentFixtures()
     {
@@ -390,6 +390,7 @@ public class FormatRegressionTests
     }
 
     /// <summary>Writes the v2 fixtures with the current code. Runs only with PF_WRITE_FIXTURES=1 and the fixtures folder as PF_FIXTURES_DIR.</summary>
+    [Trait("Category", "Tool")]   // a helper for people, not a check: without its variable it passes doing nothing
     [Fact]
     public void WriteV2Fixtures()
     {
