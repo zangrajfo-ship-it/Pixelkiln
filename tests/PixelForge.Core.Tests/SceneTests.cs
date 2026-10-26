@@ -103,13 +103,13 @@ public sealed class SceneAssetsTests() : TempDirTest("sa")
         s.AddFrame(1);
         s.AddFrame(2);
         s.Tags.Add(new FrameTag { Name = "run", From = 1, To = 2 });
-        string sp = Path.Combine(_dir, "hero.pxf");
+        string sp = P("hero.pxf");
         ProjectFile.Save(s, sp);
         var spriteAsset = p.Add(sp);
         var c = new Character { SpriteAssetId = spriteAsset.Id, OriginX = 4, OriginY = 8 };
         c.Animations["run"] = "run";
-        Character.Save(c, Path.Combine(_dir, "hero.pxchar"));
-        var charAsset = p.Add(Path.Combine(_dir, "hero.pxchar"));
+        Character.Save(c, P("hero.pxchar"));
+        var charAsset = p.Add(P("hero.pxchar"));
 
         var assets = new SceneAssets(p);
         var look = assets.Look(new SceneInstance { AssetId = charAsset.Id })!;

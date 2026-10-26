@@ -8,7 +8,7 @@ public sealed class DocumentFileTests() : TempDirTest("doc")
     [Fact]
     public void Failed_write_leaves_the_original_untouched()
     {
-        string file = Path.Combine(_dir, "a.pxs");
+        string file = P("a.pxs");
         Song.Save(new Song { Bpm = 99 }, file);
         Directory.CreateDirectory(file + ".tmp");                   // the temp file cannot be created
         Assert.ThrowsAny<Exception>(() => Song.Save(new Song { Bpm = 150 }, file));   // IOException or UnauthorizedAccessException
@@ -18,7 +18,7 @@ public sealed class DocumentFileTests() : TempDirTest("doc")
     [Fact]
     public void Migrated_file_gets_one_backup_of_the_old_version()
     {
-        string file = Path.Combine(_dir, "song.pxs");
+        string file = P("song.pxs");
         File.Copy(Fixture("song.v1.pxs"), file);
         var song = Song.Load(file);
         Song.Save(song, file);
@@ -34,7 +34,7 @@ public sealed class DocumentFileTests() : TempDirTest("doc")
     [Fact]
     public void Sound_v1_is_saved_as_v2_with_backup_and_reloads()
     {
-        string file = Path.Combine(_dir, "s.sfx");
+        string file = P("s.sfx");
         File.Copy(Fixture("sound.v1.sfx"), file);
         var s = Sfx.Load(file);
         Sfx.Save(s, file);
@@ -52,7 +52,7 @@ public sealed class DocumentFileTests() : TempDirTest("doc")
     [InlineData("x.sfx")]
     public void Damaged_and_newer_files_give_readable_errors(string name)
     {
-        string file = Path.Combine(_dir, name);
+        string file = P(name);
         Action load = Path.GetExtension(name) switch
         {
             ".pxf" => () => ProjectFile.Load(file),
@@ -69,13 +69,13 @@ public sealed class DocumentFileTests() : TempDirTest("doc")
         }
         File.WriteAllText(file, "{ \"Version\": 42 }");
         Assert.Contains("newer PixelForge", Assert.Throws<InvalidDataException>(load).Message);
-        Assert.Throws<FileNotFoundException>(() => ProjectFile.Load(Path.Combine(_dir, "nope.pxf")));
+        Assert.Throws<FileNotFoundException>(() => ProjectFile.Load(P("nope.pxf")));
     }
 
     [Fact]
     public void Map_v2_upgrades_to_current_keeping_everything()
     {
-        string file = Path.Combine(_dir, "m.pxm");
+        string file = P("m.pxm");
         File.Copy(Fixture("map.v2.pxm"), file);
         Tilemap.Save(Tilemap.Load(file), file);
         var m = Tilemap.Load(file);

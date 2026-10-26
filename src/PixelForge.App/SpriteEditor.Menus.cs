@@ -100,12 +100,12 @@ public partial class SpriteEditor : IEditor
     void OnZoomFit(object sender, RoutedEventArgs e) => ZoomFit();
 
     /// <summary>One zoom level up/down, keeping the middle of the view in place.</summary>
-    void ZoomStep(int dir)
+    /// <summary>One zoom level in or out, around <paramref name="anchor"/> (the mouse) or the middle of the view.</summary>
+    void ZoomStep(int dir, Point? anchor = null)
     {
         int i = Array.IndexOf(ZoomLevels, _zoom) + dir;
         if (i < 0 || i >= ZoomLevels.Length) return;
-        var center = Scroller.TranslatePoint(new Point(Scroller.ViewportWidth / 2, Scroller.ViewportHeight / 2), CanvasHost);
-        ZoomTo(ZoomLevels[i], center);
+        ZoomTo(ZoomLevels[i], anchor ?? Scroller.TranslatePoint(new Point(Scroller.ViewportWidth / 2, Scroller.ViewportHeight / 2), CanvasHost));
     }
 
     /// <summary>Biggest zoom at which the whole sprite is visible.</summary>

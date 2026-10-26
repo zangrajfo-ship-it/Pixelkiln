@@ -356,7 +356,7 @@ public static class LevelBuilder
     /// </summary>
     public static Placement Place(bool[] solid, int w, int h, ulong seed, int checkpoints, int hazards, int collectibles, bool sideView)
     {
-        bool S(int x, int y) => x < 0 || y < 0 || x >= w || y >= h || solid[y * w + x];
+        bool S(int x, int y) => !Tools.InBounds(w, h, x, y) || solid[y * w + x];
         bool Stand(int x, int y) => !S(x, y) && !S(x, y - 1) && S(x, y + 1);   // two free cells over ground
         var free = new List<(int X, int Y)>();
         for (int y = 1; y < h - 1; y++)

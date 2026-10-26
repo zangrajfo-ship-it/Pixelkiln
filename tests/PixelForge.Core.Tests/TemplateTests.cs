@@ -7,7 +7,7 @@ public sealed class TemplateTests() : TempDirTest("tpl")
 {
     Project NewProject(string name = "game")
     {
-        string root = Path.Combine(_dir, name);
+        string root = P(name);
         Directory.CreateDirectory(root);
         return Project.Create(root, name);
     }
@@ -93,7 +93,7 @@ public sealed class TemplateTests() : TempDirTest("tpl")
     {
         var p = NewProject("src");
         var made = TemplateEngine.Create(Builtin("platformer-hero"), null, p, "", false);
-        string scope = Path.Combine(_dir, "user-templates");
+        string scope = P("user-templates");
         var t = TemplateLibrary.SaveFromAssets(p, [made.Primary.Id], scope, TemplateSource.User, "my-hero", "My hero", "1.0", TemplateKind.Character, "mine", ["hero"]);
         Assert.Equal(2, t.Manifest.Steps.Count);                          // the sprite came along as a dependency
         Assert.Throws<IOException>(() => TemplateLibrary.SaveFromAssets(p, [made.Primary.Id], scope, TemplateSource.User, "my-hero", "My hero", "1.0", TemplateKind.Character, null, []));
@@ -109,20 +109,20 @@ public sealed class TemplateTests() : TempDirTest("tpl")
     [Fact]
     public void Packs_round_trip_and_bad_templates_or_paths_are_refused()
     {
-        string pack = Path.Combine(_dir, "a.pxtplpack");
+        string pack = P("a.pxtplpack");
         TemplateLibrary.ExportPack(pack, [Builtin("asset-door"), Builtin("music-chiptune-loop")]);
-        string scope = Path.Combine(_dir, "scope");
+        string scope = P("scope");
         var installed = TemplateLibrary.ImportPack(pack, scope, TemplateSource.User);
         Assert.Equal(["asset-door", "music-chiptune-loop"], installed.Select(t => t.Manifest.Id).Order());
         byte[] first = File.ReadAllBytes(pack);
         TemplateLibrary.ExportPack(pack, [Builtin("asset-door"), Builtin("music-chiptune-loop")]);
         Assert.Equal(first, File.ReadAllBytes(pack));                      // reproducible
 
-        string evil = Path.Combine(_dir, "evil.pxtplpack");
+        string evil = P("evil.pxtplpack");
         using (var z = ZipFile.Open(evil, ZipArchiveMode.Create)) z.CreateEntry("../outside.txt");
         Assert.Throws<InvalidDataException>(() => TemplateLibrary.ImportPack(evil, scope, TemplateSource.User));
 
-        string bad = Path.Combine(_dir, "bad.pxtplpack");
+        string bad = P("bad.pxtplpack");
         using (var z = ZipFile.Open(bad, ZipArchiveMode.Create))
         {
             using (var w = new StreamWriter(z.CreateEntry("ok@1.0/template.json").Open())) w.Write(TemplateLoader.Serialize(Builtin("asset-ladder").Manifest));

@@ -66,8 +66,8 @@ public sealed class LoadTests() : TempDirTest("load")
         var p = Project.Create(_dir, "G");
         var sp = new Sprite(16, 16);
         Array.Fill(sp.Layers[0].Cels[0], 0xFF00FF00u);
-        ProjectFile.Save(sp, Path.Combine(_dir, "o.pxf"));
-        var asset = p.Add(Path.Combine(_dir, "o.pxf"));
+        ProjectFile.Save(sp, P("o.pxf"));
+        var asset = p.Add(P("o.pxf"));
         var s = new Scene { Width = 4096, Height = 512 };
         for (int i = 0; i < 500; i++) s.Instances.Add(new SceneInstance { AssetId = asset.Id, LayerId = s.Layers[0].Id, X = i * 8 % 4096, Y = i % 300 });
         var sb = new Sandbox(s, new SceneAssets(p), 320, 180);

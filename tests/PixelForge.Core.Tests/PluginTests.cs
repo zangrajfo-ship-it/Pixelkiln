@@ -13,8 +13,8 @@ public sealed class PluginTests() : TempDirTest("plugins")
 
     void Write(string id, string json)
     {
-        Directory.CreateDirectory(Path.Combine(_dir, id));
-        File.WriteAllText(Path.Combine(_dir, id, "plugin.json"), json);
+        Directory.CreateDirectory(P(id));
+        File.WriteAllText(P(id, "plugin.json"), json);
     }
 
     static string Manifest(string id = "demo", int api = 1, string extra = "", string contributions = "{}") =>
@@ -32,7 +32,7 @@ public sealed class PluginTests() : TempDirTest("plugins")
         Assert.Equal(2, c.Macros![0].Commands.Count);
 
         var installed = PluginLoader.Install(Sample(), _dir);
-        Assert.True(File.Exists(Path.Combine(_dir, "retro-pack", "plugin.json")));
+        Assert.True(File.Exists(P("retro-pack", "plugin.json")));
         Assert.Equal("retro-pack", installed.Manifest.Id);
     }
 
@@ -47,7 +47,7 @@ public sealed class PluginTests() : TempDirTest("plugins")
         Write("bad-preset", Manifest("bad-preset", contributions: """{ "generatorPresets": [{ "name": "x", "generator": "sprite", "settings": { "speed": "1" } }] }"""));
         Write("escape", Manifest("escape", contributions: """{ "exportProfiles": [{ "name": "x", "target": "Godot4", "outputFolder": "../../out" }] }"""));
         Write("dll", Manifest("dll", contributions: """{ "assembly": "evil.dll" }"""));
-        Directory.CreateDirectory(Path.Combine(_dir, "empty"));
+        Directory.CreateDirectory(P("empty"));
 
         var (ok, bad) = PluginLoader.LoadAll(_dir);
         Assert.Equal(["good"], ok.Select(p => p.Manifest.Id));

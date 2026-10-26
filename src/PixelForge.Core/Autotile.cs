@@ -70,7 +70,7 @@ public static class Autotile
         if (rule.Variants.Contains(tile)) return true;
         var (bc, br) = Block(rule.Mode);
         int dc = tile % ts.Columns - rule.Base % ts.Columns, dr = tile / ts.Columns - rule.Base / ts.Columns;
-        return dc >= 0 && dc < bc && dr >= 0 && dr < br;
+        return Tools.InBounds(bc, br, dc, dr);
     }
 
     public static void Apply(Tilemap map, MapLayer layer, int terrainBase, int x, int y, bool on) =>

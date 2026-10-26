@@ -111,8 +111,7 @@ public partial class TilemapEditor : UserControl
     void OnWheel(object sender, MouseWheelEventArgs e)
     {
         e.Handled = true;
-        int i = Array.IndexOf(ZoomLevels, _zoom) + Math.Sign(e.Delta);
-        if (i >= 0 && i < ZoomLevels.Length) ZoomTo(ZoomLevels[i], e.GetPosition(CanvasHost));
+        ZoomStep(Math.Sign(e.Delta), e.GetPosition(CanvasHost));
     }
 
     /// <summary>Changes zoom and keeps the canvas point <paramref name="anchor"/> in place on screen.</summary>

@@ -10,7 +10,7 @@ public sealed class BatchTests() : TempDirTest("batch")
         var list = new List<AssetEntry>();
         for (int i = 0; i < n; i++)
         {
-            string f = Path.Combine(_dir, $"s{i}.pxf");
+            string f = P($"s{i}.pxf");
             ProjectFile.Save(new Sprite(4, 2), f);
             list.Add(p.Add(f));
         }

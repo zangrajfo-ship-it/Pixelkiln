@@ -84,7 +84,7 @@ public sealed class Settings
         Workspaces = [.. (Workspaces ?? []).Where(w => !string.IsNullOrWhiteSpace(w.Name) && !string.IsNullOrWhiteSpace(w.Tab)).GroupBy(w => w.Name).Select(g => g.Last()).Take(20)],
     };
 
-    static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
+    static readonly JsonSerializerOptions Json = DocumentFile.Indented;
 
     public string Serialize() => JsonSerializer.Serialize(this, Json);
 

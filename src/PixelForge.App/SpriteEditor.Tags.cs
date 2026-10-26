@@ -46,7 +46,7 @@ public partial class SpriteEditor
             {
                 _activeTag = _activeTag == index ? null : index;
                 RefreshTags();
-                if (ActiveTag is { } a) { StopPlaying(); SelectFrame(a.From); }
+                if (ActiveTag is { } a) GoToFrame(a.From);
             };
             TagsPanel.Children.Add(chip);
         }

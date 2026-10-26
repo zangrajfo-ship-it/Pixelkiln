@@ -21,7 +21,7 @@ public sealed class VectorTests() : TempDirTest("vec")
             Children = [VectorGeometry.Polygon(8, 8, 4, 5, star: true), new VShape { Kind = VShapeKind.Ellipse, X = 0, Y = 0, W = 4, H = 4,
                 Fill = new VPaint(VPaintKind.Linear, 0, [new VStop(0, 0xFF000000), new VStop(1, 0x80FFFFFF)], 0, 0, 4, 0) }],
         });
-        string f = Path.Combine(_dir, "a.pxvec");
+        string f = P("a.pxvec");
         VectorDoc.Save(d, f);
         var e = VectorDoc.Load(f);
         Assert.Equal((32.0, 16.0, 2), (e.Width, e.Height, e.Shapes.Count));
@@ -147,8 +147,8 @@ public sealed class VectorTests() : TempDirTest("vec")
         Assert.Contains(smooth, p => p >> 24 is > 0 and < 255);           // soft edge
         Assert.DoesNotContain(crisp, p => p >> 24 is > 0 and < 255);      // no half-transparent pixels
         var p = Project.Create(_dir, "g");
-        VectorDoc.Save(d, Path.Combine(_dir, "v.pxvec"));
-        var a = p.Add(Path.Combine(_dir, "v.pxvec"));
+        VectorDoc.Save(d, P("v.pxvec"));
+        var a = p.Add(P("v.pxvec"));
         Assert.Equal(AssetType.Vector, a.Type);
         Assert.NotNull(AssetKinds.Of(AssetType.Vector).Picture!(p.FullPath(a), p));
     }
@@ -159,12 +159,12 @@ public sealed class VectorTests() : TempDirTest("vec")
         var p = Project.Create(_dir, "g");
         var v = new VectorDoc { Width = 8, Height = 4 };
         v.Shapes.Add(Rect(0, 0, 8, 4, 0xFF00FF00));
-        VectorDoc.Save(v, Path.Combine(_dir, "sky.pxvec"));
+        VectorDoc.Save(v, P("sky.pxvec"));
         var d = new PaintDoc(6, 3);
         d.Layers[0].TileFor(0, 0)[0] = 0xFFFF0000;
-        PaintDoc.Save(d, Path.Combine(_dir, "hills.pxpaint"));
-        var sky = p.Add(Path.Combine(_dir, "sky.pxvec"));
-        var hills = p.Add(Path.Combine(_dir, "hills.pxpaint"));
+        PaintDoc.Save(d, P("hills.pxpaint"));
+        var sky = p.Add(P("sky.pxvec"));
+        var hills = p.Add(P("hills.pxpaint"));
         Assert.True(AssetLoader.IsPicture(sky.Type) && AssetLoader.IsPicture(hills.Type));
         Assert.Equal((8, 4), AssetLoader.LoadImage(p.FullPath(sky)) is var (_, w, h) ? (w, h) : default);
 
@@ -174,8 +174,8 @@ public sealed class VectorTests() : TempDirTest("vec")
         var px = SceneRenderer.Render(s, new SceneAssets(p), 0, 0, 16, 8, 0);
         Assert.Equal(0xFF00FF00u, px[1]);
         Assert.Equal(0xFFFF0000u, px[10]);
-        Scene.Save(s, Path.Combine(_dir, "level.pxscene"));
-        p.Add(Path.Combine(_dir, "level.pxscene"));
+        Scene.Save(s, P("level.pxscene"));
+        p.Add(P("level.pxscene"));
 
         var godot = Exporter.Plan(p, new ExportProfile());
         Assert.True(godot.Ok, string.Join("; ", godot.Errors));

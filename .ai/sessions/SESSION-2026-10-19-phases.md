@@ -313,3 +313,12 @@ Uporabnik je želel pripravljene primere za učenje, preprostejše vzorce za gla
 - **Napaka ob prvem prikazu:** urejevalniki so ob prvem `Loaded` pozabili pot datoteke, odprte pred tem (ukazna vrstica); zdaj jo obdržijo.
 - **Ni podprto:** zrcaljenje in vrtenje ploščic ter oznake ploščic iz vzorca (format `.pxm` jih nima; zahtevalo bi novo različico).
 - **Preverjanje:** Debug in Release brez opozoril, 220/220 testov, smoke OK z novim korakom za začetni zaslon; posnetki oken Tilemap, Character in Home pregledani.
+
+## Faza 26: čiščenje kode brez spremembe delovanja (26. 10. 2026)
+Uporabnik je želel preprosto kodo, ki se jo da urejati ročno, s smiselnimi komentarji, v več krogih, brez spremembe delovanja.
+- **Prvi krog** (trije vzporedni deli, vsak v svoji delovni kopiji): Core (skupne metode `PixelOps.Paste/Resize`, `ColorUtil.Lerp`, `ImageIO.Unpremultiply`, `Tools.Region/Wrap`, `DocumentFile.Indented/WriteViaTemp`, `Tilemap.RequireTileset`, `LogicNode.Number`; odstranjena neuporabljena koda; poenostavitve v `AssetKinds`, `Svg`, `Optimize`, `GodotExport.Track`, `UiExport`), App (`Ui.ShowTitle`, `Ui.ConfirmDiscard`, `Ui.ShowContextMenu` v vseh 13 urejevalnikih; `MainWindow.IsShown`; `StepFrame`, `UseColor`, en slovar orodij; `RailSep` v App.xaml; Help brez izklopljenih delov), testi (`TempDirTest`, `TestFiles`, razredi v svojih datotekah) in smoke (`Find-AppWindow`, `Close-AppWindow`).
+- **Drugi krog:** neodvisni pregled je preveril vsak kos sprememb (formati in izvozi bajtno enaki, besedila, bližnjice in imena za smoke nespremenjeni) in našel še malenkosti: `GoToFrame`, `ZoomStep` z mestom miške, `Tools.InBounds`, skupne nastavitve JSON, `P()` v testih.
+- **Edina namerna sprememba:** sredstvo izklopljenega urejevalnika pokaže sporočilo namesto izjeme. Pomoč (F1) omenja tri lekcije, ne sedmih.
+- **Zavestno ne spremenjeno** (sprememba izhoda ali tveganje): `LogicExport`, `TrimStart('#')`, `SceneCheck.SolidCells`, mešanje barv v `Particles`, `VersionStore.Restore`, skupni slogi besedil v XAML, predpomnjenje slik v Sprite, skupni zoom pomočnik.
+- **Preverjanje:** Debug in Release brez opozoril; testi 220/220 (en enkraten padec ob hladnem zagonu, nato 11 zaporednih uspešnih zagonov); smoke OK.
+

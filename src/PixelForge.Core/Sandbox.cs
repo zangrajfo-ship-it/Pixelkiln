@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace PixelForge.Core;
 
 /// <summary>Software renderer for a scene seen through a camera at the game's resolution (parallax, tracks, flips, hitboxes).</summary>
@@ -141,7 +143,7 @@ public static class SceneRenderer
 
     static void Outline(uint[] o, int w, int h, int x, int y, int bw, int bh, uint c)
     {
-        void P(int px, int py) { if (px >= 0 && py >= 0 && px < w && py < h) o[py * w + px] = c; }
+        void P(int px, int py) { if (Tools.InBounds(w, h, px, py)) o[py * w + px] = c; }
         for (int i = 0; i < bw; i++) { P(x + i, y); P(x + i, y + bh - 1); }
         for (int j = 0; j < bh; j++) { P(x, y + j); P(x + bw - 1, y + j); }
     }
@@ -215,7 +217,7 @@ public sealed class Sandbox
         var spawn = Scene.Areas.FirstOrDefault(a => a.Kind == AreaKind.Spawn);
         if (Player is not null && _assets.Look(Player) is { Character: { } c } look)
         {
-            double P(string key, double fallback) => c.Properties.TryGetValue(key, out var v) && double.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : fallback;
+            double P(string key, double fallback) => c.Properties.TryGetValue(key, out var v) && double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : fallback;
             (_speed, _jump, _gravity) = (P("speed", 90), P("jump", 230), P("gravity", 640));
             var solid = c.Boxes.FirstOrDefault(b => b.Kind == BoxKind.Solid);
             var sprite = look.Sprite;
@@ -381,7 +383,6 @@ public sealed class Sandbox
 
     uint[]? _overlay;
     bool _overlayTried;
-
     bool _overlayMoves;
 
     /// <summary>The scene's UI screen at the view size; drawn once unless some of its elements play a clip.</summary>

@@ -73,8 +73,8 @@ public sealed class UiTests() : TempDirTest("ui")
         Assert.Equal(0u, hud[180 / 2 * 320 + 160]);                            // HUD is see-through in the middle
 
         var scene = new Scene { Width = 320, Height = 180, UiAssetId = r.Primary.Id, UiScreen = "HUD" };
-        Scene.Save(scene, Path.Combine(_dir, "level.pxscene"));
-        p.Add(Path.Combine(_dir, "level.pxscene"));
+        Scene.Save(scene, P("level.pxscene"));
+        p.Add(P("level.pxscene"));
         Assert.DoesNotContain(SceneCheck.Run(scene, p), x => x.Severity == "error");
         var sb = new Sandbox(scene, new SceneAssets(p), 320, 180);
         var view = sb.Render(false);
@@ -104,12 +104,12 @@ public sealed class UiTests() : TempDirTest("ui")
     public void Extra_scales_write_larger_copies_of_pictures()
     {
         var p = Project.Create(_dir, "g");
-        ImageIO.SavePng(Path.Combine(_dir, "dot.png"), [0xFFFF0000, 0xFF00FF00], 2, 1);
-        p.Add(Path.Combine(_dir, "dot.png"));
+        ImageIO.SavePng(P("dot.png"), [0xFFFF0000, 0xFF00FF00], 2, 1);
+        p.Add(P("dot.png"));
         var v = new VectorDoc { Width = 4, Height = 4 };
         v.Shapes.Add(new VShape { Kind = VShapeKind.Ellipse, W = 4, H = 4, Fill = VPaint.Solid(0xFF0000FF) });
-        VectorDoc.Save(v, Path.Combine(_dir, "ball.pxvec"));
-        p.Add(Path.Combine(_dir, "ball.pxvec"));
+        VectorDoc.Save(v, P("ball.pxvec"));
+        p.Add(P("ball.pxvec"));
         var r = Exporter.Plan(p, new ExportProfile { Scales = [2, 4] });
         Assert.True(r.Ok, string.Join("; ", r.Errors));
         Assert.Contains("dot@2x.png", r.Files.Keys);

@@ -932,7 +932,6 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
 
     // ---------- IEditor ----------
 
-
     public string[] FileExtensions => [".pxscene"];
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
