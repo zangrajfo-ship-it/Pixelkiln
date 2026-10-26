@@ -66,11 +66,7 @@ public partial class TextureEditor : UserControl, IEditor, IPictureSource
         UpdateTitle();
     }
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled texture" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled texture");
 
     void RefreshAssets()
     {
@@ -193,6 +189,13 @@ public partial class TextureEditor : UserControl, IEditor, IPictureSource
     }
 
     void OnViewChanged(object sender, RoutedEventArgs e) => ShowMap();
+
+    /// <summary>Chooses a view from the menu or a key (the radio buttons only report clicks, so the map is redrawn here).</summary>
+    void ShowView(RadioButton view)
+    {
+        view.IsChecked = true;
+        ShowMap();
+    }
     void OnPreviewSize(object sender, SizeChangedEventArgs e) => ShowMap();
 
     void ShowMap()
@@ -321,12 +324,7 @@ public partial class TextureEditor : UserControl, IEditor, IPictureSource
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current texture?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "texture", () => Save(_path));
 
     public void OpenPath(string path, bool confirmed = false)
     {
@@ -370,11 +368,11 @@ public partial class TextureEditor : UserControl, IEditor, IPictureSource
             Ui.Item("_Redo", "Ctrl+Y", Do(OnRedo)),
             Ui.Item("_Shuffle seed", "R", Do(OnShuffle))),
         Ui.Menu("_View",
-            Ui.Item("_Colour", "1", () => { ViewAlbedo.IsChecked = true; ShowMap(); }),
-            Ui.Item("_Height", "2", () => { ViewHeight.IsChecked = true; ShowMap(); }),
-            Ui.Item("_Normal", "3", () => { ViewNormal.IsChecked = true; ShowMap(); }),
-            Ui.Item("_Occlusion", "4", () => { ViewAo.IsChecked = true; ShowMap(); }),
-            Ui.Item("_Lit", "5", () => { ViewLit.IsChecked = true; ShowMap(); }),
+            Ui.Item("_Colour", "1", () => ShowView(ViewAlbedo)),
+            Ui.Item("_Height", "2", () => ShowView(ViewHeight)),
+            Ui.Item("_Normal", "3", () => ShowView(ViewNormal)),
+            Ui.Item("_Occlusion", "4", () => ShowView(ViewAo)),
+            Ui.Item("_Lit", "5", () => ShowView(ViewLit)),
             Ui.Toggle("_Repeat 4×4", "T", RepeatBox)),
     ];
 
@@ -392,11 +390,11 @@ public partial class TextureEditor : UserControl, IEditor, IPictureSource
             case Key.O when ctrl: OnOpen(null, null); break;
             case Key.E when ctrl: OnExport(null, null); break;
             case Key.R when !ctrl: OnShuffle(this, new RoutedEventArgs()); break;
-            case Key.D1 when !ctrl: ViewAlbedo.IsChecked = true; ShowMap(); break;
-            case Key.D2 when !ctrl: ViewHeight.IsChecked = true; ShowMap(); break;
-            case Key.D3 when !ctrl: ViewNormal.IsChecked = true; ShowMap(); break;
-            case Key.D4 when !ctrl: ViewAo.IsChecked = true; ShowMap(); break;
-            case Key.D5 when !ctrl: ViewLit.IsChecked = true; ShowMap(); break;
+            case Key.D1 when !ctrl: ShowView(ViewAlbedo); break;
+            case Key.D2 when !ctrl: ShowView(ViewHeight); break;
+            case Key.D3 when !ctrl: ShowView(ViewNormal); break;
+            case Key.D4 when !ctrl: ShowView(ViewAo); break;
+            case Key.D5 when !ctrl: ShowView(ViewLit); break;
             case Key.T when !ctrl: RepeatBox.IsChecked = RepeatBox.IsChecked != true; ShowMap(); break;
             default: e.Handled = false; break;
         }

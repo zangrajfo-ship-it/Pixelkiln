@@ -23,7 +23,8 @@ public partial class TilemapEditor
     Int32Rect _tsSel = new(0, 0, 1, 1);   // tileset selection, in tiles
     (int X, int Y)? _tsDragFrom;
 
-    RadioButton CurrentTool => new[] { PaintBtn, EraseBtn, FillBtn, PickBtn, AutoBtn, ObjectBtn }.First(r => r.IsChecked == true);
+    RadioButton[]? _tools;   // filled on first use: the named buttons exist only after InitializeComponent
+    RadioButton CurrentTool => (_tools ??= [PaintBtn, EraseBtn, FillBtn, PickBtn, AutoBtn, ObjectBtn]).First(r => r.IsChecked == true);
 
     void SetTool(RadioButton tool)
     {
@@ -324,10 +325,10 @@ public partial class TilemapEditor
     }
 
     void OnSolidToggle(object sender, RoutedEventArgs e) =>
-        SetTileCollision(SolidToggle.IsChecked == true ? new TileCollision(0, 0, _map.TileSize, _map.TileSize) : null);
+        SetTileCollision(SolidToggle.IsChecked == true ? SolidBox : null);
 
     void OnOneWayToggle(object sender, RoutedEventArgs e) =>
-        SetTileCollision(OneWayToggle.IsChecked == true ? new TileCollision(0, 0, _map.TileSize, Math.Max(1, _map.TileSize / 4), OneWay: true) : null);
+        SetTileCollision(OneWayToggle.IsChecked == true ? OneWayBox : null);
 
     IEnumerable<int> SelectedTiles()
     {
@@ -335,6 +336,10 @@ public partial class TilemapEditor
         for (int j = 0; j < _tsSel.Height; j++)
             for (int i = 0; i < _tsSel.Width; i++) yield return (_tsSel.Y + j) * ts.Columns + _tsSel.X + i;
     }
+
+    // the two usual collision boxes: the whole tile, or a thin top to jump through from below
+    TileCollision SolidBox => new(0, 0, _map.TileSize, _map.TileSize);
+    TileCollision OneWayBox => new(0, 0, _map.TileSize, Math.Max(1, _map.TileSize / 4), OneWay: true);
 
     /// <summary>Sets (or with null clears) the collision of every selected tileset tile.</summary>
     void SetTileCollision(TileCollision? c)

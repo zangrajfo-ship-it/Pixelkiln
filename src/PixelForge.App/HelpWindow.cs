@@ -36,6 +36,7 @@ static class HelpWindow
             ("Space", "Play animation (the chosen tag only)"), ("← →", "Previous / next frame"),
             ("Palette: Enter / Shift+Enter / Del", "Use as left / right color, remove"),
         ]),
+        /* simplified app: shortcuts of the switched-off modes
         ("Sprite › Paint (Ctrl+2)", [
             ("B N E A S I G", "Brush, pencil, eraser, airbrush, smudge, picker, gradient"),
             ("Alt+click", "Pick a colour"), ("X", "Swap primary and secondary colour"),
@@ -63,12 +64,14 @@ static class HelpWindow
             ("Preview at", "See a screen at another resolution; anchors move elements as in the game"),
             ("Ctrl+Shift+D", "Device preview of what you are editing (any mode)"),
         ]),
+        */
         ("Tilemap", [
             ("B E G I", "Paint, erase, fill, pick"), ("A", "Auto-tile terrain"), ("O", "Objects"),
             ("Shift (objects)", "Snap to tiles"), ("Del", "Delete selected object"),
             ("Tileset: arrows / Shift+arrows", "Select tile / several tiles"),
             ("Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / fit"), ("Ctrl+G", "Grid"),
         ]),
+        /* simplified app: shortcuts of the switched-off tabs and modes
         ("Scene", [
             ("V I A C", "Select, place object, draw area, set camera start"),
             ("Arrows / Shift+arrows", "Move selection by 1 px / one tile"), ("Shift (drag)", "Ignore tile snapping"),
@@ -112,7 +115,8 @@ static class HelpWindow
             ("Shift+← →", "Shorter / longer note"), ("+ / −", "Note volume"), ("Del", "Remove note"),
         ]),
         ("SFX", [("Space", "Play sound"), ("Preset buttons / Mutate", "Coin, jump, hit … / a variation of the current sound")]),
-        ("Learning", [("Help › Getting started", "Seven short lessons; each opens part of the sample game"), ("Help › Open sample game", "A small finished game to look inside and change")]),
+        */
+        ("Learning", [("Help › Getting started", "Three short lessons; each opens part of the sample game"), ("Help › Open sample game", "A small finished game to look inside and change")]),
     ];
 
     public static void Show(Window owner)

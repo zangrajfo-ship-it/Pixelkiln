@@ -84,18 +84,9 @@ public partial class MusicEditor : UserControl
         AnnounceCursor();
     }
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled song" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled song");
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current song?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "song", () => Save(_path));
 
     // ---------- note editing ----------
 
@@ -232,11 +223,16 @@ public partial class MusicEditor : UserControl
         ((RadioButton)FindName($"Ch{ch}")).IsChecked = true;
         RefreshInstrument();
         RedrawGrid();
-        if (Kit) Scroller.ScrollToVerticalOffset(StepsGrid.YOf((int)Drum.Crash) - 20);   // the drum rows are at the bottom
+        ScrollToDrums();
     }
 
     /// <summary>The drum channel with the kit on: rows are drums.</summary>
     bool Kit => _channel == (int)Channel.Noise && _song.Instruments[_channel].Kit;
+
+    void ScrollToDrums()
+    {
+        if (Kit) Scroller.ScrollToVerticalOffset(StepsGrid.YOf((int)Drum.Crash) - 20);   // the drum rows are at the bottom
+    }
 
     /// <summary>On the drum kit a click on any row places the nearest drum.</summary>
     int Snap(int note) => Kit ? (int)Drums.Of(note) : note;
@@ -302,7 +298,7 @@ public partial class MusicEditor : UserControl
             Snapshot();
             _song.Instruments[(int)Channel.Noise].Kit = _kitBox.IsChecked == true;
             RedrawGrid();
-            if (Kit) Scroller.ScrollToVerticalOffset(StepsGrid.YOf((int)Drum.Crash) - 20);
+            ScrollToDrums();
         };
         InstrumentPanel.Children.Add(_kitBox);
 
@@ -531,7 +527,6 @@ public partial class MusicEditor : UserControl
     }
 
     void OnSave(object? sender, RoutedEventArgs? e) => Save(_path);
-    void OnSaveAs(object sender, RoutedEventArgs e) => Save(null);
 
     bool Save(string? path)
     {

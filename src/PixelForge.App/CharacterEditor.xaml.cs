@@ -174,11 +174,7 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
         ThenBox.SelectedIndex = 0;
     }
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled character" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled character");
 
     // ---------- fields ----------
 
@@ -244,6 +240,14 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
         _char.Animations[name] = _sprite?.Tags.Any(t => t.Name == name) == true ? name : _sprite?.Tags.FirstOrDefault()?.Name ?? name;
         RefreshStates();
         StateBox.SelectedItem = name;
+    }
+
+    void DeleteSelectedBox()
+    {
+        if (_selBox is not { } b) return;
+        Snapshot();
+        _char.Boxes.Remove(b);
+        SelectBox(null);
     }
 
     void OnRemoveState(object sender, RoutedEventArgs e)
@@ -462,12 +466,7 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
         if (_selBox is not { } b) return;
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         int dx = e.Key == Key.Left ? -1 : e.Key == Key.Right ? 1 : 0, dy = e.Key == Key.Up ? -1 : e.Key == Key.Down ? 1 : 0;
-        if (e.Key == Key.Delete)
-        {
-            Snapshot();
-            _char.Boxes.Remove(b);
-            SelectBox(null);
-        }
+        if (e.Key == Key.Delete) DeleteSelectedBox();
         else if (dx != 0 || dy != 0)
         {
             Snapshot();
@@ -582,12 +581,7 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current character?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "character", () => Save(_path));
 
     public void OpenPath(string path, bool confirmed = false)
     {
@@ -632,7 +626,7 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
             new Separator(),
             Ui.Item("Add _standard states to sprite", null, Do(OnTemplate)),
             Ui.Item("Add s_tate…", null, Do(OnAddState)),
-            Ui.Item("_Delete selected box", "Del", () => { if (_selBox is { } b) { Snapshot(); _char.Boxes.Remove(b); SelectBox(null); } })),
+            Ui.Item("_Delete selected box", "Del", DeleteSelectedBox)),
         Ui.Menu("_Play",
             Ui.Item("_Play / stop", "Space", () => OnPlay(null, null))),
     ];

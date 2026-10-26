@@ -121,11 +121,7 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         Status.Text = p is null ? "Open a project (Project menu): scenes are built from project assets." : $"{_scene.Width}×{_scene.Height} px, {_scene.Instances.Count} objects, {_scene.Areas.Count} areas";
     }
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled scene" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled scene");
 
     // ---------- drawing ----------
 
@@ -295,17 +291,16 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
         }
     }
 
-    void ZoomStep(int dir)
+    void ZoomStep(int dir, Point? anchor = null)
     {
         int i = Array.IndexOf(Zooms, _zoom) + dir;
-        if (i >= 0 && i < Zooms.Length) SetZoom(Zooms[i]);
+        if (i >= 0 && i < Zooms.Length) SetZoom(Zooms[i], anchor);
     }
 
     void OnWheel(object sender, MouseWheelEventArgs e)
     {
         e.Handled = true;
-        int i = Array.IndexOf(Zooms, _zoom) + Math.Sign(e.Delta);
-        if (i >= 0 && i < Zooms.Length) SetZoom(Zooms[i], e.GetPosition(SceneCanvas));
+        ZoomStep(Math.Sign(e.Delta), e.GetPosition(SceneCanvas));
     }
 
     void OnZoomIn(object sender, RoutedEventArgs e) => ZoomStep(+1);
@@ -937,19 +932,12 @@ public partial class SceneEditor : UserControl, IEditor, IStyleSource
 
     // ---------- IEditor ----------
 
-    /// <summary>The scene being edited (for the game preview).</summary>
-    public Scene CurrentScene => _scene;
 
     public string[] FileExtensions => [".pxscene"];
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current scene?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "scene", () => Save(_path));
 
     public void OpenPath(string path, bool confirmed = false)
     {

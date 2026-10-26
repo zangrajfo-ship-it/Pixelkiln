@@ -50,3 +50,9 @@ interface IToolSelectable
     string CurrentToolName { get; }
     void SelectTool(string name);
 }
+
+/// <summary>Editors that can show what they are editing as one picture (for the device preview).</summary>
+interface IPictureSource
+{
+    (uint[] Pixels, int Width, int Height)? CurrentPicture { get; }
+}

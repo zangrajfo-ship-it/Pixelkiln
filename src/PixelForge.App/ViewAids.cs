@@ -278,7 +278,6 @@ sealed class Ruler : FrameworkElement
         double len = _o == Orientation.Horizontal ? ActualWidth : ActualHeight, origin = Origin(), s = _scale();
         dc.DrawRectangle((Brush?)TryFindResource("ControlFillColorDefaultBrush") ?? Brushes.DimGray, null, new Rect(0, 0, ActualWidth, ActualHeight));
         var pen = new Pen((Brush?)TryFindResource("MutedText") ?? Brushes.Gray, 1);
-        // tick step in document pixels: the smallest of 1, 2, 5, 10 … that is at least 6 screen pixels apart
         double step = TickStep(s);
         int first = (int)Math.Floor(-origin / s / step), last = (int)Math.Ceiling((len - origin) / s / step);
         var typeface = new Typeface("Segoe UI");

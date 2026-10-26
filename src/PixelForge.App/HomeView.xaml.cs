@@ -68,7 +68,7 @@ public partial class HomeView : UserControl
 
     void OnSizeTyped(object sender, TextChangedEventArgs e)
     {
-        if (!_syncing && CreateText is not null) SyncPresets();
+        if (!_syncing && CreateText is not null) SyncPresets();   // TextChanged already fires inside InitializeComponent, before CreateText exists
     }
 
     /// <summary>The preset matching the typed size is shown as chosen; the button says what will be made.</summary>
@@ -116,8 +116,11 @@ public partial class HomeView : UserControl
 
     // ---------- recent files ----------
 
-    /// <summary>File types this version edits: sprites (and images), characters, tilemaps, plus projects.</summary>
-    static readonly string[] Kinds = [".pxf", ".png", ".pxchar", ".pxm", Project.Extension];
+    /// <summary>File types this version edits (sprites and images, characters, tilemaps, projects) and their names on the cards.</summary>
+    static readonly Dictionary<string, string> Kinds = new()
+    {
+        [".pxf"] = "Sprite", [".png"] = "Image", [".pxchar"] = "Character", [".pxm"] = "Tilemap", [Project.Extension] = "Project",
+    };
 
     void OnSearch(object sender, TextChangedEventArgs e) => RefreshRecent();
 
@@ -126,7 +129,7 @@ public partial class HomeView : UserControl
         RecentPanel.Children.Clear();
         string q = SearchBox.Text.Trim();
         var files = App.Settings.RecentFiles
-            .Where(f => Kinds.Contains(System.IO.Path.GetExtension(f).ToLowerInvariant()) && File.Exists(f))
+            .Where(f => Kinds.ContainsKey(System.IO.Path.GetExtension(f).ToLowerInvariant()) && File.Exists(f))
             .Where(f => q.Length == 0 || System.IO.Path.GetFileName(f).Contains(q, StringComparison.OrdinalIgnoreCase))
             .ToList();
         foreach (var f in files) RecentPanel.Children.Add(Card(f));
@@ -157,7 +160,7 @@ public partial class HomeView : UserControl
         else thumbHost.Child = new PathIcon { Kind = "folder", Width = 40, Height = 40, StrokeWidth = 1.4 };
 
         var name = new TextBlock { Text = System.IO.Path.GetFileNameWithoutExtension(path), FontWeight = FontWeights.Medium, TextTrimming = TextTrimming.CharacterEllipsis };
-        var meta = new TextBlock { Text = $"{Kind(ext)} · {File.GetLastWriteTime(path):d. M. yyyy}", FontSize = 12, Margin = new Thickness(0, 4, 0, 0) };
+        var meta = new TextBlock { Text = $"{Kinds[ext]} · {File.GetLastWriteTime(path):d. M. yyyy}", FontSize = 12, Margin = new Thickness(0, 4, 0, 0) };
         meta.SetResourceReference(TextBlock.ForegroundProperty, "Text3Brush");
         var card = new Button
         {
@@ -165,15 +168,10 @@ public partial class HomeView : UserControl
             Template = (ControlTemplate)FindResource("CardTemplate"),
             Content = new DockPanel { Children = { Top(thumbHost), new StackPanel { Margin = new Thickness(14, 12, 14, 12), Children = { name, meta } } } },
         };
-        System.Windows.Automation.AutomationProperties.SetName(card, $"{System.IO.Path.GetFileName(path)}, {Kind(ext)}");
+        System.Windows.Automation.AutomationProperties.SetName(card, $"{System.IO.Path.GetFileName(path)}, {Kinds[ext]}");
         card.Click += (_, _) => { Hide(); OpenFile?.Invoke(path); };
         return card;
 
         static UIElement Top(UIElement e) { DockPanel.SetDock(e, Dock.Top); return e; }
     }
-
-    static string Kind(string ext) => ext switch
-    {
-        ".pxf" => "Sprite", ".png" => "Image", ".pxchar" => "Character", ".pxm" => "Tilemap", _ => "Project",
-    };
 }

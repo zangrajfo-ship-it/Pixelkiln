@@ -85,11 +85,7 @@ public partial class AudioStudio : UserControl, IEditor
     string StatusLine() => $"Playhead {_playheadMs / 1000.0:0.00} s · {_mix.Tracks.Count} tracks · {_mix.Tracks.Sum(t => t.Clips.Count)} clips"
                            + (_clip is not null ? $" · selected: {AssetName(_clip.AssetId)} at {_clip.StartMs / 1000.0:0.00} s" : "");
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled mix" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled mix");
 
     string AssetName(Guid id) => App.Project?.Find(id)?.Path ?? "missing asset";
 
@@ -574,7 +570,14 @@ public partial class AudioStudio : UserControl, IEditor
 
     Playlist? CurrentPlaylist => App.Project?.Settings.Playlists.ElementAtOrDefault(PlaylistBox.SelectedIndex);
 
-    void RefreshPlaylists(int? select = null)
+    void Rewind()
+    {
+        _playheadMs = 0;
+        MovePlayhead(0);
+        Status.Text = StatusLine();
+    }
+
+    void RefreshPlaylists(int? select = null, int item = -1)
     {
         _refreshing = true;
         var lists = App.Project?.Settings.Playlists ?? [];
@@ -582,7 +585,7 @@ public partial class AudioStudio : UserControl, IEditor
         PlaylistBox.ItemsSource = lists.Select(l => l.Name).ToList();
         PlaylistBox.SelectedIndex = lists.Count == 0 ? -1 : Math.Clamp(keep, 0, lists.Count - 1);
         _refreshing = false;
-        RefreshPlaylistItems();
+        RefreshPlaylistItems(item);
     }
 
     void RefreshPlaylistItems(int select = -1)
@@ -602,8 +605,7 @@ public partial class AudioStudio : UserControl, IEditor
     {
         try { App.Project?.Save(); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Ui.Error(ex); }
-        RefreshPlaylists(select);
-        RefreshPlaylistItems(item);
+        RefreshPlaylists(select, item);
     }
 
     void OnPlaylistChosen(object sender, SelectionChangedEventArgs e) { if (!_refreshing) RefreshPlaylistItems(); }
@@ -733,12 +735,7 @@ public partial class AudioStudio : UserControl, IEditor
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current mix?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "mix", () => Save(_path));
 
     public void OpenPath(string path, bool confirmed = false)
     {
@@ -785,7 +782,7 @@ public partial class AudioStudio : UserControl, IEditor
         Ui.Menu("_Play",
             Ui.Item("_Play / stop", "Space", () => OnPlay(null, null)),
             Ui.Toggle("_Loop region", "L", LoopToggle),
-            Ui.Item("Playhead to _start", "Home", () => { _playheadMs = 0; MovePlayhead(0); Status.Text = StatusLine(); })),
+            Ui.Item("Playhead to _start", "Home", Rewind)),
     ];
 
     public void HandleKey(KeyEventArgs e)
@@ -807,7 +804,7 @@ public partial class AudioStudio : UserControl, IEditor
             case Key.Space: OnPlay(null, null); break;
             case Key.L: LoopToggle.IsChecked = LoopToggle.IsChecked != true; break;
             case Key.S: OnSplit(null, null); break;
-            case Key.Home: _playheadMs = 0; MovePlayhead(0); Status.Text = StatusLine(); break;
+            case Key.Home: Rewind(); break;
             case Key.Delete: OnDeleteClip(null, null); break;
             case Key.Left: NudgeClip(shift ? -100 : -10); break;
             case Key.Right: NudgeClip(shift ? 100 : 10); break;

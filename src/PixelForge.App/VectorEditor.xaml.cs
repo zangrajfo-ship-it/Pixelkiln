@@ -92,11 +92,7 @@ public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSel
         UpdateTitle();
     }
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled drawing" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled drawing");
 
     // ---------- drawing ----------
 
@@ -314,10 +310,12 @@ public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSel
         }
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift), alt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
         double dx = _aids.Snap(p.X, true, _zoom) - _from.X, dy = _aids.Snap(p.Y, false, _zoom) - _from.Y;
+        // the first real movement (2 screen px) of a drag takes the undo snapshot
         if (_drag is DragKind.Move or DragKind.Scale or DragKind.Node or DragKind.HandleIn or DragKind.HandleOut && !_dragSnapshot)
         {
-            if ((p - _from).Length < Px(2) && !_dragSnapshot) return;
-            if (!_dragSnapshot) { Snapshot(); _dragSnapshot = true; }
+            if ((p - _from).Length < Px(2)) return;
+            Snapshot();
+            _dragSnapshot = true;
         }
         switch (_drag)
         {
@@ -523,9 +521,7 @@ public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSel
     void Recolor(VShape s)
     {
         if (s.Kind == VShapeKind.Group) { foreach (var c in s.Children) Recolor(c); return; }
-        s.Fill = FillFor(VectorGeometry.Bounds(s));
-        s.Stroke = StrokeBox.IsChecked == true ? VPaint.Solid(_strokeColor) : null;
-        s.StrokeWidth = StrokeWidth;
+        ApplyLook(s, line: false);
     }
 
     void RefreshProps()
@@ -546,15 +542,26 @@ public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSel
             OpacitySlider.Value = s.Opacity;
         }
         FillKindBox.SelectedItem = _fillKind;
-        Picker.Color = EditStroke.IsChecked == true ? _strokeColor : EditFill2.IsChecked == true ? _fill2 : _fill1;
+        Picker.Color = TargetColor;
         _refreshing = false;
     }
 
     void OnColorTarget(object sender, RoutedEventArgs e)
     {
         _refreshing = true;
-        Picker.Color = EditStroke.IsChecked == true ? _strokeColor : EditFill2.IsChecked == true ? _fill2 : _fill1;
+        Picker.Color = TargetColor;
         _refreshing = false;
+    }
+
+    /// <summary>The color the picker edits: stroke, second gradient color or fill.</summary>
+    uint TargetColor => EditStroke.IsChecked == true ? _strokeColor : EditFill2.IsChecked == true ? _fill2 : _fill1;
+
+    void SelectAll()
+    {
+        _sel.Clear();
+        _sel.AddRange(_doc.Shapes.Select(s => s.Id));
+        RefreshProps();
+        Rebuild();
     }
 
     void OnPickerColor(uint c)
@@ -862,7 +869,7 @@ public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSel
         bool crisp = f[2].StartsWith("Crisp");
         try
         {
-            var images = sizes.Select(n => SizeFor(n) is var (w, h) ? (Px: VectorGeometry.Rasterize(_doc, w, h, crisp), W: w, H: h, N: n) : default).ToList();
+            var images = sizes.Select(n => { var (w, h) = SizeFor(n); return (Px: VectorGeometry.Rasterize(_doc, w, h, crisp), W: w, H: h, N: n); }).ToList();
             if (f[1] == "One sprite sheet")
             {
                 int sw = images.Sum(i => i.W), sh = images.Max(i => i.H);
@@ -928,12 +935,7 @@ public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSel
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current drawing?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "drawing", () => Save(_path));
 
     public void OpenPath(string path, bool confirmed = false)
     {
@@ -991,7 +993,7 @@ public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSel
             Ui.Item("_Undo", "Ctrl+Z", Do(OnUndo)),
             Ui.Item("_Redo", "Ctrl+Y", Do(OnRedo)),
             new Separator(),
-            Ui.Item("Select _all", "Ctrl+A", () => { _sel.Clear(); _sel.AddRange(_doc.Shapes.Select(s => s.Id)); RefreshProps(); Rebuild(); }),
+            Ui.Item("Select _all", "Ctrl+A", SelectAll),
             Ui.Item("_Duplicate", "Ctrl+D", Duplicate),
             Ui.Item("De_lete", "Del", DeleteSelected)),
         Ui.Menu("_Object",
@@ -1027,7 +1029,7 @@ public partial class VectorEditor : UserControl, IEditor, IStyleSource, IToolSel
             case Key.N when ctrl: OnNew(null, null); break;
             case Key.O when ctrl: OnOpen(null, null); break;
             case Key.E when ctrl: OnExportPng(null, null); break;
-            case Key.A when ctrl: _sel.Clear(); _sel.AddRange(_doc.Shapes.Select(s => s.Id)); RefreshProps(); Rebuild(); break;
+            case Key.A when ctrl: SelectAll(); break;
             case Key.D when ctrl: Duplicate(); break;
             case Key.G when ctrl && shift: OnUngroup(null, null); break;
             case Key.G when ctrl: OnGroup(null, null); break;

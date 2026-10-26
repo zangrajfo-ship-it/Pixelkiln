@@ -111,7 +111,7 @@ sealed class StepGrid : FrameworkElement
         var notes = pat.Notes[ch];
         for (int s = 0; s < notes.Length; s++)
         {
-            if (notes[s] < 0 || notes[s] < SongT.MinNote || notes[s] > SongT.MaxNote) continue;
+            if (notes[s] < SongT.MinNote || notes[s] > SongT.MaxNote) continue;   // also skips empty steps (negative)
             int len = pat.Length(ch, s);
             dc.DrawRectangle(brush, null, new Rect(LabelW + s * CellW + inset, RowY(notes[s]) + inset, len * CellW - 2 * inset, CellH - 2 * inset));
         }

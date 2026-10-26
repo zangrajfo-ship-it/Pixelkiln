@@ -7,12 +7,6 @@ using PixelForge.Core;
 
 namespace PixelForge.App;
 
-/// <summary>Editors that can show what they are editing as one picture (for the device preview).</summary>
-interface IPictureSource
-{
-    (uint[] Pixels, int Width, int Height)? CurrentPicture { get; }
-}
-
 /// <summary>
 /// Device preview (View, Ctrl+Shift+D): the current picture inside the game's view as a phone, tablet or monitor would
 /// show it (whole-number scaling, like a pixel-perfect game), with the real on-screen size in pixels and centimetres.

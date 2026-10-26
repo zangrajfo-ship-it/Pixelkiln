@@ -89,18 +89,9 @@ public partial class TilemapEditor : UserControl
 
     void OnCollisionToggle(object sender, RoutedEventArgs e) => RenderCollision();
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled map" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled map");
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current map?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "map", () => Save(_path));
 
     // ---------- zoom / grid ----------
 
@@ -314,7 +305,6 @@ public partial class TilemapEditor : UserControl
     }
 
     void OnSave(object? sender, RoutedEventArgs? e) => Save(_path);
-    void OnSaveAs(object sender, RoutedEventArgs e) => Save(null);
 
     bool Save(string? path)
     {

@@ -274,11 +274,7 @@ static class TemplateStudio
             Directory.CreateDirectory(root);
             var p = Project.Create(root, "preview");
             var r = TemplateEngine.Create(t, null, p, "", fullKit: true);
-            if (AssetKinds.Of(r.Primary.Type).Picture?.Invoke(p.FullPath(r.Primary), p) is not var (px, w, h)) return null;
-            var (tp, tw, th) = AssetInfo.Thumbnail(px, w, h, 480);
-            var bmp = ImageIO.ToBitmap(tp, tw, th);
-            bmp.Freeze();
-            return bmp;
+            return AssetItem.Make(r.Primary.Type, p.FullPath(r.Primary), p, 480);
         }
         catch (Exception ex) when (ex is InvalidDataException or IOException or ArgumentException or UnauthorizedAccessException or FormatException) { return null; }
         finally

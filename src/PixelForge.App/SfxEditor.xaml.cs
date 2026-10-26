@@ -153,18 +153,9 @@ public partial class SfxEditor : UserControl
 
     const string SfxFilter = "PixelForge sound (*.sfx)|*.sfx";
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled sound" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled sound");
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current sound?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "sound", () => Save(_path));
 
     void OnOpen(object? sender, RoutedEventArgs? e)
     {
@@ -208,7 +199,6 @@ public partial class SfxEditor : UserControl
     }
 
     void OnSave(object? sender, RoutedEventArgs? e) => Save(_path);
-    void OnSaveAs(object sender, RoutedEventArgs e) => Save(null);
 
     bool Save(string? path)
     {

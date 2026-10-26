@@ -47,8 +47,8 @@ public partial class TilemapEditor : IEditor
             Ui.Item("_Preview selection repeated", null, PreviewRepeat),
             Ui.Item("_Generate tileset from seed…", null, GenerateTileset),
             new Separator(),
-            Ui.Item("Make selected tiles _solid", null, () => SetTileCollision(new TileCollision(0, 0, _map.TileSize, _map.TileSize))),
-            Ui.Item("Make selected tiles _one-way platforms", null, () => SetTileCollision(new TileCollision(0, 0, _map.TileSize, Math.Max(1, _map.TileSize / 4), OneWay: true))),
+            Ui.Item("Make selected tiles _solid", null, () => SetTileCollision(SolidBox)),
+            Ui.Item("Make selected tiles _one-way platforms", null, () => SetTileCollision(OneWayBox)),
             Ui.Item("Custom _collision box…", null, CustomTileCollision),
             Ui.Item("C_lear collision of selected tiles", null, () => SetTileCollision(null))),
         Ui.Menu("_View",
@@ -65,11 +65,7 @@ public partial class TilemapEditor : IEditor
             Ui.Item("Move d_own", null, Do(OnLayerDown))),
     ];
 
-    void OnTilesetMenu(object sender, RoutedEventArgs e)
-    {
-        TilesetMenuBtn.ContextMenu.PlacementTarget = TilesetMenuBtn;
-        TilesetMenuBtn.ContextMenu.IsOpen = true;
-    }
+    void OnTilesetMenu(object sender, RoutedEventArgs e) => Ui.ShowContextMenu(sender);
 
     void OnZoomIn(object sender, RoutedEventArgs e) => ZoomStep(+1);
     void OnZoomOut(object sender, RoutedEventArgs e) => ZoomStep(-1);
