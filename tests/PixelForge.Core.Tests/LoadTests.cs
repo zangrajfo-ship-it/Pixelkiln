@@ -6,12 +6,10 @@ namespace PixelForge.Core.Tests;
 /// <summary>Big documents and projects. Limits are generous (slow CI machines); they catch order-of-magnitude regressions.</summary>
 [Trait("Category", "Load")]
 [Collection("Load")]
-public sealed class LoadTests : IDisposable
+public sealed class LoadTests() : TempDirTest("load")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-load-" + Guid.NewGuid().ToString("N"));
-
-    public LoadTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
+    /// <summary>Undo cost of a sprite snapshot: 4 bytes per pixel of every cel.</summary>
+    static long Bytes(Sprite x) => 4L * x.Width * x.Height * x.Layers.Count * x.Frames.Count;
 
     static long Ms(Action a)
     {
@@ -36,13 +34,13 @@ public sealed class LoadTests : IDisposable
         var s = new Sprite(512, 512);
         for (int i = 1; i < 32; i++) s.AddFrame(i);   // 32 MB per snapshot
         long size = 4L * 512 * 512 * 32;
-        var h = new History<Sprite>(x => x.Clone(), 100, x => 4L * x.Width * x.Height * x.Layers.Count * x.Frames.Count, maxBytes: 256L * 1024 * 1024);
+        var h = new History<Sprite>(x => x.Clone(), 100, Bytes, maxBytes: 256L * 1024 * 1024);
         for (int i = 0; i < 20; i++) h.Push(s);
         Assert.InRange(h.Bytes, size, 256L * 1024 * 1024);
         Assert.Equal(8, h.UndoCount);
         Assert.NotNull(h.Undo(s));
 
-        var huge = new History<Sprite>(x => x.Clone(), 100, x => 4L * x.Width * x.Height * x.Layers.Count * x.Frames.Count, maxBytes: 1);
+        var huge = new History<Sprite>(x => x.Clone(), 100, Bytes, maxBytes: 1);
         huge.Push(s);
         huge.Push(s);
         Assert.Equal(1, huge.UndoCount);   // over budget, but the newest step is kept so Ctrl+Z still works

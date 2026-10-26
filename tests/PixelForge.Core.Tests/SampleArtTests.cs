@@ -22,6 +22,7 @@ public sealed class SampleArtTests
     }
 
     /// <summary>PF_ART_PREVIEW=folder writes every sample frame side by side, enlarged 4×, for a look.</summary>
+    [Trait("Category", "Tool")]   // a helper for people, not a check: without its variable it passes doing nothing
     [Fact]
     public void Write_preview()
     {

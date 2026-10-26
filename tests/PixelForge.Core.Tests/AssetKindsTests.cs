@@ -2,15 +2,8 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class AssetKindsTests : IDisposable
+public sealed class AssetKindsTests() : TempDirTest("kinds")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-kinds-" + Guid.NewGuid().ToString("N"));
-
-    public AssetKindsTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
-    string P(string name) => Path.Combine(_dir, name);
-
     [Fact]
     public void Every_type_is_registered_once_with_its_extensions()
     {

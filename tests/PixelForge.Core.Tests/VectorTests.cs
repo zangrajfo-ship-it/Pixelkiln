@@ -3,13 +3,8 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class VectorTests : IDisposable
+public sealed class VectorTests() : TempDirTest("vec")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-vec-" + Guid.NewGuid().ToString("N"));
-
-    public VectorTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
     static VShape Rect(double x, double y, double w, double h, uint c = 0xFFFF0000) =>
         new() { Kind = VShapeKind.Rect, X = x, Y = y, W = w, H = h, Fill = VPaint.Solid(c) };
 
@@ -188,6 +183,6 @@ public sealed class VectorTests : IDisposable
         Assert.Contains("sky.svg", godot.Files.Keys);
         Assert.Contains("hills.png", godot.Files.Keys);
         var generic = Exporter.Plan(p, new ExportProfile { Target = ExportTarget.Generic, OutputFolder = "export/g" });
-        Assert.Contains("\"hills.png\"", System.Text.Encoding.UTF8.GetString(generic.Files["level_scene.json"]));
+        Assert.Contains("\"hills.png\"", generic.Text("level_scene.json"));
     }
 }

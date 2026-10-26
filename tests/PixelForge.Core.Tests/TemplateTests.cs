@@ -3,13 +3,8 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class TemplateTests : IDisposable
+public sealed class TemplateTests() : TempDirTest("tpl")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-tpl-" + Guid.NewGuid().ToString("N"));
-
-    public TemplateTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
     Project NewProject(string name = "game")
     {
         string root = Path.Combine(_dir, name);
@@ -153,6 +148,7 @@ public sealed class TemplateTests : IDisposable
     }
 
     /// <summary>Pictures of what the built-in templates make (only with PF_PREVIEW_DIR set; for looking, not asserting).</summary>
+    [Trait("Category", "Tool")]   // a helper for people, not a check: without its variable it passes doing nothing
     [Fact]
     public void WriteTemplatePreviews()
     {

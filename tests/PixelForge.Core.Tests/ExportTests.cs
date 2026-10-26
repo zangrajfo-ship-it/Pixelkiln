@@ -1,19 +1,11 @@
 using System.IO.Compression;
-using System.Text;
 using System.Text.Json;
 using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class ExportTests : IDisposable
+public sealed class ExportTests() : TempDirTest("export")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-export-" + Guid.NewGuid().ToString("N"));
-
-    public ExportTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
-    string P(string name) => Path.Combine(_dir, name);
-
     /// <summary>Small game: sprite with tags, map with collisions, player character, parallax sky, music mix with a loop, one level.</summary>
     Project Game()
     {
@@ -72,8 +64,6 @@ public sealed class ExportTests : IDisposable
         return p;
     }
 
-    static string Text(ExportResult r, string rel) => Encoding.UTF8.GetString(r.Files[rel]);
-
     [Fact]
     public void Godot_export_writes_sprite_frames_tileset_character_and_level()
     {
@@ -81,29 +71,29 @@ public sealed class ExportTests : IDisposable
         var r = Exporter.Plan(p, new ExportProfile());
         Assert.True(r.Ok, string.Join("\n", r.Errors));
 
-        var frames = Text(r, "chars/hero.tres");
+        var frames = r.Text("chars/hero.tres");
         Assert.StartsWith("[gd_resource type=\"SpriteFrames\" load_steps=5 format=3]", frames);
         Assert.Contains("[ext_resource type=\"Texture2D\" path=\"res://assets/chars/hero.png\" id=\"1\"]", frames);
         Assert.Contains("\"name\": &\"run\",\n\"speed\": 10.0", frames);         // shortest frame 100 ms → 10 fps
         Assert.Contains("\"duration\": 2.0", frames);                           // the 200 ms frame
 
-        var tiles = Text(r, "ground_tileset.tres");
+        var tiles = r.Text("ground_tileset.tres");
         Assert.Contains("1:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4.0, -4.0, 4.0, -4.0, 4.0, 4.0, -4.0, 4.0)", tiles);
         Assert.Contains("0:0/0/physics_layer_1/polygon_0/one_way = true", tiles);
         Assert.Contains("physics_layer_0/collision_layer = 1", tiles);          // category 0
         Assert.Contains("physics_layer_1/collision_layer = 4", tiles);          // category 2
         // cell (x 0, y 1) with atlas tile 3 of a 2-column atlas = atlas (1, 1)
         Assert.Equal([1 << 16, 1 << 16, 1], GodotExport.CellData(new MapLayer { Tiles = [-1, -1, -1, -1, 3, -1, -1, -1] }, 4, 2));
-        Assert.Contains("[node name=\"door\" type=\"Area2D\" parent=\".\"]", Text(r, "ground.tscn"));
+        Assert.Contains("[node name=\"door\" type=\"Area2D\" parent=\".\"]", r.Text("ground.tscn"));
 
-        var ch = Text(r, "chars/hero_character.tscn");
+        var ch = r.Text("chars/hero_character.tscn");
         Assert.Contains("type=\"CharacterBody2D\"", ch);
         Assert.Contains("collision_layer = 2\ncollision_mask = 5", ch);
         Assert.Contains("offset = Vector2(-4.0, -8.0)", ch);
         Assert.Contains("metadata/speed = \"120\"", ch);
         Assert.Contains("\"kind\": \"Hurt\"", ch);
 
-        var level = Text(r, "level1.tscn");
+        var level = r.Text("level1.tscn");
         Assert.Contains("type=\"Parallax2D\"", level);
         Assert.Contains("scroll_scale = Vector2(0.5, 1.0)", level);
         Assert.Contains("repeat_size = Vector2(32.0, 0.0)", level);

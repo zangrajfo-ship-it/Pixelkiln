@@ -2,15 +2,8 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class AudioTests : IDisposable
+public sealed class AudioTests() : TempDirTest("audio")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-audio-" + Guid.NewGuid().ToString("N"));
-
-    public AudioTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
-    string P(string name) => Path.Combine(_dir, name);
-
     static float[] Ramp(int n) => Enumerable.Range(0, n).Select(i => (float)i / n).ToArray();
 
     [Fact]
