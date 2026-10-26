@@ -2,14 +2,9 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class MotionTests : IDisposable
+public sealed class MotionTests() : TempDirTest("motion")
 {
     const uint R = 0xFFFF0000, B = 0xFF0000FF, G = 0xFF00FF00;
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-motion-" + Guid.NewGuid().ToString("N"));
-
-    public MotionTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-    string P(string name) => Path.Combine(_dir, name);
 
     static AnimClip Slide(AnimPlay play, bool reverse = false) => new()
     {
@@ -168,8 +163,7 @@ public sealed class MotionTests : IDisposable
 
         var r = Exporter.Plan(p, new ExportProfile());
         Assert.True(r.Ok, string.Join("\n", r.Errors));
-        string Text(string end) => System.Text.Encoding.UTF8.GetString(r.Files.Single(f => f.Key.EndsWith(end)).Value);
-        string level = Text("level.tscn"), guy = Text("rig_character.tscn");
+        string level = r.TextEnding("level.tscn"), guy = r.TextEnding("rig_character.tscn");
         Assert.Contains("NodePath(\".:position\")", level);
         Assert.Contains("Vector2(54.0, 0.0)", level);                  // slide at 0.5 s: 4 + 50
         Assert.Contains("NodePath(\".:offset\")", level);              // camera shake
@@ -179,14 +173,14 @@ public sealed class MotionTests : IDisposable
         Assert.DoesNotContain("AnimatedSprite2D", guy);
 
         var g = Exporter.Plan(p, new ExportProfile { Target = ExportTarget.Generic });
-        string gs = System.Text.Encoding.UTF8.GetString(g.Files.Single(f => f.Key.EndsWith("level_scene.json")).Value);
+        string gs = g.TextEnding("level_scene.json");
         Assert.Contains("\"clip\": \"slide\"", gs);
         Assert.Contains("moves.json", gs);
-        Assert.Contains("\"pivot\"", System.Text.Encoding.UTF8.GetString(g.Files.Single(f => f.Key.EndsWith("rig_character.json")).Value));
+        Assert.Contains("\"pivot\"", g.TextEnding("rig_character.json"));
     }
 
     [Fact]
-    public void Ui_elements_and_the_camera_play_clips()
+    public void Ui_elements_play_clips_and_the_camera_clip_round_trips()
     {
         var (p, _, anim) = Setup();
         var kit = UiKit.Starter(UiKit.Styles["Minimal"], ["HUD"], 200, 40);

@@ -1,15 +1,9 @@
-using System.Text;
 using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class UiTests : IDisposable
+public sealed class UiTests() : TempDirTest("ui")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-ui-" + Guid.NewGuid().ToString("N"));
-
-    public UiTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
     static UiKit Kit() => UiKit.Starter(UiKit.Styles["Fantasy"], UiKit.ScreenNames, 320, 180);
 
     [Fact]
@@ -90,20 +84,20 @@ public sealed class UiTests : IDisposable
 
         var godot = Exporter.Plan(p, new ExportProfile { Scales = [2] });
         Assert.True(godot.Ok, string.Join("; ", godot.Errors));
-        string theme = Encoding.UTF8.GetString(godot.Files.Single(f => f.Key.EndsWith("_theme.tres")).Value);
+        string theme = godot.TextEnding("_theme.tres");
         foreach (var s in new[] { "normal", "hover", "pressed", "disabled" }) Assert.Contains($"Button/styles/{s} = SubResource", theme);
         Assert.Contains("texture_margin_left = 4.0", theme);
-        string screen = Encoding.UTF8.GetString(godot.Files.Single(f => f.Key.EndsWith("_hud.tscn")).Value);
+        string screen = godot.TextEnding("_hud.tscn");
         Assert.Contains("type=\"ProgressBar\"", screen);
         Assert.Contains("anchor_left = 1.0", screen);                          // top-right icon
-        string level = Encoding.UTF8.GetString(godot.Files["level.tscn"].AsSpan());
+        string level = godot.Text("level.tscn");
         Assert.Contains("type=\"CanvasLayer\"", level);
         Assert.Contains("_hud.tscn", level);
         Assert.Contains(godot.Files.Keys, k => k.EndsWith("_ui/button_hover.png"));
 
         var generic = Exporter.Plan(p, new ExportProfile { Target = ExportTarget.Generic, OutputFolder = "export/g" });
         Assert.Contains(generic.Files.Keys, k => k.EndsWith("_ui.json"));
-        Assert.Contains("\"anchor\": \"TopRight\"", Encoding.UTF8.GetString(generic.Files.Single(f => f.Key.EndsWith("_ui.json")).Value));
+        Assert.Contains("\"anchor\": \"TopRight\"", generic.TextEnding("_ui.json"));
     }
 
     [Fact]

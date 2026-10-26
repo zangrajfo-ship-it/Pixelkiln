@@ -4,15 +4,8 @@ using PixelForge.Core;
 namespace PixelForge.Core.Tests;
 
 /// <summary>Each test works in its own temporary folder.</summary>
-public sealed class ProjectTests : IDisposable
+public sealed class ProjectTests() : TempDirTest("proj")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-proj-" + Guid.NewGuid().ToString("N"));
-
-    public ProjectTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
-    string P(params string[] parts) => Path.Combine([_dir, .. parts]);
-
     string NewSprite(string rel)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(P(rel))!);
@@ -187,13 +180,8 @@ public sealed class ProjectTests : IDisposable
     }
 }
 
-public sealed class AssetInfoTests : IDisposable
+public sealed class AssetInfoTests() : TempDirTest("info")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-info-" + Guid.NewGuid().ToString("N"));
-
-    public AssetInfoTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
     [Fact]
     public void Describes_each_type_and_damaged_or_missing_files()
     {

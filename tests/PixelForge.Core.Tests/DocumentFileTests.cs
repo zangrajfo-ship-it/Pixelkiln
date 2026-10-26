@@ -1,16 +1,10 @@
 using PixelForge.Core;
+using static PixelForge.Core.Tests.TestFiles;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class DocumentFileTests : IDisposable
+public sealed class DocumentFileTests() : TempDirTest("doc")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-doc-" + Guid.NewGuid().ToString("N"));
-
-    public DocumentFileTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
-    static string Fixture(string name) => Path.Combine(AppContext.BaseDirectory, "Fixtures", name);
-
     [Fact]
     public void Failed_write_leaves_the_original_untouched()
     {

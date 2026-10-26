@@ -2,14 +2,8 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class LogicTests : IDisposable
+public sealed class LogicTests() : TempDirTest("logic")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-logic-" + Guid.NewGuid().ToString("N"));
-
-    public LogicTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-    string P(string name) => Path.Combine(_dir, name);
-
     /// <summary>Builds a graph from (id, kind, params) nodes and "from.port>to" links.</summary>
     static LogicGraph G(IEnumerable<(string Id, LogicKind Kind, string Params)> nodes, params string[] links)
     {
@@ -204,17 +198,17 @@ public sealed class LogicTests : IDisposable
         var (p, _, _, _) = Game(g);
         var r = Exporter.Plan(p, new ExportProfile());
         Assert.True(r.Ok, string.Join("\n", r.Errors));
-        string gd = System.Text.Encoding.UTF8.GetString(r.Files["level_logic.gd"]);
+        string gd = r.Text("level_logic.gd");
         foreach (var part in new[] { "extends Node", "func _n_s() -> void:", "await get_tree().create_timer(0.25).timeout", "res://assets/ding.wav", "wait_time = 1.5",
                      "one_shot = false", "if float(vars.get(\"coins\", 0.0)) >= 3.0:", "change_scene_to_file(\"res://assets/next.tscn\")", "body_entered.connect(_entered_n_exit)",
                      "distance_to(", "return _obj(\"Hero\")", "if n == \"Hero\" and s == \"idle\":" })
             Assert.Contains(part, gd);
         Assert.DoesNotContain("\r", gd);
-        Assert.Contains("path=\"res://assets/level_logic.gd\"", System.Text.Encoding.UTF8.GetString(r.Files["level.tscn"]));
+        Assert.Contains("path=\"res://assets/level_logic.gd\"", r.Text("level.tscn"));
 
         var gen = Exporter.Plan(p, new ExportProfile { Target = ExportTarget.Generic });
         Assert.Contains("rules_logic.json", gen.Files.Keys);
-        Assert.Contains("\"logic\": \"rules_logic.json\"", System.Text.Encoding.UTF8.GetString(gen.Files["level_scene.json"]));
+        Assert.Contains("\"logic\": \"rules_logic.json\"", gen.Text("level_scene.json"));
         Assert.Contains(p.Assets.First(a => a.Path == "ding.sfx").Id, AssetKinds.Of(AssetType.Logic).References!(P("rules.pxlogic")));
     }
 }
