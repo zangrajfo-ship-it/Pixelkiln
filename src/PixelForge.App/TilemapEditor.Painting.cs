@@ -220,7 +220,7 @@ public partial class TilemapEditor
     void SetStamp(int[] stamp, int w, int h)
     {
         (_stamp, _sw, _sh) = (stamp, w, h);
-        if (_map.Tileset is not { } ts) { StampPreview.Source = null; return; }
+        if (_map.Tileset is not { } ts) { BrushPreview.Source = StampPreview.Source = null; return; }
         int t = ts.TileSize, pw = w * t;
         var px = new uint[pw * h * t];
         for (int j = 0; j < h; j++)
@@ -231,7 +231,7 @@ public partial class TilemapEditor
                 var tile = ts.Tile(idx);
                 for (int y = 0; y < t; y++) Array.Copy(tile, y * t, px, (j * t + y) * pw + i * t, t);
             }
-        StampPreview.Source = ImageIO.ToBitmap(px, pw, h * t);
+        BrushPreview.Source = StampPreview.Source = ImageIO.ToBitmap(px, pw, h * t);
     }
 
     void UpdateStampPreview(int x, int y)
@@ -249,7 +249,7 @@ public partial class TilemapEditor
 
     // ---------- tileset ----------
 
-    int TilesetScale => _map.Tileset is { } ts ? Math.Clamp(240 / ts.Width, 1, 8) : 1;
+    int TilesetScale => _map.Tileset is { } ts ? Math.Clamp(264 / ts.Width, 1, 8) : 1;   // fills the 297 px panel
 
     void RefreshTileset()
     {
@@ -258,9 +258,14 @@ public partial class TilemapEditor
             TilesetImage.Source = null;
             TilesetHost.Width = TilesetHost.Height = 0;
             SelectionRect.Visibility = Visibility.Collapsed;
-            StampPreview.Source = null;
+            BrushPreview.Source = StampPreview.Source = null;
+            TilesetName.Text = "No tileset";
+            UpdateTileProps();
             return;
         }
+        string name = _map.TilesetSource is { } src ? System.IO.Path.GetFileName(src)
+            : _map.TilesetAssetId is Guid id && App.Project?.Find(id) is { } asset ? System.IO.Path.GetFileName(asset.Path) : "Embedded";
+        TilesetName.Text = $"{name} · {ts.TileSize} px · {ts.Count} tiles";
         int s = TilesetScale;
         TilesetImage.Source = ImageIO.ToBitmap(ts.Pixels, ts.Width, ts.Height);
         TilesetHost.Width = ts.Width * s;
@@ -292,7 +297,37 @@ public partial class TilemapEditor
             Canvas.SetTop(r, (tile / ts.Columns * ts.TileSize + c.Y) * s);
             CollisionMarks.Children.Add(r);
         }
+        UpdateTileProps();
+        if (_bmp is not null) RenderCollision();
     }
+
+    /// <summary>TILE PROPERTIES: the first selected tileset tile, its number and collision.</summary>
+    void UpdateTileProps()
+    {
+        bool has = _map.Tileset is not null;
+        SolidToggle.IsEnabled = OneWayToggle.IsEnabled = has;
+        if (_map.Tileset is not { } ts)
+        {
+            TilePreview.Source = null;
+            (TileTitle.Text, TileInfo.Text) = ("No tile", "Load a tileset");
+            SolidToggle.IsChecked = OneWayToggle.IsChecked = false;
+            return;
+        }
+        var sel = SelectedTiles().ToList();
+        int first = sel[0];
+        TilePreview.Source = ImageIO.ToBitmap(ts.Tile(first), ts.TileSize, ts.TileSize);
+        TileTitle.Text = sel.Count == 1 ? $"Tile #{first + 1}" : $"{sel.Count} tiles";
+        TileInfo.Text = $"ID #{first + 1} · {ts.TileSize}×{ts.TileSize}";
+        // checked only when every selected tile has it, so a click sets it for all of them
+        SolidToggle.IsChecked = sel.All(t => _map.TileCollisions.GetValueOrDefault(t) is { OneWay: false });
+        OneWayToggle.IsChecked = sel.All(t => _map.TileCollisions.GetValueOrDefault(t) is { OneWay: true });
+    }
+
+    void OnSolidToggle(object sender, RoutedEventArgs e) =>
+        SetTileCollision(SolidToggle.IsChecked == true ? new TileCollision(0, 0, _map.TileSize, _map.TileSize) : null);
+
+    void OnOneWayToggle(object sender, RoutedEventArgs e) =>
+        SetTileCollision(OneWayToggle.IsChecked == true ? new TileCollision(0, 0, _map.TileSize, Math.Max(1, _map.TileSize / 4), OneWay: true) : null);
 
     IEnumerable<int> SelectedTiles()
     {
@@ -392,6 +427,7 @@ public partial class TilemapEditor
         for (int j = 0; j < r.Height; j++)
             for (int i = 0; i < r.Width; i++) stamp[j * r.Width + i] = (r.Y + j) * ts.Columns + r.X + i;
         SetStamp(stamp, r.Width, r.Height);
+        UpdateTileProps();
         System.Windows.Automation.AutomationProperties.SetItemStatus(TilesetHost,
             r.Width * r.Height == 1 ? $"Tile {stamp[0] + 1} of {ts.Count}" : $"{r.Width} by {r.Height} tiles from tile {stamp[0] + 1}");
     }

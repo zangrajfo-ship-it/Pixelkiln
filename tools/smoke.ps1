@@ -229,6 +229,21 @@ try {
             Start-Sleep -Milliseconds 500
         }
     }
+    # start screen: the logo opens it, it lists presets, its close button hides it again
+    $logo = Find-All $root ([System.Windows.Automation.ControlType]::Button) | Where-Object { $_.Current.Name -eq 'Start screen' } | Select-Object -First 1
+    if (-not $logo) { $failures += 'start screen button missing' }
+    else {
+        $logo.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep 1
+        $presets = @(Find-All $root ([System.Windows.Automation.ControlType]::RadioButton) | Where-Object { $_.Current.Name -like '* by * pixels*' -and -not $_.Current.IsOffscreen })
+        $close = Find-All $root ([System.Windows.Automation.ControlType]::Button) | Where-Object { $_.Current.Name -eq 'Close start screen' -and -not $_.Current.IsOffscreen } | Select-Object -First 1
+        if ($presets.Count -ne 6 -or -not $close) { $failures += "start screen: $($presets.Count) presets, close button $([bool]$close)" }
+        else {
+            Write-Host "start screen: $($presets.Count) presets"
+            $close.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+            Start-Sleep -Milliseconds 500
+        }
+    }
     # command palette: commands of every tab and of the sample plugin are listed
     $palItem = Find-MenuItem $root 'Options' 'Command palette*'
     if (-not $palItem) { Missing 'Options > Command palette' }
