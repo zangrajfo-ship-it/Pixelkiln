@@ -2,15 +2,8 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class SandboxTests : IDisposable
+public sealed class SandboxTests() : TempDirTest("sandbox")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-sandbox-" + Guid.NewGuid().ToString("N"));
-
-    public SandboxTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
-    string P(string name) => Path.Combine(_dir, name);
-
     /// <summary>64×64 scene: solid floor row at y 56–63, a hero (8×8 sprite, feet origin) at (16, 20).</summary>
     (Scene Scene, SceneAssets Assets) World()
     {

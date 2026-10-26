@@ -114,7 +114,7 @@ public sealed class LightingTests
 
             var r = Exporter.Plan(p, new ExportProfile());
             Assert.True(r.Ok, string.Join("\n", r.Errors));
-            string level = System.Text.Encoding.UTF8.GetString(r.Files.Single(f => f.Key.EndsWith("cave.tscn")).Value);
+            string level = r.TextEnding("cave.tscn");
             foreach (var part in new[] { "type=\"CanvasModulate\"", "type=\"PointLight2D\"", "shadow_enabled = true", "type=\"GradientTexture2D\"", "_spot1.png",
                          "polygon = PackedVector2Array(10.0, 10.0, 15.0, 10.0, 15.0, 15.0, 10.0, 15.0)", "type=\"CPUParticles2D\"", "blend_mode = 1", "metadata/flicker" })
                 Assert.Contains(part, level);

@@ -2,13 +2,8 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class TextureTests : IDisposable
+public sealed class TextureTests() : TempDirTest("tex")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-tex-" + Guid.NewGuid().ToString("N"));
-
-    public TextureTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
     [Fact]
     public void Every_material_tiles_without_a_seam_and_repeats_for_a_seed()
     {
@@ -83,7 +78,7 @@ public sealed class TextureTests : IDisposable
         var godot = Exporter.Plan(p, new ExportProfile());
         Assert.True(godot.Ok, string.Join("; ", godot.Errors));
         Assert.Contains("wall_normal.png", godot.Files.Keys);
-        Assert.Contains("normal_texture = ExtResource(\"2\")", System.Text.Encoding.UTF8.GetString(godot.Files["wall_material.tres"]));
+        Assert.Contains("normal_texture = ExtResource(\"2\")", godot.Text("wall_material.tres"));
         var generic = Exporter.Plan(p, new ExportProfile { Target = ExportTarget.Generic, OutputFolder = "export/g" });
         Assert.Contains("rockface_ao.png", generic.Files.Keys);
         Assert.Contains("rockface_height.png", generic.Files.Keys);

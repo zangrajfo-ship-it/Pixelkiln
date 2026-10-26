@@ -2,13 +2,8 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class PluginTests : IDisposable
+public sealed class PluginTests() : TempDirTest("plugins")
 {
-    readonly string _dir = Path.Combine(Path.GetTempPath(), "pf-plugins-" + Guid.NewGuid().ToString("N"));
-
-    public PluginTests() => Directory.CreateDirectory(_dir);
-    public void Dispose() => Directory.Delete(_dir, recursive: true);
-
     static string Sample()
     {
         for (var d = new DirectoryInfo(AppContext.BaseDirectory); d is not null; d = d.Parent)
