@@ -88,8 +88,8 @@ public partial class SpriteEditor : IEditor
             Ui.Item("Move _left", null, Do(OnFrameLeft)),
             Ui.Item("Move _right", null, Do(OnFrameRight)),
             new Separator(),
-            Ui.Item("_Previous frame", "←", () => { StopPlaying(); SelectFrame((_frame + _sprite.Frames.Count - 1) % _sprite.Frames.Count); }),
-            Ui.Item("Ne_xt frame", "→", () => { StopPlaying(); SelectFrame((_frame + 1) % _sprite.Frames.Count); }),
+            Ui.Item("_Previous frame", "←", () => StepFrame(-1)),
+            Ui.Item("Ne_xt frame", "→", () => StepFrame(+1)),
             Ui.Item("_Play / stop", "Space", () => OnPlay(null, null))),
     ];
 
@@ -118,39 +118,31 @@ public partial class SpriteEditor : IEditor
 
     // ---------- tool options strip ----------
 
-    static readonly Dictionary<Tool, string> ToolHints = new()
+    // icon, name and key for the context bar; the hint is shown in place of options (Pencil and Eraser have options instead)
+    static readonly Dictionary<Tool, (string Icon, string Name, string Key, string Hint)> ToolLooks = new()
     {
-        [Tool.Pencil] = "Left and right mouse paint with the two colors.",
-        [Tool.Eraser] = "Paints transparent pixels.",
-        [Tool.Fill] = "Fills the touching area of the same color.",
-        [Tool.Picker] = "Click a pixel to take its color (left or right mouse).",
-        [Tool.Line] = "Drag to draw. Shift: 0°, 45° or 90°.",
-        [Tool.Rect] = "Drag to draw. Shift: square.",
-        [Tool.Ellipse] = "Drag to draw. Shift: circle.",
-        [Tool.Select] = "Drag to select, drag inside to move. H/V flip, R rotate, Enter apply, Esc cancel.",
-        [Tool.Wand] = "Click to select pixels of one color; Shift+click adds. Move them with Select (M).",
-    };
-
-    static readonly Dictionary<Tool, (string Icon, string Name, string Key)> ToolLooks = new()
-    {
-        [Tool.Pencil] = ("pencil", "Pencil", "B"), [Tool.Eraser] = ("eraser", "Eraser", "E"), [Tool.Fill] = ("bucket", "Paint bucket", "G"),
-        [Tool.Picker] = ("picker", "Eyedropper", "I"), [Tool.Line] = ("line", "Line", "L"), [Tool.Rect] = ("rect", "Rectangle", "U"),
-        [Tool.Ellipse] = ("ellipse", "Ellipse", "O"), [Tool.Select] = ("marquee", "Rectangular marquee", "M"), [Tool.Wand] = ("wand", "Magic wand", "W"),
+        [Tool.Pencil] = ("pencil", "Pencil", "B", ""),
+        [Tool.Eraser] = ("eraser", "Eraser", "E", ""),
+        [Tool.Fill] = ("bucket", "Paint bucket", "G", "Fills the touching area of the same color."),
+        [Tool.Picker] = ("picker", "Eyedropper", "I", "Click a pixel to take its color (left or right mouse)."),
+        [Tool.Line] = ("line", "Line", "L", "Drag to draw. Shift: 0°, 45° or 90°."),
+        [Tool.Rect] = ("rect", "Rectangle", "U", "Drag to draw. Shift: square."),
+        [Tool.Ellipse] = ("ellipse", "Ellipse", "O", "Drag to draw. Shift: circle."),
+        [Tool.Select] = ("marquee", "Rectangular marquee", "M", "Drag to select, drag inside to move. H/V flip, R rotate, Enter apply, Esc cancel."),
+        [Tool.Wand] = ("wand", "Magic wand", "W", "Click to select pixels of one color; Shift+click adds. Move them with Select (M)."),
     };
 
     /// <summary>The context bar: the current tool's icon, name and key, then only the options it uses.</summary>
     void UpdateToolOptions()
     {
         var t = CurrentTool;
-        (ToolIcon.Kind, ToolName.Text, ToolKey.Text) = ToolLooks[t];
+        (ToolIcon.Kind, ToolName.Text, ToolKey.Text, ToolHint.Text) = ToolLooks[t];
         static Visibility V(bool show) => show ? Visibility.Visible : Visibility.Collapsed;
         SizeOption.Visibility = V(t is Tool.Pencil or Tool.Eraser or Tool.Line);
         FilledToggle.Visibility = V(t is Tool.Rect or Tool.Ellipse);
         PixelPerfectToggle.Visibility = V(t is Tool.Pencil);
         ContiguousToggle.Visibility = V(t is Tool.Wand);
         MirrorOption.Visibility = V(t is Tool.Pencil or Tool.Eraser or Tool.Line or Tool.Rect or Tool.Ellipse);
-        // tools without options get a sentence instead
-        ToolHint.Text = t is Tool.Fill or Tool.Picker or Tool.Select or Tool.Wand or Tool.Line or Tool.Rect or Tool.Ellipse ? ToolHints[t] : "";
         ToolHint.Visibility = V(ToolHint.Text.Length > 0);
     }
 }

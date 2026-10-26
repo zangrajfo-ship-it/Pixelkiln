@@ -88,8 +88,7 @@ public partial class PaintEditor : UserControl, IEditor, IStyleSource, IToolSele
 
     void UpdateTitle()
     {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled painting" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
+        Ui.ShowTitle(this, _path, _dirty, "untitled painting");
         Status.Text = $"{_doc.Width}×{_doc.Height} px · {_doc.Layers.Count} layer{(_doc.Layers.Count == 1 ? "" : "s")} · {_doc.Bytes / 1048576.0:0.#} MB in tiles";
     }
 
@@ -167,7 +166,7 @@ public partial class PaintEditor : UserControl, IEditor, IStyleSource, IToolSele
 
     // ---------- brush ----------
 
-    PaintTool? Tool => (string)ToolsPanel.Children.OfType<RadioButton>().First(r => r.IsChecked == true).Tag is var t && Enum.TryParse<PaintTool>(t, out var tool) ? tool : null;
+    PaintTool? Tool => Enum.TryParse<PaintTool>(ToolName, out var tool) ? tool : null;   // null for tools that are not brushes
     string ToolName => (string)ToolsPanel.Children.OfType<RadioButton>().First(r => r.IsChecked == true).Tag;
 
     BrushSettings Brush => new(Tool ?? PaintTool.Brush, SizeSlider.Value, HardSlider.Value, SpacingSlider.Value, OpacitySlider.Value, FlowSlider.Value,
@@ -602,12 +601,7 @@ public partial class PaintEditor : UserControl, IEditor, IStyleSource, IToolSele
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current painting?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "painting", () => Save(_path));
 
     public void OpenPath(string path, bool confirmed = false)
     {

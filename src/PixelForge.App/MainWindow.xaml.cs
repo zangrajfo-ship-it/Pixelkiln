@@ -24,7 +24,16 @@ public partial class MainWindow : Window
     readonly LogicEditor LogicEd = new();
     // RigEditor? RigEd;   // a view of the States mode's document, so not in Editors (simplified app: switched off)
 
-    TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => t.Content == ed || t.Content is ModeHost h && h.Contains(ed));
+    TabItem TabOf(IEditor ed) => Tabs.Items.Cast<TabItem>().First(t => Holds(t, ed));
+    static bool Holds(TabItem t, IEditor ed) => t.Content == ed || t.Content is ModeHost h && h.Contains(ed);
+
+    /// <summary>The editor is in a tab of the simplified app (and, in a mode tab, is one of its modes).</summary>
+    bool IsShown(IEditor ed) => Tabs.Items.Cast<TabItem>().Any(t => Holds(t, ed) && Shown.Contains((string)t.Header));
+
+    /// <summary>The sample game opens with this file.</summary>
+    const string SampleStart = "art/hero.pxf";
+
+    bool SpriteShows(string path) => string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Shows the tab and, inside it, the mode that holds the editor.</summary>
     void Reveal(IEditor ed)
@@ -69,10 +78,10 @@ public partial class MainWindow : Window
         HostModes();
         BuildShell();
         MapEd.SpriteImage = () => SpriteEd.CurrentImage;
-        CharEd.IsSpriteOpenDirty = path => SpriteEd.IsDirty && string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase);
+        CharEd.IsSpriteOpenDirty = path => SpriteEd.IsDirty && SpriteShows(path);
         CharEd.SpriteFileChanged = path =>
         {
-            if (string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase) && !SpriteEd.IsDirty) SpriteEd.OpenPath(path, confirmed: true);
+            if (SpriteShows(path) && !SpriteEd.IsDirty) SpriteEd.OpenPath(path, confirmed: true);
         };
         Ui.NameSymbolButtons(this);
         _autosave.Tick += (_, _) => Autosave();
@@ -133,7 +142,7 @@ public partial class MainWindow : Window
             Ui.Item("_Preferences…", "Ctrl+,", () => PreferencesWindow.Show(this))));
         MainMenu.Items.Add(Ui.Menu("_Help",
             Ui.Item("_Getting started…", null, () => GettingStarted.Show(this, OpenSampleAsset)),
-            Ui.Item("Open _sample game…", null, () => OpenSampleAsset("art/hero.pxf")),
+            Ui.Item("Open _sample game…", null, () => OpenSampleAsset(SampleStart)),
             Ui.Item("_Keyboard shortcuts", "F1", () => HelpWindow.Show(this)),
             Ui.Item("_About PixelForge", null, () => MessageBox.Show(this,
                 "PixelForge — sprites, tilemaps, music and sound effects for your games.", "About PixelForge"))));
@@ -155,7 +164,7 @@ public partial class MainWindow : Window
             Ui.Item("_Open project…", null, () => ProjectCommands.Open(this)),
             recent,
             Ui.Item("Make project from _folder…", null, () => ProjectCommands.FromFolder(this)),
-            Ui.Item("Open _sample game…", null, () => OpenSampleAsset("art/hero.pxf")),
+            Ui.Item("Open _sample game…", null, () => OpenSampleAsset(SampleStart)),
             Ui.Item("_Close project", null, ProjectCommands.Close, open),
             new Separator(),
             Ui.Item("New from _template…", "Ctrl+T", ShowTemplateStudio, open),
@@ -165,16 +174,13 @@ public partial class MainWindow : Window
             // Ui.Item("St_yle guide…", null, () => { if (App.Project is { } p) StyleGuideWindow.Show(this, p); }, open),
             Ui.Item("Project _settings and collisions…", null, () => { if (App.Project is { } p) ProjectSettingsWindow.Show(this, p); }, open),
             Ui.Item("_History of selected asset…", "Ctrl+H", Assets.ShowHistory, open),
-            Ui.Item("_Export…", "Ctrl+Shift+E", () =>
-            {
-                ShowExport();
-            }, open),
+            Ui.Item("_Export…", "Ctrl+Shift+E", ShowExport, open),
             Ui.Item("_Palette studio…", null, () =>
             {
                 if (App.Project is { } p)
                     PaletteStudio.Show(this, p,
-                        canTouch: path => !(SpriteEd.IsDirty && string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase)),
-                        changed: path => { if (string.Equals(SpriteEd.CurrentPath, path, StringComparison.OrdinalIgnoreCase)) SpriteEd.OpenPath(path, confirmed: true); });
+                        canTouch: path => !(SpriteEd.IsDirty && SpriteShows(path)),
+                        changed: path => { if (SpriteShows(path)) SpriteEd.OpenPath(path, confirmed: true); });
             }, open),
             browser);
     }
@@ -223,7 +229,7 @@ public partial class MainWindow : Window
     void ReloadRestored(string path)
     {
         foreach (var ed in Editors.Where(ed => string.Equals(ed.CurrentPath, path, StringComparison.OrdinalIgnoreCase)))
-            if (!ed.IsDirty || MessageBox.Show(this, $"“{System.IO.Path.GetFileName(path)}” has unsaved changes. Discard them and show the restored version?",
+            if (!ed.IsDirty || MessageBox.Show(this, $"“{Path.GetFileName(path)}” has unsaved changes. Discard them and show the restored version?",
                     "Version restored", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 ed.OpenPath(path, confirmed: true);
     }
@@ -279,12 +285,12 @@ public partial class MainWindow : Window
         }
         if (a.Type == AssetType.Palette)
         {
-            Tabs.SelectedIndex = 0;
+            Reveal(SpriteEd);
             SpriteEd.ApplyPaletteFile(path);
             return;
         }
         if (target is null) { Ui.Error(new NotSupportedException($"{a.Type} assets open in their own studio.")); return; }
-        if (!Shown.Contains((string)TabOf(target).Header) || TabOf(target).Content is ModeHost h && !h.Contains(target))
+        if (!IsShown(target))
         {
             MessageBox.Show(this, $"“{a.Path}” is a {a.Type} asset. This version only edits sprites, characters and tilemaps.", "PixelForge");
             return;
@@ -300,8 +306,6 @@ public partial class MainWindow : Window
         if (p.FindByPath(Path.Combine(p.Root, relPath)) is { } a) OpenAsset(a);
         else Ui.Error(new FileNotFoundException($"The sample game has no “{relPath}”. Make a fresh copy with Help › Open sample game in another folder."));
     }
-
-    // ---------- command palette ----------
 
     // ---------- autosave + recovery ----------
 
@@ -377,12 +381,7 @@ public partial class MainWindow : Window
         // if (e.Key == Key.D && ctrl && shift) { ShowDevicePreview(); e.Handled = true; return; }   // simplified app
         if (e.Key == Key.H && ctrl && !shift && App.Project is not null) { Assets.ShowHistory(); e.Handled = true; return; }
         if (e.Key == Key.T && ctrl && !shift && App.Project is not null) { ShowTemplateStudio(); e.Handled = true; return; }
-        if (e.Key == Key.E && ctrl && shift && App.Project is { } project)
-        {
-            ExportWindow.Show(this, project, [.. Editors.Where(ed => ed.IsDirty).Select(ed => ed.CurrentPath ?? "untitled")]);
-            e.Handled = true;
-            return;
-        }
+        if (e.Key == Key.E && ctrl && shift && App.Project is not null) { ShowExport(); e.Handled = true; return; }
         if (Assets.IsKeyboardFocusWithin) return;   // the asset browser has its own keys (Del, F2, Enter …)
         if (ControlOwnsKey(e.OriginalSource, e.Key)) return;
         Current?.HandleKey(e);

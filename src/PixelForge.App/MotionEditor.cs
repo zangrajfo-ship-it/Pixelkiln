@@ -76,7 +76,7 @@ sealed class MotionEditor : UserControl, IEditor
         side.Children.Add(L("Value", _kValue)); side.Children.Add(_kValue);
         side.Children.Add(L("Curve to the next key", _ease)); side.Children.Add(_ease);
         var bez = new UniformGrid { Columns = 4, Margin = new Thickness(0, 4, 0, 0) };
-        foreach (var t in new[] { _x1, _y1, _x2, _y2 }) { t.Margin = new Thickness(0, 0, 4, 0); bez.Children.Add(t); }
+        foreach (var t in Bezier) { t.Margin = new Thickness(0, 0, 4, 0); bez.Children.Add(t); }
         side.Children.Add(L("Bezier x1 y1 x2 y2", _x1)); side.Children.Add(bez);
         side.Children.Add(new WrapPanel { Margin = new Thickness(0, 8, 0, 0), Children = { Btn("Apply", ApplyKey), Btn("Delete key", DeleteKey) } });
         side.Children.Add(new TextBlock { Text = "Preview (selected track's target)", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 4) });
@@ -96,7 +96,7 @@ sealed class MotionEditor : UserControl, IEditor
         _playMode.SelectionChanged += (_, _) => EditClip(c => c.Play = Enum.Parse<AnimPlay>((string)_playMode.SelectedItem));
         _ease.SelectionChanged += (_, _) =>
         {
-            if (!_refreshing && _key is not null) foreach (var b in new[] { _x1, _y1, _x2, _y2 }) b.IsEnabled = (string)_ease.SelectedItem == nameof(AnimEase.Bezier);
+            if (!_refreshing && _key is not null) foreach (var b in Bezier) b.IsEnabled = (string)_ease.SelectedItem == nameof(AnimEase.Bezier);
         };
         _reverse.Click += (_, _) => EditClip(c => c.Reverse = _reverse.IsChecked == true);
         _play.Checked += (_, _) => { _last = DateTime.Now; _timer.Start(); };
@@ -134,11 +134,7 @@ sealed class MotionEditor : UserControl, IEditor
         UpdateTitle();
     }
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled animations" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled animations");
 
     void EditClip(Action<AnimClip> edit)
     {
@@ -244,7 +240,7 @@ sealed class MotionEditor : UserControl, IEditor
         var (t, k) = Same(track, key);
         int i = t.Keys.IndexOf(k);
         t.Keys[i] = k with { TimeMs = time };
-        t.Keys.Sort((a, b) => a.TimeMs.CompareTo(b.TimeMs));
+        SortKeys(t);
         (_track, _key) = (t, t.Keys.First(x => x.TimeMs == time));
         Refresh();
     }
@@ -252,9 +248,15 @@ sealed class MotionEditor : UserControl, IEditor
     /// <summary>The track and key in the current document (records are compared by value, tracks by position).</summary>
     (AnimTrack, AnimKey) Same(AnimTrack track, AnimKey key)
     {
-        var t = Cur.Tracks.First(x => x.Target == track.Target && x.Property == track.Property);
+        var t = TrackIn(track);
         return (t, t.Keys.First(x => x == key));
     }
+
+    AnimTrack TrackIn(AnimTrack track) => Cur.Tracks.First(x => x.Target == track.Target && x.Property == track.Property);
+
+    static void SortKeys(AnimTrack t) => t.Keys.Sort((a, b) => a.TimeMs.CompareTo(b.TimeMs));
+
+    TextBox[] Bezier => [_x1, _y1, _x2, _y2];
 
     void AddKey(AnimTrack track, double ms)
     {
@@ -262,10 +264,10 @@ sealed class MotionEditor : UserControl, IEditor
         if (track.Keys.Any(k => k.TimeMs == time)) return;
         double value = track.Keys.Count > 0 ? AnimClip.Sample(track, time) : AnimClip.Neutral(track.Property);
         Snapshot();
-        var t = Cur.Tracks.First(x => x.Target == track.Target && x.Property == track.Property);
+        var t = TrackIn(track);
         var key = new AnimKey(time, value, t.Keys.LastOrDefault(k => k.TimeMs < time)?.Ease ?? AnimEase.Linear);
         t.Keys.Add(key);
-        t.Keys.Sort((a, b) => a.TimeMs.CompareTo(b.TimeMs));
+        SortKeys(t);
         (_track, _key) = (t, key);
         Refresh();
     }
@@ -278,7 +280,7 @@ sealed class MotionEditor : UserControl, IEditor
         var k = _key ?? new AnimKey(0, 0);
         (_kTime.Text, _kValue.Text, _ease.SelectedItem) = (on ? $"{k.TimeMs}" : "", on ? $"{k.Value:0.###}" : "", k.Ease.ToString());
         (_x1.Text, _y1.Text, _x2.Text, _y2.Text) = ($"{k.X1:0.##}", $"{k.Y1:0.##}", $"{k.X2:0.##}", $"{k.Y2:0.##}");
-        foreach (var b in new[] { _x1, _y1, _x2, _y2 }) b.IsEnabled = on && k.Ease == AnimEase.Bezier;
+        foreach (var b in Bezier) b.IsEnabled = on && k.Ease == AnimEase.Bezier;
         _refreshing = false;
         DrawCurve();
     }
@@ -286,19 +288,20 @@ sealed class MotionEditor : UserControl, IEditor
     void ApplyKey()
     {
         if (_track is null || _key is null) return;
-        bool ok = int.TryParse(_kTime.Text, out int time) & double.TryParse(_kValue.Text, out double value);
+        bool timeOk = int.TryParse(_kTime.Text, out int time) && time >= 0;
+        bool ok = double.TryParse(_kValue.Text, out double value);
         double[] b = new double[4];
-        var boxes = new[] { _x1, _y1, _x2, _y2 };
+        var boxes = Bezier;
         for (int i = 0; i < 4; i++) ok &= double.TryParse(boxes[i].Text, out b[i]);
-        Ui.MarkInvalid(_kTime, time < 0 || !int.TryParse(_kTime.Text, out _) ? "Time is a whole number of milliseconds, 0 or more." : null);
-        if (!ok || time < 0) return;
+        Ui.MarkInvalid(_kTime, timeOk ? null : "Time is a whole number of milliseconds, 0 or more.");
+        if (!ok || !timeOk) return;
         if (_track.Keys.Any(k => k != _key && k.TimeMs == time)) { Ui.MarkInvalid(_kTime, $"There is already a key at {time} ms."); return; }
         Snapshot();
         var (t, k) = Same(_track, _key);
         var ease = Enum.Parse<AnimEase>((string)_ease.SelectedItem);
         var nk = new AnimKey(time, value, ease, Math.Clamp(b[0], 0, 1), b[1], Math.Clamp(b[2], 0, 1), b[3]);
         t.Keys[t.Keys.IndexOf(k)] = nk;
-        t.Keys.Sort((x, y) => x.TimeMs.CompareTo(y.TimeMs));
+        SortKeys(t);
         (_track, _key) = (t, nk);
         Refresh();
     }
@@ -455,8 +458,17 @@ sealed class MotionEditor : UserControl, IEditor
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException) { Ui.Error(ex); return false; }
     }
 
-    void Undo() { if (_history.Undo(_doc) is { } l) { _doc = l; _dirty = true; Refresh(); UpdateTitle(); } }
-    void Redo() { if (_history.Redo(_doc) is { } l) { _doc = l; _dirty = true; Refresh(); UpdateTitle(); } }
+    void Undo() => Restore(_history.Undo(_doc));
+    void Redo() => Restore(_history.Redo(_doc));
+
+    void Restore(AnimLibrary? l)
+    {
+        if (l is null) return;
+        _doc = l;
+        _dirty = true;
+        Refresh();
+        UpdateTitle();
+    }
 
     // ---------- IEditor ----------
 
@@ -464,12 +476,7 @@ sealed class MotionEditor : UserControl, IEditor
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current animations?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "animations", () => Save(_path));
 
     public void OpenPath(string path, bool confirmed = false)
     {

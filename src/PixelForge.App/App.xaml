@@ -275,6 +275,13 @@
             <Setter Property="Padding" Value="5,1" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+        <!-- separator between tool groups on the tool rails -->
+        <Style x:Key="RailSep" TargetType="Rectangle">
+            <Setter Property="Height" Value="1" />
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Fill" Value="{DynamicResource LineBrush}" />
+            <Setter Property="Margin" Value="0,5" />
+        </Style>
         <Style x:Key="Divider" TargetType="Rectangle">
             <Setter Property="Width" Value="1" />
             <Setter Property="Height" Value="24" />
