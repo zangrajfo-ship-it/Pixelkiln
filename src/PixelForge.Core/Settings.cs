@@ -2,15 +2,15 @@ using System.Text.Json;
 
 namespace PixelForge.Core;
 
-/// <summary>User preferences, stored as JSON in %AppData%\PixelForge\settings.json.</summary>
 /// <summary>A workspace: which tab and mode to show, whether the asset browser is open, and the tool to start with.</summary>
 public sealed record WorkspaceProfile(string Name, string Tab, string? Mode = null, bool AssetBrowser = true, string? Tool = null);
 
+/// <summary>User preferences, stored as JSON in %AppData%\PixelForge\settings.json.</summary>
 public sealed class Settings
 {
     public const int MaxRecent = 12;
 
-    /// <summary>Dark, Light or System.</summary>
+    /// <summary>Modern, Dark, Light or System.</summary>
     public string Theme { get; set; } = "Modern";
     /// <summary>1 = 100 %.</summary>
     public double UiScale { get; set; } = 1;

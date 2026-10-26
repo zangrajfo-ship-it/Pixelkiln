@@ -70,6 +70,8 @@ public static class TemplateEngine
             double.TryParse(S(key, fallback.ToString(Inv)), NumberStyles.Float, Inv, out double v) ? v : throw new InvalidDataException($"Step “{_s.Id}”: {key} must be a number.");
         ulong Seed() => Rng.Seed(S("seed", _s.Id));
         AssetEntry Ref(string key) => made.TryGetValue(S(key, ""), out var a) ? a : throw new InvalidDataException($"Step “{_s.Id}”: {key} was not created (is it in the full kit only?).");
+        /// <summary>Like <see cref="Ref"/>, but optional: null when the setting is absent or its step was not created.</summary>
+        AssetEntry? Made(string key) => _s.Settings?.ContainsKey(key) == true && made.TryGetValue(S(key, ""), out var a) ? a : null;
         string Name(string fallback) => Safe(TemplateLoader.Fill(_s.Name ?? fallback, values));
 
         static string Safe(string name)
@@ -177,7 +179,7 @@ public static class TemplateEngine
             sprite.Palette.AddRange(Palette());
             var look = Procedural.Sprite(Seed(), w, h, sprite.Palette, D("density", 0.45));
             Array.Copy(look, sprite.Cel(0, 0), look.Length);
-            var states = s_states();
+            var states = _s.States is { Count: > 0 } list ? list : [new TemplateState("idle")];
             int frame = 0;
             foreach (var st in states)
             {
@@ -188,8 +190,6 @@ public static class TemplateEngine
             string f = FileFor(Name("sprite"), ".pxf");
             ProjectFile.Save(sprite, f);
             return p.Add(f);
-
-            List<TemplateState> s_states() => _s.States is { Count: > 0 } list ? list : [new TemplateState("idle")];
         }
 
         /// <summary>Several small generated sprites (coins, gems, icons …); returns the first, all are added to the project.</summary>
@@ -314,12 +314,12 @@ public static class TemplateEngine
                 scene.Areas.Add(new SceneArea { Kind = AreaKind.Checkpoint, Name = $"checkpoint {n}", X = cx * ts, Y = (cy - 1) * ts, W = ts, H = ts * 2 });
             foreach (var (hx, hy, n) in plan.Hazards.Select((c, n) => (c.X, c.Y, n + 1)))
                 scene.Areas.Add(new SceneArea { Kind = AreaKind.Kill, Name = $"hazard {n}", X = hx * ts, Y = hy * ts, W = ts, H = ts });
-            if (_s.Settings?.ContainsKey("playerStep") == true && made.TryGetValue(S("playerStep", ""), out var player))
+            if (Made("playerStep") is { } player)
                 scene.Instances.Add(new SceneInstance { Name = "Player", AssetId = player.Id, LayerId = objects.Id, X = sx * ts + ts / 2, Y = (sy + 1) * ts });
-            if (_s.Settings?.ContainsKey("collectibleStep") == true && made.TryGetValue(S("collectibleStep", ""), out var item))
+            if (Made("collectibleStep") is { } item)
                 foreach (var (ix, iy, n) in plan.Collectibles.Select((c, n) => (c.X, c.Y, n + 1)))
                     scene.Instances.Add(new SceneInstance { Name = $"item {n}", AssetId = item.Id, LayerId = objects.Id, X = ix * ts, Y = iy * ts, Properties = { ["collect"] = "1" } });
-            if (_s.Settings?.ContainsKey("musicStep") == true && made.TryGetValue(S("musicStep", ""), out var music)) scene.MusicAssetId = music.Id;
+            if (Made("musicStep") is { } music) scene.MusicAssetId = music.Id;
             // lighting and weather: a dim ambient, torches at the start and the checkpoints, rain or snow over the level
             if (_s.Settings?.ContainsKey("ambient") == true && ColorUtil.TryParseHex(S("ambient", "FFFFFF").TrimStart('#'), out uint ambient)) scene.Ambient = ambient | 0xFF000000;
             if (S("torches", "none") == "checkpoints")

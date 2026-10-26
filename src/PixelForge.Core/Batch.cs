@@ -15,8 +15,8 @@ public static class Batch
         if (!pattern.Contains("{n}") && !pattern.Contains("{name}") && ids.Count > 1)
             throw new ArgumentException("The pattern needs {n} or {name}, otherwise every file would get the same name.", nameof(pattern));
         int width = ids.Count.ToString().Length;
-        var plan = ids.Select((id, i) => (Entry: p.Find(id) ?? throw new KeyNotFoundException("Unknown asset."),
-            Name: pattern.Replace("{name}", (p.Find(id)?.Name) ?? "").Replace("{n}", (i + 1).ToString().PadLeft(width, '0')).Trim())).ToList();
+        var plan = ids.Select(id => p.Find(id) ?? throw new KeyNotFoundException("Unknown asset."))
+            .Select((e, i) => (Entry: e, Name: pattern.Replace("{name}", e.Name).Replace("{n}", (i + 1).ToString().PadLeft(width, '0')).Trim())).ToList();
         var targets = plan.Select(x => System.IO.Path.Combine(x.Entry.Folder, x.Name + System.IO.Path.GetExtension(x.Entry.Path))).ToList();
         if (plan.Any(x => x.Name.Length == 0 || x.Name.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) >= 0))
             throw new ArgumentException("A resulting name is empty or contains \\ / : * ? \" < > |.", nameof(pattern));

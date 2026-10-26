@@ -70,10 +70,7 @@ public sealed class Sprite
 
     public void MoveLayer(int from, int to)
     {
-        if (to < 0 || to >= Layers.Count) return;
-        var l = Layers[from];
-        Layers.RemoveAt(from);
-        Layers.Insert(to, l);
+        if (to >= 0 && to < Layers.Count) Move(Layers, from, to);
     }
 
     /// <summary>Inserts a frame at index; copies pixels from <paramref name="copyFrom"/> or starts blank.</summary>

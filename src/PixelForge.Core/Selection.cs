@@ -9,32 +9,9 @@ public static class Selection
     /// </summary>
     public static bool[] MagicWand(uint[] px, int w, int h, int x, int y, bool contiguous)
     {
-        var mask = new bool[w * h];
-        if (!Tools.InBounds(w, h, x, y)) return mask;
+        if (contiguous || !Tools.InBounds(w, h, x, y)) return Tools.Region(px, w, h, x, y);
         uint target = px[y * w + x];
-        if (!contiguous)
-        {
-            for (int i = 0; i < px.Length; i++) mask[i] = px[i] == target;
-            return mask;
-        }
-        var q = new Queue<int>();
-        q.Enqueue(y * w + x);
-        mask[y * w + x] = true;
-        while (q.Count > 0)
-        {
-            int i = q.Dequeue(), cx = i % w, cy = i / w;
-            Try(cx - 1, cy); Try(cx + 1, cy); Try(cx, cy - 1); Try(cx, cy + 1);
-        }
-        return mask;
-
-        void Try(int nx, int ny)
-        {
-            if (!Tools.InBounds(w, h, nx, ny)) return;
-            int n = ny * w + nx;
-            if (mask[n] || px[n] != target) return;
-            mask[n] = true;
-            q.Enqueue(n);
-        }
+        return [.. px.Select(p => p == target)];
     }
 
     /// <summary>Smallest rectangle around the selected pixels, or null if nothing is selected.</summary>

@@ -5,9 +5,19 @@ public sealed class Rng(ulong seed)
 {
     ulong _s = seed;
 
+    const ulong Gamma = 0x9E3779B97F4A7C15;
+
     public ulong NextULong()
     {
-        ulong z = _s += 0x9E3779B97F4A7C15;
+        ulong r = Hash(_s);
+        _s += Gamma;
+        return r;
+    }
+
+    /// <summary>One SplitMix64 step on its own: a well-mixed number for x (particles hash their index with it).</summary>
+    public static ulong Hash(ulong x)
+    {
+        ulong z = x + Gamma;
         z = (z ^ z >> 30) * 0xBF58476D1CE4E5B9;
         z = (z ^ z >> 27) * 0x94D049BB133111EB;
         return z ^ z >> 31;
@@ -39,8 +49,7 @@ public static class Procedural
     public static uint[] Sprite(ulong seed, int w, int h, IReadOnlyList<uint> palette, double density = 0.45)
     {
         if (w < 4 || h < 4) throw new ArgumentOutOfRangeException(nameof(w), "Sprites need at least 4×4 pixels.");
-        var colors = palette.Where(c => c >> 24 != 0).Distinct().OrderBy(Luma).ToList();
-        if (colors.Count < 2) throw new ArgumentException("The palette needs at least two visible colours.", nameof(palette));
+        var colors = Ramp(palette);
         var r = new Rng(seed);
         int half = (w + 1) / 2;
         var on = new bool[w * h];
@@ -87,20 +96,31 @@ public static class Procedural
 
     static double Luma(uint c) => 0.299 * (c >> 16 & 0xFF) + 0.587 * (c >> 8 & 0xFF) + 0.114 * (c & 0xFF);
 
+    /// <summary>The palette's visible colours, darkest first.</summary>
+    static List<uint> Ramp(IReadOnlyList<uint> palette)
+    {
+        var ramp = palette.Where(c => c >> 24 != 0).Distinct().OrderBy(Luma).ToList();
+        if (ramp.Count < 2) throw new ArgumentException("The palette needs at least two visible colours.", nameof(palette));
+        return ramp;
+    }
+
+    /// <summary>Marks the outer ring of cells solid.</summary>
+    static void Border(bool[] m, int w, int h)
+    {
+        for (int x = 0; x < w; x++) m[x] = m[(h - 1) * w + x] = true;
+        for (int y = 0; y < h; y++) m[y * w] = m[y * w + w - 1] = true;
+    }
+
     /// <summary>A row of seamless tiles (variants of one pattern), ready to load as a tileset.</summary>
     public static (uint[] Pixels, int Width, int Height) Tiles(ulong seed, int size, IReadOnlyList<uint> palette, TilePattern pattern, int variants = 4)
     {
         if (size < 4 || size > 128) throw new ArgumentOutOfRangeException(nameof(size), "Tile size must be 4–128.");
-        var ramp = palette.Where(c => c >> 24 != 0).Distinct().OrderBy(Luma).ToList();
-        if (ramp.Count < 2) throw new ArgumentException("The palette needs at least two visible colours.", nameof(palette));
+        var ramp = Ramp(palette);
         variants = Math.Clamp(variants, 1, 16);
         int w = size * variants;
         var px = new uint[w * size];
         for (int v = 0; v < variants; v++)
-        {
-            var tile = Tile(new Rng(seed + (ulong)v * 7919), size, ramp, pattern);
-            for (int y = 0; y < size; y++) Array.Copy(tile, y * size, px, y * w + v * size, size);
-        }
+            PixelOps.Paste(px, w, Tile(new Rng(seed + (ulong)v * 7919), size, ramp, pattern), size, size, v * size, 0);
         return (px, w, size);
     }
 
@@ -169,8 +189,7 @@ public static class Procedural
                 }
             m = next;
         }
-        for (int x = 0; x < w; x++) m[x] = m[(h - 1) * w + x] = true;
-        for (int y = 0; y < h; y++) m[y * w] = m[y * w + w - 1] = true;
+        Border(m, w, h);
         return m;
     }
 
@@ -201,8 +220,7 @@ public static class Procedural
     {
         var r = new Rng(seed);
         var m = new bool[w * h];
-        for (int x = 0; x < w; x++) m[x] = m[(h - 1) * w + x] = true;
-        for (int y = 0; y < h; y++) m[y * w] = m[y * w + w - 1] = true;
+        Border(m, w, h);
         for (int wx = roomSize; wx < w - 2; wx += roomSize)
         {
             int door = 1 + r.Next(Math.Max(1, h - 3));
@@ -233,7 +251,7 @@ public static class Procedural
         int root = 57 + r.Next(5);   // A3..C#4
         var prog = Progressions[r.Next(Progressions.Length)];
         var s = new Song(16, empty: true) { Bpm = Math.Clamp(bpm, 40, 300) };
-        int Note(int degree, int octave) => root + octave * 12 + sc[((degree % sc.Length) + sc.Length) % sc.Length] + 12 * (int)Math.Floor(degree / (double)sc.Length);
+        int Note(int degree, int octave) => root + octave * 12 + sc[Tools.Wrap(degree, sc.Length)] + 12 * (int)Math.Floor(degree / (double)sc.Length);
         int melody = 2;
         for (int bar = 0; bar < Math.Clamp(patterns, 1, 16); bar++)
         {

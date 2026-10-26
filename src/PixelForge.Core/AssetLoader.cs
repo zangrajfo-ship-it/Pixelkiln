@@ -10,8 +10,9 @@ public static class AssetLoader
     public static bool IsPicture(AssetType t) => t is AssetType.Image or AssetType.Sprite or AssetType.Paint or AssetType.Vector or AssetType.Texture;
 
     /// <summary>
-    /// A picture of an image, sprite (first frame, all visible layers), painting (all visible layers) or vector drawing
-    /// (art board at 1 pixel per unit).
+    /// A picture of an image, sprite (first frame, all visible layers), painting (all visible layers), vector drawing
+    /// (art board at 1 pixel per unit) or procedural texture (its colour map). Textures made from another asset need
+    /// their project and throw here (use Textures.Build).
     /// </summary>
     public static (uint[] Pixels, int Width, int Height) LoadImage(string path)
     {

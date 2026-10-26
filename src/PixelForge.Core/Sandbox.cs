@@ -21,11 +21,11 @@ public static class SceneRenderer
                     break;
                 case SceneLayerKind.Image when l.AssetId is Guid id && a.Image(id) is var (px, pw, ph):
                     if (l.RepeatX)
-                        for (int x = ((lx % pw) + pw) % pw - pw; x < w; x += pw) Blit(o, w, h, px, pw, ph, x, ly, false, 1);
+                        for (int x = Tools.Wrap(lx, pw) - pw; x < w; x += pw) Blit(o, w, h, px, pw, ph, x, ly, false, 1);
                     else Blit(o, w, h, px, pw, ph, lx, ly, false, 1);
                     break;
                 case SceneLayerKind.Instances:
-                    foreach (var i in s.InstancesOf(l.Id).OrderBy(i => i.Z))
+                    foreach (var i in s.InstancesOf(l.Id))   // already in drawing order (Z, then Y)
                     {
                         if (Look(i) is not { } look) continue;
                         var pose = a.ClipOf(i)?.Pose("", timeMs) ?? i.Track?.Sample(timeMs) ?? new Keyframe(0);
@@ -92,11 +92,15 @@ public static class SceneRenderer
                 uint alpha = (uint)((p >> 24) * Math.Clamp(opacity, 0, 1));
                 if (alpha == 0) continue;
                 int di = ty * dw + tx;
-                if (alpha == 255) { dst[di] = p; continue; }
-                uint d = dst[di];
-                uint Mix(int shift) => ((p >> shift & 0xFF) * alpha + (d >> shift & 0xFF) * (255 - alpha)) / 255 << shift;
-                dst[di] = 0xFF000000 | Mix(16) | Mix(8) | Mix(0);
+                dst[di] = alpha == 255 ? p : Over(dst[di], p, alpha);
             }
+    }
+
+    /// <summary>p drawn over the opaque pixel d with an alpha of 0–255.</summary>
+    static uint Over(uint d, uint p, uint alpha)
+    {
+        uint C(int shift) => ((p >> shift & 0xFF) * alpha + (d >> shift & 0xFF) * (255 - alpha)) / 255 << shift;
+        return 0xFF000000 | C(16) | C(8) | C(0);
     }
 
     /// <summary>
@@ -131,10 +135,7 @@ public static class SceneRenderer
                 uint alpha = (uint)((p >> 24) * a);
                 if (alpha == 0) continue;
                 int di = ty * dw + tx;
-                if (alpha == 255) { dst[di] = p; continue; }
-                uint d = dst[di];
-                uint Mix(int shift) => ((p >> shift & 0xFF) * alpha + (d >> shift & 0xFF) * (255 - alpha)) / 255 << shift;
-                dst[di] = 0xFF000000 | Mix(16) | Mix(8) | Mix(0);
+                dst[di] = alpha == 255 ? p : Over(dst[di], p, alpha);
             }
     }
 
@@ -212,12 +213,12 @@ public sealed class Sandbox
             catch (InvalidDataException ex) { LogicError = ex.Message; }
         Player = Scene.Instances.FirstOrDefault(i => _assets.Look(i)?.Character?.Kind == CharacterKind.Player);
         var spawn = Scene.Areas.FirstOrDefault(a => a.Kind == AreaKind.Spawn);
-        if (Player is not null && _assets.Look(Player)?.Character is { } c)
+        if (Player is not null && _assets.Look(Player) is { Character: { } c } look)
         {
             double P(string key, double fallback) => c.Properties.TryGetValue(key, out var v) && double.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : fallback;
             (_speed, _jump, _gravity) = (P("speed", 90), P("jump", 230), P("gravity", 640));
             var solid = c.Boxes.FirstOrDefault(b => b.Kind == BoxKind.Solid);
-            var sprite = _assets.Look(Player)!.Sprite;
+            var sprite = look.Sprite;
             _box = solid is null ? (-c.OriginX, -c.OriginY, sprite.Width, sprite.Height) : (solid.X - c.OriginX, solid.Y - c.OriginY, solid.W, solid.H);
         }
         (X, Y) = spawn is not null ? (spawn.X + spawn.W / 2.0, spawn.Y + spawn.H) : Player is not null ? (Player.X, Player.Y) : (Scene.CameraX + _viewW / 2.0, Scene.CameraY + _viewH / 2.0);

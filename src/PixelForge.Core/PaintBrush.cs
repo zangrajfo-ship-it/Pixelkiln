@@ -113,7 +113,7 @@ public sealed class PaintStroke
         if (_b.Tool == PaintTool.Smudge && !_mask)   // pick up a little of the colour under the dab for the next one
         {
             uint under = _layer.Get((int)Math.Clamp(cx, 0, _doc.Width - 1), (int)Math.Clamp(cy, 0, _doc.Height - 1));
-            _smudge = Mix(_smudge, under, 0.25);
+            _smudge = ColorUtil.Lerp(_smudge, under, 0.25);
         }
     }
 
@@ -144,7 +144,7 @@ public sealed class PaintStroke
         if (_b.Tool == PaintTool.Eraser)
             result = (uint)Math.Round((o >> 24) * (1 - now * alpha)) << 24 | o & 0x00FFFFFF;
         else if (_b.Tool == PaintTool.Smudge)
-            result = Mix(tile[i], _smudge, m * _b.Flow * alpha);
+            result = ColorUtil.Lerp(tile[i], _smudge, m * _b.Flow * alpha);
         else
         {
             result = Blending.Over(o, _color | 0xFF000000, now * alpha * (_color >> 24) / 255.0);
@@ -154,13 +154,6 @@ public sealed class PaintStroke
     }
 
     static byte[] Filled255() { var b = new byte[PaintLayer.Tile * PaintLayer.Tile]; Array.Fill(b, (byte)255); return b; }
-
-    /// <summary>Straight-alpha mix of two colours (t = 0 → a, 1 → b).</summary>
-    static uint Mix(uint a, uint b, double t)
-    {
-        uint C(int shift) => (uint)Math.Round((a >> shift & 0xFF) * (1 - t) + (b >> shift & 0xFF) * t) << shift;
-        return C(24) | C(16) | C(8) | C(0);
-    }
 
     void Remember(long k, bool mask)
     {
@@ -230,7 +223,12 @@ public sealed class PaintUndo(int maxSteps = 100, long maxBytes = History.Defaul
     {
         _undo.Add(s);
         _redo.Clear();
-        while (_undo.Count > 1 && (_undo.Count > maxSteps || _undo.Sum(x => x.Bytes) > maxBytes)) _undo.RemoveAt(0);
+        long total = _undo.Sum(x => x.Bytes);   // kept up to date while trimming, not summed again per step
+        while (_undo.Count > 1 && (_undo.Count > maxSteps || total > maxBytes))
+        {
+            total -= _undo[0].Bytes;
+            _undo.RemoveAt(0);
+        }
     }
 
     public bool Undo(PaintDoc d) => Swap(_undo, _redo, d);
@@ -266,8 +264,7 @@ public static class PaintOps
                         int gx = tx * PaintLayer.Tile + x, gy = ty * PaintLayer.Tile + y;
                         if (gx >= d.Width || gy >= d.Height) continue;
                         double f = Math.Clamp(((gx + 0.5 - x0) * dx + (gy + 0.5 - y0) * dy) / len2, 0, 1);
-                        uint C(int s) => (uint)Math.Round((a >> s & 0xFF) * (1 - f) + (b >> s & 0xFF) * f) << s;
-                        uint c = C(24) | C(16) | C(8) | C(0);
+                        uint c = ColorUtil.Lerp(a, b, f);
                         int i = y * PaintLayer.Tile + x;
                         tile[i] = l.AlphaLocked ? tile[i] & 0xFF000000 | c & 0x00FFFFFF : Blending.Over(tile[i], c | 0xFF000000, (c >> 24) / 255.0);
                     }
