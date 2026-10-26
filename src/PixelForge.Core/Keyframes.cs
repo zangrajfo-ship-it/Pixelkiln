@@ -33,7 +33,7 @@ public sealed class KeyframeTrack
         return new Keyframe((int)t, L(a.X, b.X), L(a.Y, b.Y), L(a.ScaleX, b.ScaleX), L(a.ScaleY, b.ScaleY), L(a.Rotation, b.Rotation), L(a.Opacity, b.Opacity), a.Easing);
     }
 
-    public static double Ease(Easing e, double u) => e switch
+    static double Ease(Easing e, double u) => e switch
     {
         Easing.EaseIn => u * u,
         Easing.EaseOut => 1 - (1 - u) * (1 - u),

@@ -134,7 +134,8 @@ public sealed class Project
             if (!IsInside(a.Path)) throw new InvalidDataException($"Asset path “{a.Path}” points outside the project folder.");
     }
 
-    static bool IsInside(string relative) =>
+    /// <summary>A relative path that stays inside the folder (no root, no "..").</summary>
+    internal static bool IsInside(string relative) =>
         !string.IsNullOrWhiteSpace(relative) && !System.IO.Path.IsPathRooted(relative)
         && !relative.Replace('\\', '/').Split('/').Contains("..");
 

@@ -121,38 +121,29 @@ public sealed class PaintDoc
     sealed record Manifest(int Version, int Width, int Height, List<LayerDto> Layers);
     static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
 
-    public static void Save(PaintDoc d, string path)
+    public static void Save(PaintDoc d, string path) => DocumentFile.WriteViaTemp(path, fs =>
     {
-        string tmp = path + ".tmp";
-        try
+        using var zip = new ZipArchive(fs, ZipArchiveMode.Create);
+        var m = new Manifest(Version, d.Width, d.Height, [.. d.Layers.Select(l => new LayerDto(l.Id, l.Name, l.Visible, l.Opacity, l.Blend, l.AlphaLocked, l.Mask is not null))]);
+        using (var w = new StreamWriter(zip.CreateEntry("manifest.json").Open())) w.Write(JsonSerializer.Serialize(m, Json));
+        for (int i = 0; i < d.Layers.Count; i++)
         {
-            using (var fs = File.Create(tmp))
-            using (var zip = new ZipArchive(fs, ZipArchiveMode.Create))
+            var l = d.Layers[i];
+            foreach (var (k, t) in l.Tiles.OrderBy(kv => kv.Key))
             {
-                var m = new Manifest(Version, d.Width, d.Height, [.. d.Layers.Select(l => new LayerDto(l.Id, l.Name, l.Visible, l.Opacity, l.Blend, l.AlphaLocked, l.Mask is not null))]);
-                using (var w = new StreamWriter(zip.CreateEntry("manifest.json").Open())) w.Write(JsonSerializer.Serialize(m, Json));
-                for (int i = 0; i < d.Layers.Count; i++)
-                {
-                    var l = d.Layers[i];
-                    foreach (var (k, t) in l.Tiles.OrderBy(kv => kv.Key))
-                    {
-                        if (t.All(p => p >> 24 == 0)) continue;   // empty tiles are not stored
-                        var (tx, ty) = PaintLayer.Unkey(k);
-                        using var s = zip.CreateEntry($"layers/{i}/{tx}_{ty}.png", CompressionLevel.NoCompression).Open();
-                        s.Write(ImageIO.EncodePng(t, PaintLayer.Tile, PaintLayer.Tile));
-                    }
-                    foreach (var (k, mt) in (l.Mask ?? []).OrderBy(kv => kv.Key))
-                    {
-                        var (tx, ty) = PaintLayer.Unkey(k);
-                        using var s = zip.CreateEntry($"layers/{i}/mask_{tx}_{ty}.png", CompressionLevel.NoCompression).Open();
-                        s.Write(ImageIO.EncodePng([.. mt.Select(v => (uint)v << 24)], PaintLayer.Tile, PaintLayer.Tile));   // mask value in the alpha channel
-                    }
-                }
+                if (t.All(p => p >> 24 == 0)) continue;   // empty tiles are not stored
+                var (tx, ty) = PaintLayer.Unkey(k);
+                using var s = zip.CreateEntry($"layers/{i}/{tx}_{ty}.png", CompressionLevel.NoCompression).Open();
+                s.Write(ImageIO.EncodePng(t, PaintLayer.Tile, PaintLayer.Tile));
             }
-            File.Move(tmp, path, overwrite: true);
+            foreach (var (k, mt) in (l.Mask ?? []).OrderBy(kv => kv.Key))
+            {
+                var (tx, ty) = PaintLayer.Unkey(k);
+                using var s = zip.CreateEntry($"layers/{i}/mask_{tx}_{ty}.png", CompressionLevel.NoCompression).Open();
+                s.Write(ImageIO.EncodePng([.. mt.Select(v => (uint)v << 24)], PaintLayer.Tile, PaintLayer.Tile));   // mask value in the alpha channel
+            }
         }
-        finally { if (File.Exists(tmp)) File.Delete(tmp); }
-    }
+    });
 
     public static PaintDoc Load(string path)
     {

@@ -11,6 +11,13 @@ public static class PixelOps
         return dst;
     }
 
+    /// <summary>The opposite of <see cref="Crop"/>: copies src (sw×sh) into dst (dw wide) at (x, y). No clipping, no alpha.</summary>
+    public static void Paste(uint[] dst, int dw, uint[] src, int sw, int sh, int x, int y)
+    {
+        for (int j = 0; j < sh; j++)
+            Array.Copy(src, j * sw, dst, (y + j) * dw + x, sw);
+    }
+
     /// <summary>Copies src onto dst at (x, y); transparent src pixels are skipped, out-of-bounds parts clipped.</summary>
     public static void Stamp(uint[] dst, int w, int h, uint[] src, int sw, int sh, int x, int y)
     {
@@ -81,13 +88,17 @@ public static class PixelOps
         var r = Resized(s, w, h, 0, 0);   // same layers, frames, tags, palette
         for (int li = 0; li < s.Layers.Count; li++)
             for (int f = 0; f < s.Frames.Count; f++)
-            {
-                uint[] src = s.Cel(li, f), dst = r.Cel(li, f);
-                for (int y = 0; y < h; y++)
-                    for (int x = 0; x < w; x++)
-                        dst[y * w + x] = src[y * s.Height / h * s.Width + x * s.Width / w];
-            }
+                Array.Copy(Resize(s.Cel(li, f), s.Width, s.Height, w, h), r.Cel(li, f), w * h);
         return r;
+    }
+
+    /// <summary>Nearest-neighbour resize of a pixel buffer from sw×sh to tw×th.</summary>
+    public static uint[] Resize(uint[] src, int sw, int sh, int tw, int th)
+    {
+        var o = new uint[tw * th];
+        for (int y = 0; y < th; y++)
+            for (int x = 0; x < tw; x++) o[y * tw + x] = src[y * sh / th * sw + x * sw / tw];
+        return o;
     }
 
     /// <summary>Replaces every pixel of one exact color; returns how many changed.</summary>

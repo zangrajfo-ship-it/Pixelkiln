@@ -22,7 +22,7 @@ public static class TilesetTools
     /// </summary>
     public static int RemoveDuplicates(Tilemap map)
     {
-        var ts = map.Tileset ?? throw new InvalidOperationException("Load a tileset first.");
+        var ts = map.RequireTileset();
         var remap = Enumerable.Range(0, ts.Count).ToArray();
         foreach (var group in Duplicates(ts))
             foreach (int dup in group.Skip(1)) remap[dup] = group[0];
@@ -34,11 +34,7 @@ public static class TilesetTools
         int cols = Math.Min(ts.Columns, keep.Count), rows = (keep.Count + cols - 1) / cols, w = cols * ts.TileSize, h = rows * ts.TileSize;
         var px = new uint[w * h];
         for (int k = 0; k < keep.Count; k++)
-        {
-            var tile = ts.Tile(keep[k]);
-            int ox = k % cols * ts.TileSize, oy = k / cols * ts.TileSize;
-            for (int y = 0; y < ts.TileSize; y++) Array.Copy(tile, y * ts.TileSize, px, (oy + y) * w + ox, ts.TileSize);
-        }
+            PixelOps.Paste(px, w, ts.Tile(keep[k]), ts.TileSize, ts.TileSize, k % cols * ts.TileSize, k / cols * ts.TileSize);
         foreach (var l in map.Layers)
             for (int i = 0; i < l.Tiles.Length; i++)
                 if (l.Tiles[i] >= 0 && l.Tiles[i] < ts.Count) l.Tiles[i] = newIndex[remap[l.Tiles[i]]];
@@ -60,8 +56,7 @@ public static class TilesetTools
         int ow = bw * times, oh = bh * times;
         var px = new uint[ow * oh];
         for (int ty = 0; ty < times; ty++)
-            for (int tx = 0; tx < times; tx++)
-                for (int row = 0; row < bh; row++) Array.Copy(block, row * bw, px, (ty * bh + row) * ow + tx * bw, bw);
+            for (int tx = 0; tx < times; tx++) PixelOps.Paste(px, ow, block, bw, bh, tx * bw, ty * bh);
         return (px, ow, oh);
     }
 }

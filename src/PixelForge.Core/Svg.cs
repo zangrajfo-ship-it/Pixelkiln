@@ -63,7 +63,7 @@ public static class Svg
     static void Read(XElement e, Matrix parent, Style inherited, List<VShape> into, Dictionary<string, XElement> gradients, List<string> skipped)
     {
         string name = e.Name.LocalName;
-        if (name is "defs" or "title" or "desc" or "metadata" or "linearGradient" or "radialGradient" or "style" && name != "style") return;
+        if (name is "defs" or "title" or "desc" or "metadata" or "linearGradient" or "radialGradient") return;
         if (name == "style") { skipped.Add("<style> sheets (use presentation attributes)"); return; }
         var m = parent;
         if ((string?)e.Attribute("transform") is string t) m = Transform(t) * parent;
@@ -159,9 +159,7 @@ public static class Svg
         if (!gr.Elements().Any(x => x.Name.LocalName == "stop") && ((string?)gr.Attribute(XLink + "href") ?? (string?)gr.Attribute("href")) is string href && gradients.TryGetValue(href.TrimStart('#'), out var linked)) stopsFrom = linked;
         var stops = stopsFrom.Elements().Where(x => x.Name.LocalName == "stop").Select(x =>
         {
-            var st = StyleOf(x, Style.Default);
-            string offs = (string?)x.Attribute("offset") ?? "0";
-            double off = offs.EndsWith('%') ? double.Parse(offs[..^1], Inv) / 100 : double.Parse(offs, Inv);
+            double off = Fraction((string?)x.Attribute("offset") ?? "0");
             var props = x.Attributes().ToDictionary(a => a.Name.LocalName, a => a.Value);
             if ((string?)x.Attribute("style") is string css)
                 foreach (var decl in css.Split(';', StringSplitOptions.RemoveEmptyEntries)) if (decl.Split(':', 2) is [var k, var v]) props[k.Trim()] = v.Trim();
@@ -171,7 +169,7 @@ public static class Svg
         }).ToList();
         if (stops.Count == 0) return null;
         bool user = (string?)gr.Attribute("gradientUnits") == "userSpaceOnUse";
-        double A(string key, double fallback) => (string?)gr.Attribute(key) is string v ? (v.EndsWith('%') ? double.Parse(v[..^1], Inv) / 100 : double.Parse(v, Inv)) : fallback;
+        double A(string key, double fallback) => (string?)gr.Attribute(key) is string v ? Fraction(v) : fallback;
         Point Map(double x, double y) => user ? m.Transform(new Point(x, y)) : new Point(bounds.X + x * bounds.Width, bounds.Y + y * bounds.Height);
         if (gr.Name.LocalName == "linearGradient")
         {
@@ -183,6 +181,9 @@ public static class Svg
         double rr = A("r", 0.5) * (user ? Math.Sqrt(Math.Abs(m.Determinant)) : Math.Max(bounds.Width, bounds.Height));
         return new VPaint(VPaintKind.Radial, stops[0].Color, stops, c0.X, c0.Y, 0, 0, rr);
     }
+
+    /// <summary>"50%" → 0.5, otherwise the number as written.</summary>
+    static double Fraction(string v) => v.EndsWith('%') ? double.Parse(v[..^1], Inv) / 100 : double.Parse(v, Inv);
 
     static double Len(XElement e, string attr, double fallback)
     {
@@ -225,7 +226,7 @@ public static class Svg
         ["magenta"] = 0xFFFF00FF, ["olive"] = 0xFF808000, ["brown"] = 0xFFA52A2A, ["pink"] = 0xFFFFC0CB, ["gold"] = 0xFFFFD700,
     };
 
-    public static uint? ParseColor(string s)
+    static uint? ParseColor(string s)
     {
         s = s.Trim();
         if (Named.TryGetValue(s, out var n)) return n;

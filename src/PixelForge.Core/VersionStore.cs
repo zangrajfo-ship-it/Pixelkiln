@@ -24,7 +24,10 @@ public sealed class VersionStore(Project project)
     public long MaxBytes => Math.Max(1, project.Settings.HistoryMaxMegabytes) * 1024L * 1024;
 
     string IndexPath => Path.Combine(_dir, "index.json");
-    string ObjectPath(string hash) => Path.Combine(_dir, "objects", hash);
+    string ObjectsDir => Path.Combine(_dir, "objects");
+    string ObjectPath(string hash) => Path.Combine(ObjectsDir, hash);
+
+    static string Hash(byte[] data) => Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();
 
     Dictionary<Guid, List<VersionEntry>> Index
     {
@@ -51,10 +54,10 @@ public sealed class VersionStore(Project project)
         string path = project.FullPath(a);
         if (!File.Exists(path)) return null;
         byte[] data = File.ReadAllBytes(path);
-        string hash = Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();
+        string hash = Hash(data);
         var list = Index.TryGetValue(assetId, out var l) ? l : Index[assetId] = [];
         if (list.Count > 0 && list[^1].Hash == hash) return null;
-        Directory.CreateDirectory(Path.Combine(_dir, "objects"));
+        Directory.CreateDirectory(ObjectsDir);
         if (!File.Exists(ObjectPath(hash)))
         {
             string tmp = ObjectPath(hash) + ".tmp";
@@ -78,7 +81,7 @@ public sealed class VersionStore(Project project)
         using var ms = new MemoryStream();
         gz.CopyTo(ms);
         var data = ms.ToArray();
-        if (Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant() != e.Hash) throw new InvalidDataException("This version's data is damaged.");
+        if (Hash(data) != e.Hash) throw new InvalidDataException("This version's data is damaged.");
         return data;
     }
 
@@ -95,8 +98,7 @@ public sealed class VersionStore(Project project)
         Record(assetId, $"restored version from {e.Utc:yyyy-MM-dd HH:mm:ss} UTC");
     }
 
-    public long TotalBytes => Directory.Exists(Path.Combine(_dir, "objects"))
-        ? new DirectoryInfo(Path.Combine(_dir, "objects")).EnumerateFiles().Sum(f => f.Length) : 0;
+    public long TotalBytes => Directory.Exists(ObjectsDir) ? new DirectoryInfo(ObjectsDir).EnumerateFiles().Sum(f => f.Length) : 0;
 
     /// <summary>Oldest versions go first: per asset over MaxVersions, then globally until the objects fit MaxBytes.</summary>
     void Prune()
@@ -116,16 +118,15 @@ public sealed class VersionStore(Project project)
 
     void DeleteUnreferenced()
     {
-        string objects = Path.Combine(_dir, "objects");
-        if (!Directory.Exists(objects)) return;
+        if (!Directory.Exists(ObjectsDir)) return;
         var used = Index.Values.SelectMany(l => l).Select(e => e.Hash).ToHashSet();
-        foreach (var f in Directory.EnumerateFiles(objects).Where(f => !f.EndsWith(".tmp") && !used.Contains(Path.GetFileName(f))).ToList()) File.Delete(f);
+        foreach (var f in Directory.EnumerateFiles(ObjectsDir).Where(f => !f.EndsWith(".tmp") && !used.Contains(Path.GetFileName(f))).ToList()) File.Delete(f);
     }
 
     void Save()
     {
         Directory.CreateDirectory(_dir);
-        DocumentFile.WriteAtomic(IndexPath, JsonSerializer.Serialize(Index, new JsonSerializerOptions { WriteIndented = true }));
+        DocumentFile.WriteAtomic(IndexPath, JsonSerializer.Serialize(Index, DocumentFile.Indented));
     }
 }
 

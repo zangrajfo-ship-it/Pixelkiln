@@ -2,9 +2,16 @@ using System.Globalization;
 
 namespace PixelForge.Core;
 
-/// <summary>ARGB uint helpers: HSV conversion and hex text.</summary>
+/// <summary>ARGB uint helpers: mixing, HSV conversion and hex text.</summary>
 public static class ColorUtil
 {
+    /// <summary>Straight-alpha mix of two colours per channel, alpha included (t = 0 → a, 1 → b).</summary>
+    public static uint Lerp(uint a, uint b, double t)
+    {
+        uint C(int s) => (uint)Math.Round((a >> s & 0xFF) * (1 - t) + (b >> s & 0xFF) * t) << s;
+        return C(24) | C(16) | C(8) | C(0);
+    }
+
     /// <summary>h 0..360, s and v 0..1.</summary>
     public static uint FromHsv(double h, double s, double v, byte alpha = 255)
     {

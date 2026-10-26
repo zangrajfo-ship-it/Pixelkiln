@@ -81,7 +81,7 @@ public static class StyleCheck
     }
 
     /// <summary>Opaque pixels next to transparency (or the border) whose colour is not the outline colour.</summary>
-    public static int OffOutline(uint[] px, int w, int h, uint line)
+    static int OffOutline(uint[] px, int w, int h, uint line)
     {
         int bad = 0;
         bool Clear(int x, int y) => x < 0 || y < 0 || x >= w || y >= h || px[y * w + x] >> 24 == 0;

@@ -7,7 +7,7 @@ public static class TiledExport
 {
     public static string Json(Tilemap m, string tilesetImage)
     {
-        var ts = m.Tileset ?? throw new InvalidOperationException("Load a tileset first.");
+        var ts = m.RequireTileset();
         return JsonSerializer.Serialize(new
         {
             type = "map", version = "1.10", tiledversion = "1.10.2",
@@ -56,6 +56,6 @@ public static class TiledExport
                     }),
                 },
             },
-        }, new JsonSerializerOptions { WriteIndented = true });
+        }, DocumentFile.Indented);
     }
 }

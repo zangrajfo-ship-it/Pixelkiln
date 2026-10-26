@@ -35,6 +35,6 @@ public static class CharacterExport
                     }),
                 }),
             }),
-        }, new JsonSerializerOptions { WriteIndented = true });
+        }, DocumentFile.Indented);
     }
 }

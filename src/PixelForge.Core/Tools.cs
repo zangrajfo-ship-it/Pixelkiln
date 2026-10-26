@@ -92,19 +92,27 @@ public static class Tools
     /// <summary>Flood fill where each cell's new value depends on its position (e.g. a repeating stamp).</summary>
     public static void FillPattern<T>(T[] grid, int w, int h, int x, int y, Func<int, int, T> valueAt)
     {
-        if (!InBounds(w, h, x, y)) return;
+        var region = Region(grid, w, h, x, y);
+        for (int i = 0; i < region.Length; i++)
+            if (region[i]) grid[i] = valueAt(i % w, i / w);
+    }
+
+    /// <summary>Mask of the 4-way contiguous cells with the same value as the start cell (all false outside the grid).</summary>
+    public static bool[] Region<T>(T[] grid, int w, int h, int x, int y)
+    {
+        var seen = new bool[w * h];
+        if (!InBounds(w, h, x, y)) return seen;
         var cmp = EqualityComparer<T>.Default;
         T target = grid[y * w + x];
-        var seen = new bool[w * h];
         var q = new Queue<int>();
         q.Enqueue(y * w + x);
         seen[y * w + x] = true;
         while (q.Count > 0)
         {
             int i = q.Dequeue(), cx = i % w, cy = i / w;
-            grid[i] = valueAt(cx, cy);
             Try(cx - 1, cy); Try(cx + 1, cy); Try(cx, cy - 1); Try(cx, cy + 1);
         }
+        return seen;
 
         void Try(int nx, int ny)
         {
