@@ -33,8 +33,6 @@ public sealed class SceneAssets(Project project)
         return new Box<(uint[], int, int)>((m.Render(), m.Width * m.TileSize, m.Height * m.TileSize));
     })?.Value;
 
-    public Tilemap? Tilemap(Guid id) => Get(id, Core.Tilemap.Load);
-
     public (uint[] Pixels, int Width, int Height)? Image(Guid id) => Get(id, path => new Box<(uint[], int, int)>(
         path.EndsWith(".pxtex", StringComparison.OrdinalIgnoreCase) && Textures.Build(TextureDoc.Load(path), Project) is var m ? (m.Albedo, m.Width, m.Height) : AssetLoader.LoadImage(path)))?.Value;
 
@@ -47,7 +45,7 @@ public sealed class SceneAssets(Project project)
     public LogicGraph? Logic(Guid id) => Get(id, LogicGraph.Load);
 
     /// <summary>Collision rectangles of a tilemap's visible tiles, in map pixels (cached with the file).</summary>
-    public List<Collider>? TileSolids(Guid id) => Get(id, path =>
+    List<Collider>? TileSolids(Guid id) => Get(id, path =>
     {
         var m = Core.Tilemap.Load(path);
         var o = new List<Collider>();

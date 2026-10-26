@@ -89,7 +89,7 @@ public static class Textures
         readonly int _px = Math.Max(1, px), _py = Math.Max(1, py);
         readonly float[] _v = Enumerable.Range(0, Math.Max(1, px) * Math.Max(1, py)).Select(i => (float)new Rng(seed + (ulong)i * 0x9E3779B97F4A7C15).NextDouble()).ToArray();
 
-        float V(int x, int y) => _v[((y % _py) + _py) % _py * _px + ((x % _px) + _px) % _px];
+        float V(int x, int y) => _v[Tools.Wrap(y, _py) * _px + Tools.Wrap(x, _px)];
 
         public double At(double x, double y)
         {
@@ -132,7 +132,7 @@ public static class Textures
         for (int dy = -1; dy <= 1; dy++)
             for (int dx = -1; dx <= 1; dx++)
             {
-                int gx = cx + dx, gy = cy + dy, wx = ((gx % cells) + cells) % cells, wy = ((gy % cells) + cells) % cells;
+                int gx = cx + dx, gy = cy + dy, wx = Tools.Wrap(gx, cells), wy = Tools.Wrap(gy, cells);
                 var r = new Rng(seed ^ (ulong)(wy * 73856093 ^ wx * 19349663));
                 double px = gx + 0.15 + 0.7 * r.NextDouble(), py = gy + 0.15 + 0.7 * r.NextDouble();
                 double d = Math.Sqrt((px - x) * (px - x) + (py - y) * (py - y));
@@ -234,11 +234,7 @@ public static class Textures
         return (albedo, height);
     }
 
-    static uint Lerp(uint a, uint b, double t)
-    {
-        uint C(int s) => (uint)Math.Round((a >> s & 0xFF) * (1 - t) + (b >> s & 0xFF) * t) << s;
-        return 0xFF000000 | C(16) | C(8) | C(0);
-    }
+    static uint Lerp(uint a, uint b, double t) => 0xFF000000 | ColorUtil.Lerp(a, b, t);   // textures are always opaque
 
     // ---------- derived maps ----------
 
@@ -246,7 +242,7 @@ public static class Textures
     public static uint[] NormalMap(float[] h, int w, int hgt, double strength, bool flipGreen = false)
     {
         var o = new uint[w * hgt];
-        float H(int x, int y) => h[((y % hgt + hgt) % hgt) * w + (x % w + w) % w];
+        float H(int x, int y) => h[Tools.Wrap(y, hgt) * w + Tools.Wrap(x, w)];
         for (int y = 0; y < hgt; y++)
             for (int x = 0; x < w; x++)
             {
@@ -284,14 +280,14 @@ public static class Textures
             for (int x = 0; x < w; x++)
             {
                 double s = 0;
-                for (int k = -r; k <= r; k++) s += src[y * w + ((x + k) % w + w) % w];
+                for (int k = -r; k <= r; k++) s += src[y * w + Tools.Wrap(x + k, w)];
                 tmp[y * w + x] = (float)(s / (2 * r + 1));
             }
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
             {
                 double s = 0;
-                for (int k = -r; k <= r; k++) s += tmp[((y + k) % h + h) % h * w + x];
+                for (int k = -r; k <= r; k++) s += tmp[Tools.Wrap(y + k, h) * w + x];
                 dst[y * w + x] = (float)(s / (2 * r + 1));
             }
         return dst;

@@ -185,16 +185,7 @@ public static class WavWriter
     }
 
     /// <summary>Writes through a temporary file, so a failed export never leaves half a WAV.</summary>
-    public static void Save(string path, float[] samples)
-    {
-        string tmp = path + ".tmp";
-        try
-        {
-            using (var f = File.Create(tmp)) Write(f, samples);
-            File.Move(tmp, path, overwrite: true);
-        }
-        finally { if (File.Exists(tmp)) File.Delete(tmp); }
-    }
+    public static void Save(string path, float[] samples) => DocumentFile.WriteViaTemp(path, f => Write(f, samples));
 
     public static byte[] ToBytes(float[] samples)
     {

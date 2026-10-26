@@ -187,7 +187,7 @@ public sealed class Scene
         var d = JsonSerializer.Deserialize<Dto>(json, Json) ?? throw new InvalidDataException("Empty scene file.");
         var s = new Scene
         {
-            Level = d.Level ?? "", Order = d.Order, Background = d.Background, MusicAssetId = d.MusicAssetId,
+            Level = d.Level ?? "", Order = d.Order, Background = d.Background, MusicAssetId = d.MusicAssetId, CameraX = d.CameraX, CameraY = d.CameraY,
             UiAssetId = d.UiAssetId, UiScreen = d.UiScreen,   // absent in v1 files: no overlay
             CameraClipAssetId = d.CameraClipAssetId, CameraClip = d.CameraClip,   // absent before v3
             Ambient = d.Ambient ?? 0xFFFFFFFF, TileShadows = d.TileShadows ?? true,   // before v4: unlit
@@ -195,8 +195,7 @@ public sealed class Scene
             LogicAssetId = d.LogicAssetId,   // absent before v5
             Layers = d.Layers ?? [], Instances = d.Instances ?? [], Areas = d.Areas ?? [],
         };
-        s.Resize(d.Width, d.Height);
-        (s.CameraX, s.CameraY) = (Math.Clamp(d.CameraX, 0, s.Width - 1), Math.Clamp(d.CameraY, 0, s.Height - 1));
+        s.Resize(d.Width, d.Height);   // also keeps the camera inside the scene
         if (s.Layers.Count == 0) throw new InvalidDataException("A scene needs at least one layer.");
         var ids = s.Layers.Select(l => l.Id).Concat(s.Instances.Select(i => i.Id)).Concat(s.Areas.Select(a => a.Id)).ToList();
         if (ids.Count != ids.Distinct().Count()) throw new InvalidDataException("The scene uses an id twice.");

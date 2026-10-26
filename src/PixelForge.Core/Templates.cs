@@ -39,7 +39,7 @@ public sealed record TemplateInfo(TemplateManifest Manifest, TemplateSource Sour
 public static class TemplateLoader
 {
     public const int ApiVersion = 1;
-    public const long MaxManifestBytes = 1024 * 1024;
+    const long MaxManifestBytes = 1024 * 1024;
     static readonly Regex IdPattern = new("^[a-z0-9][a-z0-9._-]{1,63}$");
     static readonly Regex VersionPattern = new(@"^\d+\.\d+(\.\d+)?$");
     static readonly Regex Placeholder = new(@"\{([A-Za-z0-9_]+)\}");
@@ -216,32 +216,16 @@ public static class TemplateLibrary
     /// <summary>Zip of template folders (built-in ones as their JSON); entries sorted, fixed time, so packs are reproducible.</summary>
     public static void ExportPack(string path, IEnumerable<TemplateInfo> templates)
     {
-        string tmp = path + ".tmp";
-        try
+        var entries = new SortedDictionary<string, byte[]>(StringComparer.Ordinal);
+        foreach (var t in templates)
         {
-            using (var fs = File.Create(tmp))
-            using (var zip = new ZipArchive(fs, ZipArchiveMode.Create))
-            {
-                var entries = new SortedDictionary<string, byte[]>(StringComparer.Ordinal);
-                foreach (var t in templates)
-                {
-                    string root = t.Key + "/";
-                    if (t.Folder is null) entries[root + "template.json"] = System.Text.Encoding.UTF8.GetBytes(TemplateLoader.Serialize(t.Manifest));
-                    else
-                        foreach (var f in Directory.EnumerateFiles(t.Folder, "*", SearchOption.AllDirectories))
-                            entries[root + Path.GetRelativePath(t.Folder, f).Replace('\\', '/')] = File.ReadAllBytes(f);
-                }
-                foreach (var (name, data) in entries)
-                {
-                    var e = zip.CreateEntry(name, CompressionLevel.Optimal);
-                    e.LastWriteTime = new DateTimeOffset(1980, 1, 1, 0, 0, 0, TimeSpan.Zero);
-                    using var s = e.Open();
-                    s.Write(data);
-                }
-            }
-            File.Move(tmp, path, overwrite: true);
+            string root = t.Key + "/";
+            if (t.Folder is null) entries[root + "template.json"] = System.Text.Encoding.UTF8.GetBytes(TemplateLoader.Serialize(t.Manifest));
+            else
+                foreach (var f in Directory.EnumerateFiles(t.Folder, "*", SearchOption.AllDirectories))
+                    entries[root + Path.GetRelativePath(t.Folder, f).Replace('\\', '/')] = File.ReadAllBytes(f);
         }
-        finally { if (File.Exists(tmp)) File.Delete(tmp); }
+        Exporter.WriteZip(path, entries);
     }
 
     /// <summary>

@@ -110,24 +110,17 @@ public static class Exporter
     }
 
     /// <summary>Zip with sorted entries and a fixed timestamp, so the same export gives the same archive.</summary>
-    static void WriteZip(string path, SortedDictionary<string, byte[]> files)
+    internal static void WriteZip(string path, SortedDictionary<string, byte[]> files) => DocumentFile.WriteViaTemp(path, fs =>
     {
-        string tmp = path + ".tmp";
-        try
+        using var zip = new ZipArchive(fs, ZipArchiveMode.Create);
+        foreach (var (rel, data) in files)
         {
-            using (var fs = File.Create(tmp))
-            using (var zip = new ZipArchive(fs, ZipArchiveMode.Create))
-                foreach (var (rel, data) in files)
-                {
-                    var e = zip.CreateEntry(rel, CompressionLevel.Optimal);
-                    e.LastWriteTime = new DateTimeOffset(1980, 1, 1, 0, 0, 0, TimeSpan.Zero);
-                    using var s = e.Open();
-                    s.Write(data);
-                }
-            File.Move(tmp, path, overwrite: true);
+            var e = zip.CreateEntry(rel, CompressionLevel.Optimal);
+            e.LastWriteTime = new DateTimeOffset(1980, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            using var s = e.Open();
+            s.Write(data);
         }
-        finally { if (File.Exists(tmp)) File.Delete(tmp); }
-    }
+    });
 
     static ExportResult Finish(ExportResult r, ExportProfile prof)
     {
@@ -213,17 +206,11 @@ public static class Exporter
             Add(rel, ImageIO.EncodePng(px, w, h));
             foreach (int s in prof.Scales.Where(s => s is > 1 and <= 16).Distinct())
             {
-                var big = redraw?.Invoke(s) ?? Enlarge(px, w, h, s);
+                var big = redraw?.Invoke(s) ?? PixelOps.Resize(px, w, h, w * s, h * s);
                 Add(rel[..^4] + $"@{s}x.png", ImageIO.EncodePng(big, w * s, h * s));
             }
         }
 
-        static uint[] Enlarge(uint[] px, int w, int h, int s)
-        {
-            var o = new uint[w * s * h * s];
-            for (int y = 0; y < h * s; y++) for (int x = 0; x < w * s; x++) o[y * w * s + x] = px[y / s * w + x / s];
-            return o;
-        }
         void Add(string rel, string text) => r.Files[rel] = Encoding.UTF8.GetBytes(text.Replace("\r\n", "\n"));
 
         public void Export(AssetEntry a)
@@ -395,7 +382,7 @@ public static class Exporter
                     direction = e.Direction, spread = e.Spread, gravity = e.Gravity, size = e.Size, endSize = e.EndSize,
                     color = $"#{e.Color:X8}", endColor = $"#{e.EndColor:X8}", additive = e.Additive, seed = e.Seed,
                 }),
-            }, new JsonSerializerOptions { WriteIndented = true });
+            }, DocumentFile.Indented);
         }
 
         /// <summary>Atlas pages of every exported picture; keys are the exported names (sprite frames as name#frame).</summary>
@@ -422,7 +409,7 @@ public static class Exporter
                 musicLoops = set.Where(a => a.Type == AssetType.Mix).Select(a => (a, m: Mix.Load(p.FullPath(a)))).Where(x => x.m.LoopStartMs is not null)
                     .Select(x => new { file = Wav(x.a.Id), startMs = x.m.LoopStartMs, endMs = x.m.LoopEndMs }),
                 exported = set.OrderBy(a => a.Path, StringComparer.Ordinal).Select(a => new { asset = a.Path, type = a.Type.ToString(), name = _base[a.Id] }),
-            }, new JsonSerializerOptions { WriteIndented = true }));
+            }, DocumentFile.Indented));
         }
     }
 }

@@ -40,10 +40,17 @@ public sealed class AnimClip
         double local = Play switch
         {
             AnimPlay.Once => Math.Clamp(t, 0, d),
-            AnimPlay.PingPong => (t % (2 * d) + 2 * d) % (2 * d) is var x && x > d ? 2 * d - x : (t % (2 * d) + 2 * d) % (2 * d),
+            AnimPlay.PingPong => PingPong(t, d),
             _ => (t % d + d) % d,
         };
         return Reverse ? d - local : local;
+    }
+
+    /// <summary>Forward over d, then back again, repeating every 2d.</summary>
+    static double PingPong(double t, double d)
+    {
+        double x = (t % (2 * d) + 2 * d) % (2 * d);
+        return x > d ? 2 * d - x : x;
     }
 
     public double Value(string target, AnimProperty p, double t) =>
@@ -81,7 +88,7 @@ public sealed class AnimClip
     };
 
     /// <summary>CSS cubic-bezier: find the curve parameter whose x is u (Newton, then bisection), return its y.</summary>
-    public static double CubicBezier(double x1, double y1, double x2, double y2, double u)
+    static double CubicBezier(double x1, double y1, double x2, double y2, double u)
     {
         x1 = Math.Clamp(x1, 0, 1);
         x2 = Math.Clamp(x2, 0, 1);

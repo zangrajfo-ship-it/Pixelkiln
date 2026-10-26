@@ -6,7 +6,7 @@ namespace PixelForge.Core;
 
 public sealed record PluginPalette(string Name, List<string> Colors)
 {
-    public List<uint> Argb() => [.. Colors.Select(c => ColorUtil.TryParseHex(c.TrimStart('#'), out uint v) ? v | (c.TrimStart('#').Length == 6 ? 0xFF000000 : 0) : 0)];
+    public List<uint> Argb() => [.. Colors.Select(c => ColorUtil.TryParseHex(c.TrimStart('#'), out uint v) ? v : 0)];   // RRGGBB comes back opaque
 }
 
 /// <summary>Saved settings for one of the built-in generators (values as the generator dialogs take them).</summary>
@@ -32,8 +32,8 @@ public static class PluginLoader
 {
     /// <summary>The plugin API this PixelForge understands; manifests asking for another one are refused.</summary>
     public const int ApiVersion = 1;
-    public const long MaxManifestBytes = 1024 * 1024;
-    public static readonly string[] Generators = ["sprite", "tiles", "layout"];
+    const long MaxManifestBytes = 1024 * 1024;
+    static readonly string[] Generators = ["sprite", "tiles", "layout"];
 
     static readonly Regex IdPattern = new("^[a-z0-9][a-z0-9._-]{1,63}$");
     static readonly Regex VersionPattern = new(@"^\d+\.\d+(\.\d+)?([-+][0-9A-Za-z.-]+)?$");
@@ -109,7 +109,7 @@ public static class PluginLoader
         foreach (var e in c.ExportProfiles ?? [])
         {
             if (string.IsNullOrWhiteSpace(e.Name)) throw new InvalidDataException("Every export profile needs a name.");
-            if (string.IsNullOrWhiteSpace(e.OutputFolder) || Path.IsPathRooted(e.OutputFolder) || e.OutputFolder.Replace('\\', '/').Split('/').Contains(".."))
+            if (!Project.IsInside(e.OutputFolder))
                 throw new InvalidDataException($"Export profile “{e.Name}”: outputFolder must be a relative folder inside the project.");
         }
         foreach (var macro in c.Macros ?? [])
@@ -122,7 +122,7 @@ public static class PluginLoader
 
     static readonly Dictionary<string, Dictionary<string, Func<string, bool>>> PresetKeys = new()
     {
-        ["sprite"] = new() { ["seed"] = _ => true, ["density"] = v => double.TryParse(v, System.Globalization.CultureInfo.InvariantCulture, out var d) && d is > 0 and < 1 },
+        ["sprite"] = new() { ["seed"] = _ => true, ["density"] = Fraction },
         ["tiles"] = new()
         {
             ["seed"] = _ => true, ["pattern"] = v => Enum.TryParse<TilePattern>(v, false, out _), ["baseColor"] = v => ColorUtil.TryParseHex(v.TrimStart('#'), out _),
@@ -131,9 +131,12 @@ public static class PluginLoader
         ["layout"] = new()
         {
             ["seed"] = _ => true, ["layout"] = v => v is "Cave" or "Platforms",
-            ["fill"] = v => double.TryParse(v, System.Globalization.CultureInfo.InvariantCulture, out var d) && d is > 0 and < 1,
+            ["fill"] = Fraction,
         },
     };
+
+    /// <summary>A number strictly between 0 and 1.</summary>
+    static bool Fraction(string v) => double.TryParse(v, System.Globalization.CultureInfo.InvariantCulture, out var d) && d is > 0 and < 1;
 
     static void ValidatePreset(PluginGeneratorPreset g)
     {

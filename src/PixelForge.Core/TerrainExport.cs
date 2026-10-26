@@ -10,7 +10,7 @@ public static class TerrainExport
 {
     public static string Json(Tilemap map)
     {
-        var ts = map.Tileset ?? throw new InvalidOperationException("Load a tileset first.");
+        var ts = map.RequireTileset();
         return JsonSerializer.Serialize(new
         {
             format = "pixelforge-terrains", version = 1, tileSize = map.TileSize, columns = ts.Columns,
@@ -25,6 +25,6 @@ public static class TerrainExport
                 tiles = (t.Mode == TerrainMode.Blob47 ? Autotile.Masks47 : Enumerable.Range(0, 16))
                     .ToDictionary(m => m.ToString(), m => Autotile.TileFor(ts, t, m)),
             }),
-        }, new JsonSerializerOptions { WriteIndented = true });
+        }, DocumentFile.Indented);
     }
 }

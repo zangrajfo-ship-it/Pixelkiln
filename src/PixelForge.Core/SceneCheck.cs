@@ -21,7 +21,7 @@ public static class SceneCheck
         }
         foreach (var i in s.Instances)
         {
-            string name = i.Name.Length > 0 ? i.Name : i.Id.ToString()[..8];
+            string name = Label(i);
             if (p.Find(i.AssetId) is not { } e || p.Resolve(i.AssetId) is null) Error($"Instance “{name}” refers to a missing asset.");
             else if (e.Type is not (AssetType.Sprite or AssetType.Character)) Error($"Instance “{name}” refers to a {e.Type}, not a sprite or character.");
             if (!layerIds.Contains(i.LayerId)) Error($"Instance “{name}” is on a layer that no longer exists.");
@@ -37,7 +37,7 @@ public static class SceneCheck
         foreach (var a in s.Areas)
             if (a.X + a.W <= 0 || a.Y + a.H <= 0 || a.X >= s.Width || a.Y >= s.Height) Warn($"{a.Kind} area “{a.Name}” is outside the scene.");
 
-        if (!s.Areas.Any(a => a.Kind == AreaKind.Spawn) && !s.Instances.Any(i => p.Find(i.AssetId)?.Type == AssetType.Character && Load<Character>(p, i.AssetId)?.Kind == CharacterKind.Player))
+        if (!s.Areas.Any(a => a.Kind == AreaKind.Spawn) && !s.Instances.Any(i => p.Find(i.AssetId)?.Type == AssetType.Character && Load(p, i.AssetId, Character.Load)?.Kind == CharacterKind.Player))
             Warn("No spawn area and no player character: where does the player start?");
 
         var solid = SolidCells(s, p);
@@ -61,14 +61,11 @@ public static class SceneCheck
     static bool Overlaps((int X, int Y, int W, int H) a, (int X, int Y, int W, int H) b) =>
         a.X < b.X + b.W && b.X < a.X + a.W && a.Y < b.Y + b.H && b.Y < a.Y + a.H;
 
-    static T? Load<T>(Project p, Guid id) where T : class
+    /// <summary>The asset loaded with <paramref name="load"/>, or null when it is missing or unreadable.</summary>
+    static T? Load<T>(Project p, Guid id, Func<string, T> load) where T : class
     {
         if (p.Resolve(id) is not string path) return null;
-        try
-        {
-            return typeof(T) == typeof(Character) ? Character.Load(path) as T
-                : typeof(T) == typeof(Tilemap) ? Tilemap.Load(path) as T : null;
-        }
+        try { return load(path); }
         catch (Exception ex) when (ex is InvalidDataException or IOException) { return null; }
     }
 
@@ -78,7 +75,7 @@ public static class SceneCheck
         var cells = new List<(int, int, int, int)>();
         foreach (var l in s.Layers.Where(l => l.Kind == SceneLayerKind.Tilemap && l.ParallaxX == 1 && l.ParallaxY == 1 && l.AssetId is not null))
         {
-            if (Load<Tilemap>(p, l.AssetId!.Value) is not { } m) continue;
+            if (Load(p, l.AssetId!.Value, Tilemap.Load) is not { } m) continue;
             foreach (var layer in m.Layers.Where(x => x.Visible))
                 for (int i = 0; i < layer.Tiles.Length; i++)
                     if (layer.Tiles[i] >= 0 && m.TileCollisions.TryGetValue(layer.Tiles[i], out var c) && !c.OneWay)
@@ -90,7 +87,7 @@ public static class SceneCheck
     /// <summary>A character's first solid box in scene space (origin at the instance position), or null.</summary>
     static (int X, int Y, int W, int H)? SolidBox(SceneInstance i, Project p)
     {
-        if (Load<Character>(p, i.AssetId) is not { } c) return null;
+        if (Load(p, i.AssetId, Character.Load) is not { } c) return null;
         var b = c.BoxesAt(i.Animation ?? c.Animations.Keys.FirstOrDefault(), 0).FirstOrDefault(x => x.Kind == BoxKind.Solid);
         if (b is null) return null;
         int x = i.FlipX ? -(b.X + b.W - c.OriginX) : b.X - c.OriginX;

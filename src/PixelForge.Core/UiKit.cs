@@ -212,11 +212,7 @@ public static class UiRender
 {
     static Color C(uint c) => Color.FromArgb((byte)(c >> 24), (byte)(c >> 16), (byte)(c >> 8), (byte)c);
 
-    static uint Mix(uint a, uint b, double t)
-    {
-        uint Ch(int s) => (uint)Math.Round((a >> s & 0xFF) * (1 - t) + (b >> s & 0xFF) * t) << s;
-        return Ch(24) | Ch(16) | Ch(8) | Ch(0);
-    }
+    static uint Mix(uint a, uint b, double t) => ColorUtil.Lerp(a, b, t);
 
     /// <summary>The element's own art for a state at its native size: the project picture if one is set, otherwise drawn from the style.</summary>
     public static uint[] Native(UiKit kit, UiElement e, UiState state, Project? p = null)
@@ -225,7 +221,7 @@ public static class UiRender
         if (art is Guid id && p?.Resolve(id) is string path)
         {
             var (px, w, h) = AssetLoader.LoadImage(path);
-            return w == e.W && h == e.H ? px : Scale(px, w, h, e.W, e.H);
+            return w == e.W && h == e.H ? px : PixelOps.Resize(px, w, h, e.W, e.H);
         }
         return Draw(kit.Style, e, state, e.W, e.H, null, 0.7, p);
     }
@@ -248,13 +244,6 @@ public static class UiRender
             int sy = Math.Clamp(Map(y, th, sh), 0, sh - 1);
             for (int x = 0; x < tw; x++) o[y * tw + x] = src[sy * sw + Math.Clamp(Map(x, tw, sw), 0, sw - 1)];
         }
-        return o;
-    }
-
-    static uint[] Scale(uint[] src, int sw, int sh, int tw, int th)
-    {
-        var o = new uint[tw * th];
-        for (int y = 0; y < th; y++) for (int x = 0; x < tw; x++) o[y * tw + x] = src[y * sh / th * sw + x * sw / tw];
         return o;
     }
 
@@ -354,14 +343,7 @@ public static class UiRender
         rtb.Render(visual);
         var px = new uint[Math.Max(1, w) * Math.Max(1, h)];
         rtb.CopyPixels(px, Math.Max(1, w) * 4, 0);
-        for (int i = 0; i < px.Length; i++)
-        {
-            uint p = px[i], a = p >> 24;
-            if (a is 0 or 255) continue;
-            if (pixel && !faded && a < 128) { px[i] = 0; continue; }
-            uint U(int s) => Math.Min(255u, ((p >> s & 0xFF) * 255 + a / 2) / a) << s;
-            px[i] = (pixel && !faded ? 255u : a) << 24 | U(16) | U(8) | U(0);
-        }
+        ImageIO.Unpremultiply(px, pixel && !faded);
         return px;
     }
 

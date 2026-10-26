@@ -67,22 +67,14 @@ public static class Particles
         {
             double age = t - k * interval;
             if (age < 0 || age >= e.LifeMs) continue;
-            ulong h = Mix((ulong)e.Seed * 0x9E3779B97F4A7C15UL ^ (ulong)k);
-            double R() { h = Mix(h); return (h >> 11) / (double)(1UL << 53); }
+            ulong h = Rng.Hash((ulong)e.Seed * 0x9E3779B97F4A7C15UL ^ (ulong)k);
+            double R() { h = Rng.Hash(h); return (h >> 11) / (double)(1UL << 53); }
             double px = e.X + R() * e.W, py = e.Y + R() * e.H;
             double a = (e.Direction + (R() - 0.5) * e.Spread) * Math.PI / 180, v = e.Speed * (0.6 + 0.4 * R());
             double s = age / 1000, u = age / e.LifeMs;
             o.Add(new Particle(px + Math.Cos(a) * v * s, py + Math.Sin(a) * v * s + 0.5 * e.Gravity * s * s, e.Size + (e.EndSize - e.Size) * u, Lerp(e.Color, e.EndColor, u)));
         }
         return o;
-    }
-
-    static ulong Mix(ulong z)
-    {
-        z += 0x9E3779B97F4A7C15UL;
-        z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
-        z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
-        return z ^ (z >> 31);
     }
 
     static uint Lerp(uint a, uint b, double u)

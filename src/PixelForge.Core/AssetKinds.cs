@@ -20,8 +20,7 @@ public static class AssetKinds
     static readonly List<AssetKind> _all =
     [
         new(AssetType.Sprite, [".pxf"], p => ProjectFile.Load(p), p => DescribeSprite(ProjectFile.Load(p)), (p, _) => AssetLoader.LoadImage(p)),
-        new(AssetType.Image, [".png", ".gif", ".bmp"], p => ImageIO.LoadImage(p), p => ImageIO.LoadImage(p) is var (_, w, h) ? $"{w}×{h} image" : "",
-            (p, _) => ImageIO.LoadImage(p)),
+        new(AssetType.Image, [".png", ".gif", ".bmp"], p => ImageIO.LoadImage(p), DescribeImage, (p, _) => ImageIO.LoadImage(p)),
         new(AssetType.Tilemap, [".pxm"], p => Tilemap.Load(p), p => DescribeMap(Tilemap.Load(p)), MapPicture,
             p => Tilemap.Load(p).TilesetAssetId is Guid g ? [g] : [],
             (p, map) =>
@@ -56,7 +55,11 @@ public static class AssetKinds
             }),
         new(AssetType.Character, [".pxchar"], p => Character.Load(p), p => DescribeCharacter(Character.Load(p)),
             (p, project) => project is not null && Character.Load(p).SpriteAssetId is Guid sid && project.Resolve(sid) is string sp ? AssetLoader.LoadImage(sp) : null,
-            p => Character.Load(p) is var ch ? new[] { ch.SpriteAssetId, ch.RigAnimAssetId }.OfType<Guid>() : [],
+            p =>
+            {
+                var ch = Character.Load(p);
+                return new[] { ch.SpriteAssetId, ch.RigAnimAssetId }.OfType<Guid>();
+            },
             (p, map) =>
             {
                 var c = Character.Load(p);
@@ -68,16 +71,9 @@ public static class AssetKinds
             }),
         new(AssetType.Palette, [".hex", ".gpl"], p => PaletteIO.Load(p), p => $"{PaletteIO.Load(p).Count} colors", (p, _) => AssetInfo.PaletteImage(PaletteIO.Load(p))),
         new(AssetType.Audio, [".wav"], p => WavReader.Load(p), p => $"WAV, {WavReader.Load(p).Length / (double)Synth.SampleRate:0.00} s"),
-        new(AssetType.Paint, [".pxpaint"], p => PaintDoc.Load(p), p => PaintDoc.Load(p) is var d ? $"Painting {d.Width}×{d.Height} px, {Plural(d.Layers.Count, "layer")}" : "",
-            (p, _) => PaintDoc.Load(p).Preview(512)),
-        new(AssetType.Vector, [".pxvec"], p => VectorDoc.Load(p), p => VectorDoc.Load(p) is var d ? $"Vector {d.Width:0.##}×{d.Height:0.##}, {Plural(d.Shapes.Count, "shape")}" : "",
-            (p, _) => VectorDoc.Load(p) is var d && Math.Max(d.Width, d.Height) is var longest && longest > 0
-                ? ((int)Math.Max(1, d.Width * 256 / longest), (int)Math.Max(1, d.Height * 256 / longest)) is var (w, h) ? (VectorGeometry.Rasterize(d, w, h), w, h) : null
-                : null),
-        new(AssetType.Texture, [".pxtex"], p => TextureDoc.Load(p), p => TextureDoc.Load(p) is var t
-                ? $"Texture {(t.Source == TextureSource.Procedural ? $"{t.Material} {t.Size}×{t.Size}" : $"from a {t.Source.ToString().ToLowerInvariant()}")}" : "",
-            (p, project) => TextureDoc.Load(p) is var t && (t.Source == TextureSource.Procedural || project is not null)
-                ? Textures.Build(t, project) is var m ? (m.Albedo, m.Width, m.Height) : null : null,
+        new(AssetType.Paint, [".pxpaint"], p => PaintDoc.Load(p), p => DescribePaint(PaintDoc.Load(p)), (p, _) => PaintDoc.Load(p).Preview(512)),
+        new(AssetType.Vector, [".pxvec"], p => VectorDoc.Load(p), p => DescribeVector(VectorDoc.Load(p)), VectorPicture),
+        new(AssetType.Texture, [".pxtex"], p => TextureDoc.Load(p), p => DescribeTexture(TextureDoc.Load(p)), TexturePicture,
             p => TextureDoc.Load(p).AssetId is Guid a ? [a] : [],
             (p, map) =>
             {
@@ -87,8 +83,7 @@ public static class AssetKinds
                 TextureDoc.Save(t, p);
                 return true;
             }),
-        new(AssetType.Ui, [".pxui"], p => UiKit.Load(p), p => UiKit.Load(p) is var k ? $"UI kit, {Plural(k.Elements.Count, "element")}, {Plural(k.Screens.Count, "screen")}" : "",
-            (p, project) => UiKit.Load(p) is var k && k.Screens.FirstOrDefault() is { } s ? (UiRender.Screen(k, s, s.Width, s.Height, project), s.Width, s.Height) : null,
+        new(AssetType.Ui, [".pxui"], p => UiKit.Load(p), p => DescribeUi(UiKit.Load(p)), UiPicture,
             p => UiKit.Load(p).ReferencedAssets(),
             (p, map) =>
             {
@@ -104,8 +99,7 @@ public static class AssetKinds
                 if (changed) UiKit.Save(k, p);
                 return changed;
             }),
-        new(AssetType.Logic, [".pxlogic"], p => LogicGraph.Load(p), p => LogicGraph.Load(p) is var g
-                ? $"Logic: {g.Nodes.Count(n => LogicGraph.IsEvent(n.Kind))} events, {g.Nodes.Count} nodes" : "",
+        new(AssetType.Logic, [".pxlogic"], p => LogicGraph.Load(p), p => DescribeLogic(LogicGraph.Load(p)),
             References: p => LogicGraph.Load(p).Nodes.SelectMany(n => n.Params.Where(kv => kv.Key is "sound" or "scene" or "library").Select(kv => Guid.TryParse(kv.Value, out var g) ? g : (Guid?)null)).OfType<Guid>().Distinct(),
             Remap: (p, map) =>
             {
@@ -117,8 +111,7 @@ public static class AssetKinds
                 if (changed) LogicGraph.Save(g, p);
                 return changed;
             }),
-        new(AssetType.Anim, [".pxanim"], p => AnimLibrary.Load(p), p => AnimLibrary.Load(p) is var l
-                ? $"Animations: {string.Join(", ", l.Clips.Take(6).Select(c => $"{c.Name} ({c.DurationMs / 1000.0:0.##} s)"))}{(l.Clips.Count > 6 ? " …" : "")}" : ""),
+        new(AssetType.Anim, [".pxanim"], p => AnimLibrary.Load(p), p => DescribeAnim(AnimLibrary.Load(p))),
         new(AssetType.Mix, [".pxmix"], p => Mix.Load(p), p => DescribeMix(Mix.Load(p)), null,
             p => Mix.Load(p).ReferencedAssets(),
             (p, map) =>
@@ -179,6 +172,55 @@ public static class AssetKinds
         $"Scene {s.Width}×{s.Height} px{(s.Level.Length > 0 ? $", level {s.Level} #{s.Order}" : "")}, {s.Layers.Count} layers, {s.Instances.Count} instances, {s.Areas.Count} areas";
 
     static string DescribeCharacter(Character c) => $"{c.Kind}, {Plural(c.Animations.Count, "state")}, {Plural(c.Boxes.Count, "box", "es")}";
+
+    static string DescribeImage(string path)
+    {
+        var (_, w, h) = ImageIO.LoadImage(path);
+        return $"{w}×{h} image";
+    }
+
+    static string DescribePaint(PaintDoc d) => $"Painting {d.Width}×{d.Height} px, {Plural(d.Layers.Count, "layer")}";
+
+    static string DescribeVector(VectorDoc d) => $"Vector {d.Width:0.##}×{d.Height:0.##}, {Plural(d.Shapes.Count, "shape")}";
+
+    static string DescribeTexture(TextureDoc t) =>
+        $"Texture {(t.Source == TextureSource.Procedural ? $"{t.Material} {t.Size}×{t.Size}" : $"from a {t.Source.ToString().ToLowerInvariant()}")}";
+
+    static string DescribeUi(UiKit k) => $"UI kit, {Plural(k.Elements.Count, "element")}, {Plural(k.Screens.Count, "screen")}";
+
+    static string DescribeLogic(LogicGraph g) => $"Logic: {g.Nodes.Count(n => LogicGraph.IsEvent(n.Kind))} events, {g.Nodes.Count} nodes";
+
+    static string DescribeAnim(AnimLibrary l) =>
+        $"Animations: {string.Join(", ", l.Clips.Take(6).Select(c => $"{c.Name} ({c.DurationMs / 1000.0:0.##} s)"))}{(l.Clips.Count > 6 ? " …" : "")}";
+
+    // ---------- pictures ----------
+
+    /// <summary>The drawing scaled so its longer side is 256 px.</summary>
+    static (uint[], int, int)? VectorPicture(string path, Project? _)
+    {
+        var d = VectorDoc.Load(path);
+        double longest = Math.Max(d.Width, d.Height);
+        if (longest <= 0) return null;
+        int w = (int)Math.Max(1, d.Width * 256 / longest), h = (int)Math.Max(1, d.Height * 256 / longest);
+        return (VectorGeometry.Rasterize(d, w, h), w, h);
+    }
+
+    /// <summary>Procedural textures draw alone; textures made from another asset need the project.</summary>
+    static (uint[], int, int)? TexturePicture(string path, Project? project)
+    {
+        var t = TextureDoc.Load(path);
+        if (t.Source != TextureSource.Procedural && project is null) return null;
+        var m = Textures.Build(t, project);
+        return (m.Albedo, m.Width, m.Height);
+    }
+
+    /// <summary>The kit's first screen.</summary>
+    static (uint[], int, int)? UiPicture(string path, Project? project)
+    {
+        var k = UiKit.Load(path);
+        if (k.Screens.FirstOrDefault() is not { } s) return null;
+        return (UiRender.Screen(k, s, s.Width, s.Height, project), s.Width, s.Height);
+    }
 
     /// <summary>The whole scene at its camera-free size (needs the project for its assets); huge scenes get no picture.</summary>
     static (uint[], int, int)? ScenePicture(string path, Project? project)

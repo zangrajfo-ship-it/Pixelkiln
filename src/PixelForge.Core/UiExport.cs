@@ -12,7 +12,7 @@ public static class UiExport
 {
     static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-    public static string Safe(string s)
+    static string Safe(string s)
     {
         var sb = new StringBuilder();
         foreach (char c in s.Trim()) sb.Append(char.IsAsciiLetterOrDigit(c) ? char.ToLowerInvariant(c) : '_');
@@ -20,6 +20,9 @@ public static class UiExport
     }
 
     public static string ScreenFile(string b, string screen) => $"{b}_{Safe(screen)}.tscn";
+
+    /// <summary>Exported picture of one element state.</summary>
+    static string StateFile(string b, string element, UiState s) => $"{b}_ui/{element}_{s.ToString().ToLowerInvariant()}.png";
 
     static IEnumerable<UiState> StatesOf(UiElement e) => e.Kind is UiElementKind.Button or UiElementKind.InventorySlot or UiElementKind.Slider ? Enum.GetValues<UiState>() : [UiState.Normal];
 
@@ -42,7 +45,7 @@ public static class UiExport
             foreach (var s in StatesOf(e))
             {
                 var px = UiRender.Native(kit, e, s, p);
-                string file = $"{b}_ui/{names[e.Id]}_{s.ToString().ToLowerInvariant()}.png";
+                string file = StateFile(b, names[e.Id], s);
                 o[file] = ImageIO.EncodePng(px, e.W, e.H);
                 parts.Add((e, s, px, file));
             }
@@ -76,13 +79,13 @@ public static class UiExport
                 name = s.Name, width = s.Width, height = s.Height, background = s.Background >> 24 == 0 ? null : Hex(s.Background),
                 items = s.Items.Where(i => names.ContainsKey(i.ElementId)).Select(i => new { element = names[i.ElementId], i.X, i.Y, w = i.W, h = i.H, anchor = i.Anchor.ToString(), text = i.Text, value = i.Value, state = i.State.ToString() }),
             }),
-        }, new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n"));
+        }, DocumentFile.Indented).Replace("\r\n", "\n"));
 
         if (res is null) return o;
 
         // ---- Godot: Theme + one Control scene per screen ----
         string themeFile = $"{b}_theme.tres";
-        o[themeFile] = Encoding.UTF8.GetBytes(Theme(kit, (e, st) => res($"{b}_ui/{names[e.Id]}_{st.ToString().ToLowerInvariant()}.png")));
+        o[themeFile] = Encoding.UTF8.GetBytes(Theme(kit, (e, st) => res(StateFile(b, names[e.Id], st))));
         foreach (var s in kit.Screens)
             o[ScreenFile(b, s.Name)] = Encoding.UTF8.GetBytes(ScreenScene(kit, s, b, names, res, res(themeFile)));
         return o;
@@ -156,8 +159,7 @@ public static class UiExport
         foreach (var i in s.Items)
         {
             if (kit.Element(i.ElementId) is not { } e) continue;
-            string n = GodotExport.NodeName(i.Text is { Length: > 0 } t && t.Length <= 24 ? t : e.Name), u = n;
-            for (int k = 2; !used.Add(u); k++) u = $"{n}{k}";
+            string u = GodotExport.Unique(used, i.Text is { Length: > 0 } t && t.Length <= 24 ? t : e.Name);
             var (al, at, ar, ab) = Anchors(i.Anchor);
             // offsets are distances from the anchor points in design pixels
             double ol = i.X - al * s.Width, ot = i.Y - at * s.Height, or = i.X + i.W - ar * s.Width, ob = i.Y + i.H - ab * s.Height;
@@ -176,7 +178,7 @@ public static class UiExport
                 case "HSlider": body.Append($"value = {F(i.Value * 100)}\n"); break;
                 case "ProgressBar": body.Append($"value = {F(i.Value * 100)}\nshow_percentage = false\n"); break;
                 case "TextureRect":
-                    body.Append($"texture = {Ext("Texture2D", res($"{b}_ui/{names[e.Id]}_{i.State.ToString().ToLowerInvariant()}.png"))}\nexpand_mode = 1\nstretch_mode = 5\n");
+                    body.Append($"texture = {Ext("Texture2D", res(StateFile(b, names[e.Id], i.State)))}\nexpand_mode = 1\nstretch_mode = 5\n");
                     break;
             }
             body.Append('\n');

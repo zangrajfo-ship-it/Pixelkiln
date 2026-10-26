@@ -26,10 +26,7 @@ public static class AssetInfo
         if (w <= max && h <= max) return (px, w, h);
         double f = (double)max / Math.Max(w, h);
         int tw = Math.Max(1, (int)(w * f)), th = Math.Max(1, (int)(h * f));
-        var t = new uint[tw * th];
-        for (int y = 0; y < th; y++)
-            for (int x = 0; x < tw; x++) t[y * tw + x] = px[y * h / th * w + x * w / tw];
-        return (t, tw, th);
+        return (PixelOps.Resize(px, w, h, tw, th), tw, th);
     }
 
     /// <summary>Picture of a palette: 8 swatches per row, 4×4 px each.</summary>

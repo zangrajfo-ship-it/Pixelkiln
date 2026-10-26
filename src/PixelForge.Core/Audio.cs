@@ -71,7 +71,7 @@ public static class WavReader
     };
 
     /// <summary>Linear resampling. ponytail: no anti-alias filter; fine for game sounds, add a windowed-sinc if downsampled music sounds harsh.</summary>
-    public static float[] Resample(float[] src, int from, int to)
+    static float[] Resample(float[] src, int from, int to)
     {
         if (from == to || src.Length == 0) return src;
         var dst = new float[(long)src.Length * to / from];

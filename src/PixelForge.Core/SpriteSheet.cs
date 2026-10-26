@@ -15,12 +15,7 @@ public static class SpriteSheet
         int w = cols * s.Width, h = rows * s.Height;
         var px = new uint[w * h];
         for (int f = 0; f < n; f++)
-        {
-            var frame = Compositor.Flatten(s, f);
-            int ox = f % cols * s.Width, oy = f / cols * s.Height;
-            for (int y = 0; y < s.Height; y++)
-                Array.Copy(frame, y * s.Width, px, (oy + y) * w + ox, s.Width);
-        }
+            PixelOps.Paste(px, w, Compositor.Flatten(s, f), s.Width, s.Height, f % cols * s.Width, f / cols * s.Height);
         return new Sheet(px, w, h, cols);
     }
 
@@ -62,5 +57,5 @@ public static class SpriteSheet
             app = "PixelForge", image = imageName, format = "RGBA8888", size = new { w = sheet.Width, h = sheet.Height }, scale = "1",
             frameTags = s.Tags.Select(t => new { name = t.Name, from = t.From, to = t.To, direction = "forward" }),
         },
-    }, new JsonSerializerOptions { WriteIndented = true });
+    }, DocumentFile.Indented);
 }
