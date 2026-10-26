@@ -5,7 +5,7 @@ using PixelForge.Core;
 
 namespace PixelForge.App;
 
-/// <summary>Layer opacity, replace color, sprite sheet import, scaling.</summary>
+/// <summary>Layer opacity, replace color, sprite sheet import, scaling; below: copy/paste style and tool choice for the workspace commands.</summary>
 public partial class SpriteEditor
 {
     bool _refreshingOpacity;

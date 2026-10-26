@@ -122,19 +122,10 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
             thumb.Source = ImageIO.ToBitmap(current, w, h);
     }
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled");
 
     /// <summary>True if it is OK to drop the current sprite.</summary>
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current sprite?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "sprite", () => Save(_path));
 
     // ---------- zoom / grid ----------
 
@@ -182,13 +173,13 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
             sw.Click += (_, _) =>
             {
                 if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) RemoveColor(index);
-                else { (_primary, _editSecondary) = (c, false); RefreshSwatches(); }
+                else UseColor(c, secondary: false);
             };
-            sw.MouseRightButtonUp += (_, e) => { (_secondary, _editSecondary) = (c, true); RefreshSwatches(); e.Handled = true; };
+            sw.MouseRightButtonUp += (_, e) => { UseColor(c, secondary: true); e.Handled = true; };
             sw.PreviewKeyDown += (_, e) =>
             {
                 if (e.Key == Key.Delete) { RemoveColor(index); e.Handled = true; }
-                else if (e.Key == Key.Enter && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) { (_secondary, _editSecondary) = (c, true); RefreshSwatches(); e.Handled = true; }
+                else if (e.Key == Key.Enter && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) { UseColor(c, secondary: true); e.Handled = true; }
             };
             PaletteWrap.Children.Add(sw);
         }
@@ -203,11 +194,7 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         PaletteWrap.Children.Add(add);
     }
 
-    void OnPaletteMenu(object sender, RoutedEventArgs e)
-    {
-        PaletteMenuBtn.ContextMenu.PlacementTarget = PaletteMenuBtn;
-        PaletteMenuBtn.ContextMenu.IsOpen = true;
-    }
+    void OnPaletteMenu(object sender, RoutedEventArgs e) => Ui.ShowContextMenu(sender);
 
     const string PaletteFilter = "Palette (*.hex;*.gpl)|*.hex;*.gpl|Lospec hex (*.hex)|*.hex|GIMP palette (*.gpl)|*.gpl";
 
@@ -270,16 +257,20 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         System.Windows.Automation.AutomationProperties.SetName(SecondarySwatch, $"Right mouse color {Ui.ColorName(_secondary)}{(_editSecondary ? ", edited by the color picker" : "")}");
     }
 
-    void OnPrimarySwatch(object sender, RoutedEventArgs e)
+    /// <summary>Sets the left (or right) mouse color; the color picker then edits that one.</summary>
+    void UseColor(uint c, bool secondary)
     {
-        _editSecondary = false;
+        if (secondary) _secondary = c; else _primary = c;
+        _editSecondary = secondary;
         RefreshSwatches();
-        Picker.Focus();
     }
 
-    void OnSecondarySwatch(object sender, RoutedEventArgs e)
+    void OnPrimarySwatch(object sender, RoutedEventArgs e) => EditSwatch(secondary: false);
+    void OnSecondarySwatch(object sender, RoutedEventArgs e) => EditSwatch(secondary: true);
+
+    void EditSwatch(bool secondary)
     {
-        _editSecondary = true;
+        _editSecondary = secondary;
         RefreshSwatches();
         Picker.Focus();
     }
@@ -422,8 +413,15 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
 
     void OnFirstFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame(0); }
     void OnLastFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame(_sprite.Frames.Count - 1); }
-    void OnPrevFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame((_frame + _sprite.Frames.Count - 1) % _sprite.Frames.Count); }
-    void OnNextFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame((_frame + 1) % _sprite.Frames.Count); }
+    void OnPrevFrame(object sender, RoutedEventArgs e) => StepFrame(-1);
+    void OnNextFrame(object sender, RoutedEventArgs e) => StepFrame(+1);
+
+    /// <summary>Stops playback and moves one frame back or forward, wrapping around.</summary>
+    void StepFrame(int d)
+    {
+        StopPlaying();
+        SelectFrame((_frame + d + _sprite.Frames.Count) % _sprite.Frames.Count);
+    }
 
     void OnSwapColors(object sender, RoutedEventArgs e)
     {
@@ -616,7 +614,6 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
     }
 
     void OnSave(object? sender, RoutedEventArgs? e) => Save(_path);
-    void OnSaveAs(object sender, RoutedEventArgs e) => Save(null);
 
     bool Save(string? path)
     {
@@ -643,7 +640,7 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
     void OnExportPng(object sender, RoutedEventArgs e)
     {
         CommitFloat();
-        var dlg = new SaveFileDialog { Filter = "PNG image (*.png)|*.png", FileName = System.IO.Path.ChangeExtension(System.IO.Path.GetFileName(_path) ?? "sprite", ".png") };
+        var dlg = new SaveFileDialog { Filter = "PNG image (*.png)|*.png", FileName = BaseName + ".png" };
         if (dlg.ShowDialog() != true) return;
         try { ImageIO.SavePng(dlg.FileName, Compositor.Flatten(_sprite, _frame), _sprite.Width, _sprite.Height); }
         catch (Exception ex) { Ui.Error(ex); }
@@ -693,8 +690,8 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
             case Key.Enter: CommitFloat(); break;
             case Key.Escape: CancelFloat(); break;
             case Key.Space: OnPlay(null, null); break;
-            case Key.Left: StopPlaying(); SelectFrame((_frame + _sprite.Frames.Count - 1) % _sprite.Frames.Count); break;
-            case Key.Right: StopPlaying(); SelectFrame((_frame + 1) % _sprite.Frames.Count); break;
+            case Key.Left: StepFrame(-1); break;
+            case Key.Right: StepFrame(+1); break;
             default: e.Handled = false; break;
         }
     }

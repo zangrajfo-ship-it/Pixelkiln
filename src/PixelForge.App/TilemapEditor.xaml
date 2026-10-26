@@ -3,14 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:PixelForge.App"
              Focusable="True" FocusVisualStyle="{x:Null}">
-    <UserControl.Resources>
-        <Style x:Key="RailSep" TargetType="Rectangle">
-            <Setter Property="Height" Value="1" />
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Fill" Value="{DynamicResource LineBrush}" />
-            <Setter Property="Margin" Value="0,5" />
-        </Style>
-    </UserControl.Resources>
     <DockPanel>
         <!-- the editor's status line; the main window shows it in its status bar -->
         <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource LineBrush}">
@@ -51,7 +43,7 @@
                     <Border Style="{StaticResource PanelSection}">
                         <StackPanel>
                             <DockPanel Margin="0,0,0,10">
-                                <Button x:Name="TilesetMenuBtn" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Width="28" Height="28" ToolTip="Tileset: load, from Sprite tab, reload"
+                                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Width="28" Height="28" ToolTip="Tileset: load, from Sprite tab, reload"
                                         AutomationProperties.Name="Tileset menu" Click="OnTilesetMenu">
                                     <local:PathIcon Kind="more" Width="15" Height="15" StrokeWidth="3" />
                                     <Button.ContextMenu>
@@ -163,7 +155,7 @@
                           AutomationProperties.Name="Map canvas">
                 <Grid x:Name="CanvasHost" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Cross"
                       MouseDown="OnCanvasDown" MouseMove="OnCanvasMove" MouseUp="OnCanvasUp" MouseLeave="OnCanvasLeave">
-                    <Rectangle Fill="{DynamicResource LineBrush}" Stroke="Black" StrokeThickness="0" />
+                    <Rectangle Fill="{DynamicResource LineBrush}" />
                     <Image x:Name="MapImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                     <Image x:Name="CollisionImage" Stretch="Fill" RenderOptions.BitmapScalingMode="NearestNeighbor" IsHitTestVisible="False" Visibility="Collapsed" />
                     <Rectangle x:Name="GridOverlay" IsHitTestVisible="False" />

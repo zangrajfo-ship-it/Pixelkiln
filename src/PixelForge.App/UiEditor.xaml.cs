@@ -67,6 +67,13 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
 
     // ---------- document ----------
 
+    void RefreshAll()
+    {
+        RefreshLists();
+        RefreshProps();
+        Redraw();
+    }
+
     void LoadKit(UiKit k, string? path)
     {
         (_kit, _path, _dirty) = (k, path, false);
@@ -74,9 +81,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
         (_element, _placement) = (null, null);
         _screen = k.Screens.FirstOrDefault()?.Name;
         _view = _screen is null ? ViewKind.Style : ViewKind.Screen;
-        RefreshLists();
-        RefreshProps();
-        Redraw();
+        RefreshAll();
         UpdateTitle();
     }
 
@@ -87,11 +92,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
         UpdateTitle();
     }
 
-    void UpdateTitle()
-    {
-        if (IsVisible && Window.GetWindow(this) is { } win)
-            win.Title = $"PixelForge — {(_path is null ? "untitled UI kit" : System.IO.Path.GetFileName(_path))}{(_dirty ? " *" : "")}";
-    }
+    void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled UI kit");
 
     void RefreshLists()
     {
@@ -256,9 +257,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
     void OnShowStyle(object sender, RoutedEventArgs e)
     {
         (_view, _placement) = (ViewKind.Style, null);
-        RefreshLists();
-        RefreshProps();
-        Redraw();
+        RefreshAll();
     }
 
     // ---------- mouse on a screen ----------
@@ -409,9 +408,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
         var el = new UiElement { Name = $"{kind} {_kit.Elements.Count(x => x.Kind == kind) + 1}", Kind = kind, W = w, H = h, Margin = m, Label = kind is UiElementKind.Button or UiElementKind.Label ? kind.ToString() : "" };
         _kit.Elements.Add(el);
         (_view, _element) = (ViewKind.Element, el.Id);
-        RefreshLists();
-        RefreshProps();
-        Redraw();
+        RefreshAll();
     }
 
     void OnDuplicateElement(object sender, RoutedEventArgs e)
@@ -423,9 +420,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
         copy.Name = el.Name + " copy";
         _kit.Elements.Add(copy);
         _element = copy.Id;
-        RefreshLists();
-        RefreshProps();
-        Redraw();
+        RefreshAll();
     }
 
     void OnDeleteElement(object sender, RoutedEventArgs e)
@@ -438,9 +433,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
         _kit.Elements.Remove(el);
         foreach (var s in _kit.Screens) s.Items.RemoveAll(i => i.ElementId == el.Id);
         (_element, _view) = (null, ViewKind.Style);
-        RefreshLists();
-        RefreshProps();
-        Redraw();
+        RefreshAll();
     }
 
     void OnAddScreen(object sender, RoutedEventArgs e)
@@ -469,9 +462,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
         }
         _kit.Screens.Add(screen);
         (_view, _screen, _placement) = (ViewKind.Screen, name, null);
-        RefreshLists();
-        RefreshProps();
-        Redraw();
+        RefreshAll();
     }
 
     void OnDeleteScreen(object sender, RoutedEventArgs e)
@@ -482,9 +473,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
         _screen = _kit.Screens.FirstOrDefault()?.Name;
         _placement = null;
         _view = _screen is null ? ViewKind.Style : ViewKind.Screen;
-        RefreshLists();
-        RefreshProps();
-        Redraw();
+        RefreshAll();
     }
 
     void OnPlace(object? sender, RoutedEventArgs? e)
@@ -496,9 +485,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
         var pl = new UiPlacement { ElementId = el.Id, X = (target.Width - el.W) / 2, Y = (target.Height - el.H) / 2, W = el.W, H = el.H, Anchor = UiAnchor.Center };
         target.Items.Add(pl);
         (_view, _screen, _placement) = (ViewKind.Screen, target.Name, pl.Id);
-        RefreshLists();
-        RefreshProps();
-        Redraw();
+        RefreshAll();
     }
 
     void OnRemovePlacement(object? sender, RoutedEventArgs? e)
@@ -533,9 +520,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
         if (Element is null) _element = null;
         if (Screen is null) _screen = _kit.Screens.FirstOrDefault()?.Name;
         if (Placement is null) _placement = null;
-        RefreshLists();
-        RefreshProps();
-        Redraw();
+        RefreshAll();
         UpdateTitle();
     }
 
@@ -605,12 +590,7 @@ public partial class UiEditor : UserControl, IEditor, IPictureSource
     public bool IsDirty => _dirty;
     public string? CurrentPath => _path;
 
-    public bool ConfirmDiscard()
-    {
-        if (!_dirty) return true;
-        var r = MessageBox.Show("Save changes to the current UI kit?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && Save(_path));
-    }
+    public bool ConfirmDiscard() => Ui.ConfirmDiscard(_dirty, "UI kit", () => Save(_path));
 
     public void OpenPath(string path, bool confirmed = false)
     {

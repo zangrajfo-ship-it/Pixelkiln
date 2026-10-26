@@ -113,7 +113,7 @@ static class Ui
         var wBox = new TextBox { Text = w.ToString(), Width = 60 };
         var hBox = new TextBox { Text = h.ToString(), Width = 60 };
         var anchors = new RadioButton[9];
-        var grid = new System.Windows.Controls.Primitives.UniformGrid { Rows = 3, Columns = 3, Width = 72, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0) };
+        var grid = new UniformGrid { Rows = 3, Columns = 3, Width = 72, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0) };
         for (int i = 0; i < 9; i++) grid.Children.Add(anchors[i] = new RadioButton { GroupName = "anchor", IsChecked = i == 4, Margin = new Thickness(2) });
         var ok = new Button { Content = "OK", Width = 80, IsDefault = true, Margin = new Thickness(0, 0, 8, 0) };
         var cancel = new Button { Content = "Cancel", Width = 80, IsCancel = true };
@@ -146,10 +146,33 @@ static class Ui
         return (int.Parse(wBox.Text), int.Parse(hBox.Text), a % 3, a / 3);
     }
 
+    /// <summary>Window title "PixelForge — file *" from the editor on screen; a hidden editor leaves the title alone.</summary>
+    public static void ShowTitle(FrameworkElement editor, string? path, bool dirty, string untitled)
+    {
+        if (editor.IsVisible && Window.GetWindow(editor) is { } win)
+            win.Title = $"PixelForge — {(path is null ? untitled : Path.GetFileName(path))}{(dirty ? " *" : "")}";
+    }
+
+    /// <summary>Offers to save unsaved changes. True = go on (saved or discarded), false = cancelled or the save failed.</summary>
+    public static bool ConfirmDiscard(bool dirty, string what, Func<bool> save)
+    {
+        if (!dirty) return true;
+        var r = MessageBox.Show($"Save changes to the current {what}?", "PixelForge", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+        return r == MessageBoxResult.No || (r == MessageBoxResult.Yes && save());
+    }
+
+    /// <summary>Opens a button's ContextMenu under it (the "…" menu buttons).</summary>
+    public static void ShowContextMenu(object button)
+    {
+        var b = (FrameworkElement)button;
+        b.ContextMenu.PlacementTarget = b;
+        b.ContextMenu.IsOpen = true;
+    }
+
     public static void Error(Exception ex) =>
         MessageBox.Show(ex.Message, "PixelForge", MessageBoxButton.OK, MessageBoxImage.Error);
 
-    public static SolidColorBrush BrushOf(uint c) => new(Color.FromArgb((byte)(c >> 24), (byte)(c >> 16), (byte)(c >> 8), (byte)c));
+    public static SolidColorBrush BrushOf(uint c) => new(ColorOf(c));
 
     /// <summary>Tiled grid lines every <paramref name="cell"/> screen pixels.</summary>
     /// <param name="color">Line color incl. alpha; default = black 60 %, at least 3:1 on the light checkerboard (WCAG 1.4.11).</param>
@@ -171,7 +194,6 @@ static class Ui
         };
     }
 
-    /// <summary>Transparency checkerboard from the preferences.</summary>
     /// <summary>Transparency checkerboard; scale = the canvas zoom when the brush sits inside a zoomed canvas, so squares keep their screen size.</summary>
     public static Brush CheckerBrush(double scale = 1)
     {

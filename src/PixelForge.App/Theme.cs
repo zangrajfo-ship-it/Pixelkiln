@@ -19,7 +19,7 @@ static class Theme
     static readonly FontFamily Segoe = new("Segoe UI");
     static readonly FontFamily Consolas = new("Cascadia Mono, Consolas");
 
-    static Color C(uint argb) => Color.FromArgb((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb);
+    static Color C(uint argb) => Ui.ColorOf(argb);
 
     // token → (Modern, Dark, Light)
     static readonly (string Key, uint Modern, uint Dark, uint Light)[] Tokens =
