@@ -59,22 +59,22 @@ public sealed class TextureTests() : TempDirTest("tex")
         var s = new PaintStroke(paint, paint.Layers[0], new BrushSettings(PaintTool.Pencil, Size: 6, Smoothing: 0, PressureSize: false, Wrap: true), 0xFFFF0000);
         s.To(1, 16);
         Assert.Equal(0xFFFF0000u, paint.Layers[0].Get(31, 16));                 // the dab continues on the other side
-        PaintDoc.Save(paint, Path.Combine(_dir, "rock.pxpaint"));
-        var rock = p.Add(Path.Combine(_dir, "rock.pxpaint"));
+        PaintDoc.Save(paint, P("rock.pxpaint"));
+        var rock = p.Add(P("rock.pxpaint"));
 
         var t = new TextureDoc { Source = TextureSource.Painting, AssetId = rock.Id, SeamBlend = 4 };
-        TextureDoc.Save(t, Path.Combine(_dir, "rockface.pxtex"));
-        var back = TextureDoc.Load(Path.Combine(_dir, "rockface.pxtex"));
+        TextureDoc.Save(t, P("rockface.pxtex"));
+        var back = TextureDoc.Load(P("rockface.pxtex"));
         Assert.Equal((TextureSource.Painting, rock.Id, 4), (back.Source, back.AssetId!.Value, back.SeamBlend));
-        var texAsset = p.Add(Path.Combine(_dir, "rockface.pxtex"));
+        var texAsset = p.Add(P("rockface.pxtex"));
         Assert.Contains(rock.Id, p.ReferencesOf(texAsset));
         var maps = Textures.Build(back, p);
         Assert.Equal((32, 32), (maps.Width, maps.Height));
         Assert.Throws<InvalidDataException>(() => Textures.Build(back, null));   // a painted texture needs its project
         Assert.Throws<InvalidDataException>(() => TextureDoc.Deserialize(TextureDoc.Serialize(new TextureDoc { Source = TextureSource.Picture })));
 
-        TextureDoc.Save(new TextureDoc { Material = Material.Brick, Size = 32 }, Path.Combine(_dir, "wall.pxtex"));
-        p.Add(Path.Combine(_dir, "wall.pxtex"));
+        TextureDoc.Save(new TextureDoc { Material = Material.Brick, Size = 32 }, P("wall.pxtex"));
+        p.Add(P("wall.pxtex"));
         var godot = Exporter.Plan(p, new ExportProfile());
         Assert.True(godot.Ok, string.Join("; ", godot.Errors));
         Assert.Contains("wall_normal.png", godot.Files.Keys);

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
+using PixelForge.Core;
 
 namespace PixelForge.App;
 
@@ -45,7 +46,7 @@ public partial class MainWindow
     /// <summary>Opens a sprite, character, tilemap or project file; a file inside a project opens with its project.</summary>
     public bool OpenDocument(string path)
     {
-        if (path.EndsWith(Core.Project.Extension, StringComparison.OrdinalIgnoreCase)) { ProjectCommands.OpenPath(path); return true; }
+        if (path.EndsWith(Project.Extension, StringComparison.OrdinalIgnoreCase)) { ProjectCommands.OpenPath(path); return true; }
         string ext = Path.GetExtension(path).ToLowerInvariant();
         if (Editors.FirstOrDefault(ed => ed.FileExtensions.Contains(ext) && IsShown(ed)) is not { } editor) return false;
         // linked sprites and tilesets resolve through the project
@@ -53,7 +54,7 @@ public partial class MainWindow
             try
             {
                 for (var dir = new DirectoryInfo(Path.GetDirectoryName(Path.GetFullPath(path))!); dir is not null; dir = dir.Parent)
-                    if (dir.GetFiles("*" + Core.Project.Extension).FirstOrDefault() is { } proj) { ProjectCommands.OpenPath(proj.FullName); break; }
+                    if (dir.GetFiles("*" + Project.Extension).FirstOrDefault() is { } proj) { ProjectCommands.OpenPath(proj.FullName); break; }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }   // a folder we may not list: open the file alone
         Reveal(editor);

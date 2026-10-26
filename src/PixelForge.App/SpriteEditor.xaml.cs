@@ -141,8 +141,7 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
     void OnWheel(object sender, MouseWheelEventArgs e)
     {
         e.Handled = true;
-        int i = Array.IndexOf(ZoomLevels, _zoom) + Math.Sign(e.Delta);
-        if (i >= 0 && i < ZoomLevels.Length) ZoomTo(ZoomLevels[i], e.GetPosition(CanvasHost));
+        ZoomStep(Math.Sign(e.Delta), e.GetPosition(CanvasHost));
     }
 
     /// <summary>Changes zoom and keeps the canvas point <paramref name="anchor"/> in place on screen.</summary>
@@ -411,16 +410,18 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
 
     void OnOnionToggle(object sender, RoutedEventArgs e) => Render();
 
-    void OnFirstFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame(0); }
-    void OnLastFrame(object sender, RoutedEventArgs e) { StopPlaying(); SelectFrame(_sprite.Frames.Count - 1); }
+    void OnFirstFrame(object sender, RoutedEventArgs e) => GoToFrame(0);
+    void OnLastFrame(object sender, RoutedEventArgs e) => GoToFrame(_sprite.Frames.Count - 1);
     void OnPrevFrame(object sender, RoutedEventArgs e) => StepFrame(-1);
     void OnNextFrame(object sender, RoutedEventArgs e) => StepFrame(+1);
 
     /// <summary>Stops playback and moves one frame back or forward, wrapping around.</summary>
-    void StepFrame(int d)
+    void StepFrame(int d) => GoToFrame((_frame + d + _sprite.Frames.Count) % _sprite.Frames.Count);
+
+    void GoToFrame(int f)
     {
         StopPlaying();
-        SelectFrame((_frame + d + _sprite.Frames.Count) % _sprite.Frames.Count);
+        SelectFrame(f);
     }
 
     void OnSwapColors(object sender, RoutedEventArgs e)

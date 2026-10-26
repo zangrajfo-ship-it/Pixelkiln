@@ -101,7 +101,7 @@ public sealed class PaintTests() : TempDirTest("paint")
         d.Layers[0].TileFor(2, 1)[5] = Red;
         d.Layers[0].TileFor(0, 0);                            // empty tile: not written
         d.Layers.Add(new PaintLayer { Name = "glow", Blend = BlendMode.Screen, Opacity = 0.5, AlphaLocked = true, Mask = new() { [PaintLayer.Key(1, 0)] = new byte[256 * 256] } });
-        string f = Path.Combine(_dir, "a.pxpaint");
+        string f = P("a.pxpaint");
         PaintDoc.Save(d, f);
         var e = PaintDoc.Load(f);
         Assert.Equal((600, 300, 2), (e.Width, e.Height, e.Layers.Count));
@@ -110,9 +110,9 @@ public sealed class PaintTests() : TempDirTest("paint")
         Assert.Equal((BlendMode.Screen, 0.5, true), (e.Layers[1].Blend, e.Layers[1].Opacity, e.Layers[1].AlphaLocked));
         Assert.Equal(0, e.Layers[1].MaskAt(300, 10));
         Assert.Equal(255, e.Layers[1].MaskAt(10, 10));
-        Assert.Throws<InvalidDataException>(() => PaintDoc.Load(Path.Combine(_dir, "missing.pxpaint")));
-        File.WriteAllText(Path.Combine(_dir, "bad.pxpaint"), "not a zip");
-        Assert.Throws<InvalidDataException>(() => PaintDoc.Load(Path.Combine(_dir, "bad.pxpaint")));
+        Assert.Throws<InvalidDataException>(() => PaintDoc.Load(P("missing.pxpaint")));
+        File.WriteAllText(P("bad.pxpaint"), "not a zip");
+        Assert.Throws<InvalidDataException>(() => PaintDoc.Load(P("bad.pxpaint")));
         Assert.Throws<ArgumentOutOfRangeException>(() => new PaintDoc(9000, 10));
     }
 

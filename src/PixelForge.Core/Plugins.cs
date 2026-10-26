@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -136,7 +137,7 @@ public static class PluginLoader
     };
 
     /// <summary>A number strictly between 0 and 1.</summary>
-    static bool Fraction(string v) => double.TryParse(v, System.Globalization.CultureInfo.InvariantCulture, out var d) && d is > 0 and < 1;
+    static bool Fraction(string v) => double.TryParse(v, CultureInfo.InvariantCulture, out var d) && d is > 0 and < 1;
 
     static void ValidatePreset(PluginGeneratorPreset g)
     {

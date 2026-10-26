@@ -87,7 +87,7 @@ public partial class MainWindow : Window
         _autosave.Tick += (_, _) => Autosave();
         Assets.OpenRequested += OpenAsset;
         Assets.FileMoved += (from, to) => { foreach (var ed in Editors) ed.OnFileMoved(from, to); };
-        App.ProjectChanged += UpdateProjectTitle;
+        App.ProjectChanged += BuildMenu;   // Close project / Check project enable with a project
         App.AssetRestored += ReloadRestored;
         App.SettingsChanged += ApplySettings;
         ApplySettings();
@@ -252,7 +252,6 @@ public partial class MainWindow : Window
         if (App.Project is { } p) TemplateStudio.Show(this, p, Assets.SelectedAll, OpenAsset);
     }
 
-    void UpdateProjectTitle() => BuildMenu();   // Close project / Check project enable with a project
 
     /// <summary>Opens an asset in the tab that edits its type.</summary>
     void OpenAsset(AssetEntry a)

@@ -71,11 +71,12 @@ public partial class TilemapEditor : IEditor
     void OnZoomOut(object sender, RoutedEventArgs e) => ZoomStep(-1);
     void OnZoomFit(object sender, RoutedEventArgs e) => ZoomFit();
 
-    void ZoomStep(int dir)
+    /// <summary>One zoom level in or out, around <paramref name="anchor"/> (the mouse) or the middle of the view.</summary>
+    void ZoomStep(int dir, Point? anchor = null)
     {
         int i = Array.IndexOf(ZoomLevels, _zoom) + dir;
         if (i < 0 || i >= ZoomLevels.Length) return;
-        ZoomTo(ZoomLevels[i], Scroller.TranslatePoint(new Point(Scroller.ViewportWidth / 2, Scroller.ViewportHeight / 2), CanvasHost));
+        ZoomTo(ZoomLevels[i], anchor ?? Scroller.TranslatePoint(new Point(Scroller.ViewportWidth / 2, Scroller.ViewportHeight / 2), CanvasHost));
     }
 
     void ZoomFit()

@@ -212,8 +212,6 @@ public static class UiRender
 {
     static Color C(uint c) => Color.FromArgb((byte)(c >> 24), (byte)(c >> 16), (byte)(c >> 8), (byte)c);
 
-    static uint Mix(uint a, uint b, double t) => ColorUtil.Lerp(a, b, t);
-
     /// <summary>The element's own art for a state at its native size: the project picture if one is set, otherwise drawn from the style.</summary>
     public static uint[] Native(UiKit kit, UiElement e, UiState state, Project? p = null)
     {
@@ -253,7 +251,7 @@ public static class UiRender
         var icon = e.IconAssetId is Guid ic && p?.Resolve(ic) is string ip ? AssetLoader.LoadImage(ip) : ((uint[], int, int)?)null;
         return Render(w, h, st.Pixel, dc =>
         {
-            uint baseC = state switch { UiState.Hover => Mix(st.Base, st.Light, 0.25), UiState.Pressed => Mix(st.Base, st.Dark, 0.3), _ => st.Base };
+            uint baseC = state switch { UiState.Hover => ColorUtil.Lerp(st.Base, st.Light, 0.25), UiState.Pressed => ColorUtil.Lerp(st.Base, st.Dark, 0.3), _ => st.Base };
             double r = st.Radius, bw = st.Border, dy = state == UiState.Pressed ? 1 : 0;
             var full = new Rect(bw / 2, bw / 2 + dy, Math.Max(0, w - bw), Math.Max(0, h - bw - dy));
             Pen? border = bw > 0 ? new Pen(new SolidColorBrush(C(st.Dark)), bw) : null;
@@ -261,12 +259,12 @@ public static class UiRender
             {
                 case UiElementKind.Button:
                     dc.DrawRoundedRectangle(new SolidColorBrush(C(baseC)), border, full, r, r);
-                    if (state != UiState.Pressed) dc.DrawLine(new Pen(new SolidColorBrush(C(Mix(baseC, st.Light, 0.5))), 1), new Point(r + bw, bw + 0.5), new Point(w - r - bw, bw + 0.5));
+                    if (state != UiState.Pressed) dc.DrawLine(new Pen(new SolidColorBrush(C(ColorUtil.Lerp(baseC, st.Light, 0.5))), 1), new Point(r + bw, bw + 0.5), new Point(w - r - bw, bw + 0.5));
                     DrawText(dc, st, text ?? e.Label, full, state);
                     break;
                 case UiElementKind.Panel:
                 case UiElementKind.Dialog:
-                    dc.DrawRoundedRectangle(new SolidColorBrush(C(Mix(st.Dark, st.Base, 0.35))), bw > 0 ? new Pen(new SolidColorBrush(C(st.Accent)), bw) : null, full, r, r);
+                    dc.DrawRoundedRectangle(new SolidColorBrush(C(ColorUtil.Lerp(st.Dark, st.Base, 0.35))), bw > 0 ? new Pen(new SolidColorBrush(C(st.Accent)), bw) : null, full, r, r);
                     if (e.Kind == UiElementKind.Dialog)
                     {
                         double bar = Math.Min(h / 3.0, st.FontSize + 4);
@@ -294,7 +292,7 @@ public static class UiRender
                     dc.DrawRoundedRectangle(new SolidColorBrush(C(st.Accent)), null, inner, Math.Max(0, r - 1), Math.Max(0, r - 1));
                     break;
                 case UiElementKind.InventorySlot:
-                    dc.DrawRoundedRectangle(new SolidColorBrush(C(Mix(st.Dark, st.Base, state == UiState.Hover ? 0.4 : 0.2))), new Pen(new SolidColorBrush(C(st.Base)), Math.Max(1, bw)), full, r, r);
+                    dc.DrawRoundedRectangle(new SolidColorBrush(C(ColorUtil.Lerp(st.Dark, st.Base, state == UiState.Hover ? 0.4 : 0.2))), new Pen(new SolidColorBrush(C(st.Base)), Math.Max(1, bw)), full, r, r);
                     if (icon is var (ipx, iw, ih)) DrawPicture(dc, ipx, iw, ih, new Rect(w * 0.15, h * 0.15, w * 0.7, h * 0.7));
                     DrawText(dc, st, text ?? e.Label, full, state);
                     break;
@@ -323,7 +321,7 @@ public static class UiRender
         if (string.IsNullOrEmpty(text)) return;
         double size = Math.Max(4, Math.Min(st.FontSize * (box.Height >= st.FontSize * 2.4 ? 1.5 : 1), box.Height * 0.8));
         var ft = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal),
-            size, new SolidColorBrush(C(state == UiState.Disabled ? Mix(st.Text, st.Dark, 0.5) : st.Text)), 1)
+            size, new SolidColorBrush(C(state == UiState.Disabled ? ColorUtil.Lerp(st.Text, st.Dark, 0.5) : st.Text)), 1)
         { MaxTextWidth = Math.Max(1, box.Width - 2), TextAlignment = left ? TextAlignment.Left : TextAlignment.Center, Trimming = TextTrimming.CharacterEllipsis };
         dc.DrawText(ft, new Point(box.X + 1, box.Y + Math.Max(0, (box.Height - ft.Height) / 2)));
     }

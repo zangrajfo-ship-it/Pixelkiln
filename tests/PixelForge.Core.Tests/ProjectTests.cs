@@ -3,7 +3,6 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-/// <summary>Each test works in its own temporary folder.</summary>
 public sealed class ProjectTests() : TempDirTest("proj")
 {
     string NewSprite(string rel)
@@ -188,18 +187,18 @@ public sealed class AssetInfoTests() : TempDirTest("info")
         var s = new Sprite(8, 4);
         s.AddFrame(1);
         s.Tags.Add(new FrameTag { Name = "walk", From = 0, To = 1 });
-        string sp = Path.Combine(_dir, "a.pxf");
+        string sp = P("a.pxf");
         ProjectFile.Save(s, sp);
         Assert.StartsWith("8×4 px, 2 frames, 1 layer, 0.20 s, tags: walk", AssetInfo.Describe(AssetType.Sprite, sp));
 
-        string song = Path.Combine(_dir, "b.pxs");
+        string song = P("b.pxs");
         Song.Save(new Song { Bpm = 120 }, song);   // 16 steps of 1/8 s = 2 s
         Assert.StartsWith("120 BPM, 1 pattern, 0:02", AssetInfo.Describe(AssetType.Song, song));
 
-        string bad = Path.Combine(_dir, "c.pxm");
+        string bad = P("c.pxm");
         File.WriteAllText(bad, "garbage");
         Assert.StartsWith("Cannot be read", AssetInfo.Describe(AssetType.Tilemap, bad));
-        Assert.Equal("File is missing.", AssetInfo.Describe(AssetType.Sprite, Path.Combine(_dir, "none.pxf")));
+        Assert.Equal("File is missing.", AssetInfo.Describe(AssetType.Sprite, P("none.pxf")));
     }
 
     [Fact]

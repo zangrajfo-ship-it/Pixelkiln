@@ -84,7 +84,7 @@ public static class StyleCheck
     static int OffOutline(uint[] px, int w, int h, uint line)
     {
         int bad = 0;
-        bool Clear(int x, int y) => x < 0 || y < 0 || x >= w || y >= h || px[y * w + x] >> 24 == 0;
+        bool Clear(int x, int y) => !Tools.InBounds(w, h, x, y) || px[y * w + x] >> 24 == 0;
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
                 if (px[y * w + x] >> 24 != 0 && (Clear(x - 1, y) || Clear(x + 1, y) || Clear(x, y - 1) || Clear(x, y + 1)) && (px[y * w + x] & 0xFFFFFF) != line) bad++;

@@ -11,7 +11,7 @@ public static class ProjectFile
     // v2 added Tags (optional, so v1 files still load)
     record SpriteDto(int Version, int Width, int Height, uint[] Palette, int[] FrameDurations, LayerDto[] Layers, TagDto[]? Tags = null);
 
-    static readonly JsonSerializerOptions Json = new() { WriteIndented = true };
+    static readonly JsonSerializerOptions Json = DocumentFile.Indented;
 
     public const int Version = 2;
 

@@ -90,7 +90,7 @@ public class SfxTests
     [Fact]
     public void Older_songs_keep_pitched_noise_and_v3_keeps_the_kit()
     {
-        Assert.False(Song.Load(Path.Combine(AppContext.BaseDirectory, "Fixtures", "song.v2.pxs")).Instruments[(int)Channel.Noise].Kit);
+        Assert.False(Song.Load(TestFiles.Fixture("song.v2.pxs")).Instruments[(int)Channel.Noise].Kit);
         var s = new Song();
         s.Instruments[(int)Channel.Noise].Kit = false;
         Assert.False(Song.Deserialize(Song.Serialize(s)).Instruments[(int)Channel.Noise].Kit);
