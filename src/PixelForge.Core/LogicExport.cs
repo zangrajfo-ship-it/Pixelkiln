@@ -19,8 +19,7 @@ public static class LogicExport
         var sb = new StringBuilder();
         void L(int indent, string line) => sb.Append('\t', indent).Append(line).Append('\n');
         string Fn(LogicNode n) => "_n_" + new string([.. n.Id.Select(c => char.IsAsciiLetterOrDigit(c) ? c : '_')]);
-        string Num(LogicNode n, string key, double fallback = 0) =>
-            F(double.TryParse(n.P(key), NumberStyles.Float, CultureInfo.InvariantCulture, out double v) ? v : fallback);
+        string Num(LogicNode n, string key, double fallback = 0) => F(n.Number(key, fallback));
         var links = g.Links.GroupBy(l => l.From).ToDictionary(x => x.Key, x => x.ToList());
         IEnumerable<LogicNode> Next(LogicNode n, string port) => (links.GetValueOrDefault(n.Id) ?? []).Where(l => l.Port == port).Select(l => g.Node(l.To)).OfType<LogicNode>();
         void Calls(int indent, LogicNode n, string port)

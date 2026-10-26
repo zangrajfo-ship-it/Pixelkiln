@@ -20,7 +20,7 @@ public static class ProjectFile
     public static Sprite Load(string path) => DocumentFile.Load(path, "sprite", Version, Deserialize);
 
     public static string Serialize(Sprite s) => JsonSerializer.Serialize(new SpriteDto(
-        2, s.Width, s.Height, [.. s.Palette], [.. s.Frames.Select(f => f.DurationMs)],
+        Version, s.Width, s.Height, [.. s.Palette], [.. s.Frames.Select(f => f.DurationMs)],
         [.. s.Layers.Select(l => new LayerDto(l.Name, l.Visible,
             [.. l.Cels.Select(c => Convert.ToBase64String(MemoryMarshal.AsBytes(c.AsSpan())))], l.Opacity))],
         [.. s.Tags.Select(t => new TagDto(t.Name, t.From, t.To))]), Json);

@@ -61,6 +61,7 @@ public static class Optimizer
     {
         var sizes = new List<AssetSize>();
         var problems = new List<(AssetEntry, string)>();
+        var unreadable = new HashSet<AssetEntry>();
         var present = p.Assets.Where(a => File.Exists(p.FullPath(a))).ToList();
         foreach (var a in present)
         {
@@ -73,7 +74,11 @@ public static class Optimizer
                 if (a.Type == AssetType.Sprite) { var s = ProjectFile.Load(path); (w, h) = (s.Width, s.Height); memory = 4L * w * h * s.Frames.Count; }
                 else if (AssetLoader.IsPicture(a.Type)) { (_, w, h) = AssetLoader.LoadImage(path); memory = 4L * w * h; }
             }
-            catch (Exception ex) when (ex is InvalidDataException or IOException or NotSupportedException) { problems.Add((a, "cannot be read: " + ex.Message)); }
+            catch (Exception ex) when (ex is InvalidDataException or IOException or NotSupportedException)
+            {
+                problems.Add((a, "cannot be read: " + ex.Message));
+                unreadable.Add(a);
+            }
             if (Math.Max(w, h) > maxTexture) problems.Add((a, $"{w}×{h} is larger than {maxTexture} px; many devices cannot load such a texture."));
             if (a.Type == AssetType.Texture && w > 0 && (!System.Numerics.BitOperations.IsPow2(w) || !System.Numerics.BitOperations.IsPow2(h)))
                 problems.Add((a, $"{w}×{h}: repeating textures should be a power of two."));
@@ -88,15 +93,16 @@ public static class Optimizer
             .Where(g => g.Count() > 1).Select(g => g.OrderBy(a => a.Path).ToList()).ToList();
 
         ct.ThrowIfCancellationRequested();
-        var items = Pictures(p, present.Where(a => !problems.Any(x => x.Item1 == a && x.Item2.StartsWith("cannot"))), a => a.Path).ToList();
+        var items = Pictures(p, present.Where(a => !unreadable.Contains(a)), a => a.Path).ToList();
         int pages = 0, dupFrames = 0, empty = 0;
         long atlasBytes = 0, loose = items.Sum(i => 4L * i.W * i.H);
+        var fitting = items.Where(i => Math.Max(i.W, i.H) + 2 <= maxTexture).ToList();   // with the atlas padding
         try
         {
-            var atlas = Atlas.Pack(items.Where(i => Math.Max(i.W, i.H) + 2 <= maxTexture), maxTexture);
+            var atlas = Atlas.Pack(fitting, maxTexture);
             (pages, atlasBytes) = (atlas.Pages.Count, atlas.Pages.Sum(pg => 4L * pg.W * pg.H));
             (dupFrames, empty) = (atlas.Frames.Count(f => f.SameAs is not null), atlas.Frames.Count(f => f.Page < 0));
-            loose = items.Where(i => Math.Max(i.W, i.H) + 2 <= maxTexture).Sum(i => 4L * i.W * i.H);
+            loose = fitting.Sum(i => 4L * i.W * i.H);
         }
         catch (InvalidDataException) { }   // reported above as a size problem
         return new OptimizeReport(sizes, unused, duplicates, problems, pages, atlasBytes, loose, dupFrames, empty);

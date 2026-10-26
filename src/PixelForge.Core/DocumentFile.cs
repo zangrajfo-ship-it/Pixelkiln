@@ -11,6 +11,9 @@ namespace PixelForge.Core;
 /// </summary>
 public static class DocumentFile
 {
+    /// <summary>Indented JSON for exports and reports; one shared instance, so System.Text.Json can cache its metadata.</summary>
+    internal static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
+
     /// <summary>"Version" of a JSON document; missing = 1 (the first formats had none), unreadable = 0.</summary>
     public static int PeekVersion(string json)
     {
@@ -63,5 +66,17 @@ public static class DocumentFile
             try { if (File.Exists(tmp)) File.Delete(tmp); }
             catch (IOException) { }   // leftover .tmp is harmless; the real file is what matters
         }
+    }
+
+    /// <summary>Binary files (zips, WAVs): written to "&lt;file&gt;.tmp", then moved over the target, so a failure never leaves half a file.</summary>
+    public static void WriteViaTemp(string path, Action<Stream> write)
+    {
+        string tmp = path + ".tmp";
+        try
+        {
+            using (var f = File.Create(tmp)) write(f);
+            File.Move(tmp, path, overwrite: true);
+        }
+        finally { if (File.Exists(tmp)) File.Delete(tmp); }
     }
 }

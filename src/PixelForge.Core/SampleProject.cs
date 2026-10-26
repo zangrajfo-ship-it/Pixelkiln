@@ -68,8 +68,8 @@ public static class SampleProject
         UiKit.Save(hud, F("ui/hud.pxui"));
         var hudAsset = Add("ui/hud.pxui");
 
-        var level2 = Cave(p, F, Add, art, hero, sounds, cave);
-        Meadow(p, F, Add, art, hero, slime, sounds, sunny, hudAsset, level2);
+        var level2 = Cave(F, Add, art, hero, sounds, cave);
+        Meadow(F, Add, art, hero, slime, sounds, sunny, hudAsset, level2);
 
         File.WriteAllText(F("README.txt"), Readme);
         p.Save();
@@ -77,7 +77,7 @@ public static class SampleProject
     }
 
     /// <summary>Level 1, “Meadow”: walk right, collect five coins, avoid the water and the spikes, reach the exit.</summary>
-    static void Meadow(Project p, Func<string, string> F, Func<string, AssetEntry> Add, Dictionary<string, AssetEntry> art, AssetEntry hero, AssetEntry slime,
+    static void Meadow(Func<string, string> F, Func<string, AssetEntry> Add, Dictionary<string, AssetEntry> art, AssetEntry hero, AssetEntry slime,
         Dictionary<string, AssetEntry> sounds, AssetEntry music, AssetEntry hud, AssetEntry next)
     {
         const int W = 40, H = 15, ground = 12;
@@ -167,7 +167,7 @@ public static class SampleProject
     }
 
     /// <summary>Level 2, “Cave”: dark, lit by torches, with a chest that opens when touched.</summary>
-    static AssetEntry Cave(Project p, Func<string, string> F, Func<string, AssetEntry> Add, Dictionary<string, AssetEntry> art, AssetEntry hero,
+    static AssetEntry Cave(Func<string, string> F, Func<string, AssetEntry> Add, Dictionary<string, AssetEntry> art, AssetEntry hero,
         Dictionary<string, AssetEntry> sounds, AssetEntry music)
     {
         const int W = 24, H = 12, floor = 10;

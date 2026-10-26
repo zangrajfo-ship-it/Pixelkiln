@@ -133,7 +133,7 @@ public sealed class Sfx
     {
         var node = JsonSerializer.SerializeToNode(s)!.AsObject();
         node.Insert(0, "Version", Version);
-        return node.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        return node.ToJsonString(DocumentFile.Indented);
     }
 
     public static Sfx Deserialize(string json) =>

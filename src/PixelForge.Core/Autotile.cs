@@ -54,8 +54,6 @@ public static class Autotile
         if (rule.Variants.Any(v => v < 0 || v >= ts.Count)) throw new InvalidOperationException("A terrain variant points outside the tileset.");
     }
 
-    public static void Validate(Tileset ts, int terrainBase) => Validate(ts, new TerrainRule { Base = terrainBase });
-
     /// <summary>Blob16 tile for a mask (kept for callers that only know the block's base).</summary>
     public static int TileFor(Tileset ts, int terrainBase, int mask) => terrainBase + mask / 4 * ts.Columns + mask % 4;
 
@@ -65,8 +63,6 @@ public static class Autotile
         int i = Index47[Reduce(mask)];
         return rule.Base + i / 8 * ts.Columns + i % 8;
     }
-
-    public static bool IsTerrain(Tileset ts, int terrainBase, int tile) => IsTerrain(ts, new TerrainRule { Base = terrainBase }, tile);
 
     public static bool IsTerrain(Tileset ts, TerrainRule rule, int tile)
     {
@@ -83,7 +79,7 @@ public static class Autotile
     /// <summary>Paints (on) or clears (off) a terrain cell and re-picks it and its 8 neighbours.</summary>
     public static void Apply(Tilemap map, MapLayer layer, TerrainRule rule, int x, int y, bool on)
     {
-        var ts = map.Tileset ?? throw new InvalidOperationException("Load a tileset first.");
+        var ts = map.RequireTileset();
         Validate(ts, rule);
         if (!Tools.InBounds(map.Width, map.Height, x, y)) return;
         layer.Tiles[y * map.Width + x] = on ? rule.Base : Tilemap.Empty;
@@ -148,6 +144,9 @@ public static class Autotile
     }
 
     /// <summary>Pixel size of the template image for a mode.</summary>
-    public static (int Width, int Height) TemplateSize(int tileSize, TerrainMode mode) =>
-        Block(mode) is var (c, r) ? (c * tileSize, r * tileSize) : default;
+    public static (int Width, int Height) TemplateSize(int tileSize, TerrainMode mode)
+    {
+        var (c, r) = Block(mode);
+        return (c * tileSize, r * tileSize);
+    }
 }

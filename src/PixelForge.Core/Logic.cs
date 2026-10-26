@@ -23,6 +23,10 @@ public sealed class LogicNode
     public Dictionary<string, string> Params { get; set; } = [];
     public LogicNode Clone() => new() { Id = Id, Kind = Kind, X = X, Y = Y, Params = new(Params) };
     public string P(string key, string fallback = "") => Params.TryGetValue(key, out var v) ? v : fallback;
+
+    /// <summary>A parameter as a number (invariant culture), or the fallback when it is missing or not a number.</summary>
+    public double Number(string key, double fallback = 0) =>
+        double.TryParse(P(key), NumberStyles.Float, CultureInfo.InvariantCulture, out double v) ? v : fallback;
 }
 
 /// <summary>Flow from a node's port (out, true, false) to another node.</summary>
@@ -184,11 +188,8 @@ public sealed class LogicRuntime
         if (g.Check().FirstOrDefault(m => !m.StartsWith("Warning:")) is { } error) throw new InvalidDataException(error);
         _g = g.Clone();
         _out = _g.Links.GroupBy(l => l.From).ToDictionary(x => x.Key, x => x.ToList());
-        foreach (var t in _g.Nodes.Where(n => n.Kind == LogicKind.Timer)) _nextTimer[t.Id] = D(t, "ms");
+        foreach (var t in _g.Nodes.Where(n => n.Kind == LogicKind.Timer)) _nextTimer[t.Id] = t.Number("ms");
     }
-
-    static double D(LogicNode n, string key, double fallback = 0) =>
-        double.TryParse(n.P(key), NumberStyles.Float, CultureInfo.InvariantCulture, out double v) ? v : fallback;
 
     public double Var(string name) => Variables.GetValueOrDefault(name.Trim());
 
@@ -212,7 +213,7 @@ public sealed class LogicRuntime
             {
                 if (t.P("repeat") == "yes")
                 {
-                    double every = Math.Max(1, D(t, "ms")), next = due + every;
+                    double every = Math.Max(1, t.Number("ms")), next = due + every;
                     while (next <= timeMs) next += every;   // a slow frame fires once, not once per missed period
                     _nextTimer[t.Id] = next;
                 }
@@ -262,23 +263,23 @@ public sealed class LogicRuntime
         {
             case LogicKind.Compare:
             {
-                double a = Var(Name("variable")), b = D(n, "value");
+                double a = Var(Name("variable")), b = n.Number("value");
                 bool yes = Name("op") switch { "==" => a == b, "!=" => a != b, "<" => a < b, "<=" => a <= b, ">" => a > b, _ => a >= b };
                 Continue(n, yes ? "true" : "false", t);
                 return;
             }
             case LogicKind.HasItem:
-                Continue(n, Items.GetValueOrDefault(Name("item")) >= (int)D(n, "count", 1) ? "true" : "false", t);
+                Continue(n, Items.GetValueOrDefault(Name("item")) >= (int)n.Number("count", 1) ? "true" : "false", t);
                 return;
             case LogicKind.SetVariable:
             {
                 string v = Name("variable");
-                double x = D(n, "value");
+                double x = n.Number("value");
                 Variables[v] = Name("op") switch { "+=" => Var(v) + x, "-=" => Var(v) - x, _ => x };
                 break;
             }
             case LogicKind.GiveItem:
-                Items[Name("item")] = Math.Max(0, Items.GetValueOrDefault(Name("item")) + (int)D(n, "count", 1));
+                Items[Name("item")] = Math.Max(0, Items.GetValueOrDefault(Name("item")) + (int)n.Number("count", 1));
                 break;
             case LogicKind.PlaySound when Guid.TryParse(Name("sound"), out var s): Effects.Add(new PlaySoundEffect(s)); break;
             case LogicKind.Show: Effects.Add(new ShowEffect(Name("object"), n.P("visible") == "yes")); break;
@@ -288,7 +289,7 @@ public sealed class LogicRuntime
                 break;
             case LogicKind.PlayClip when Guid.TryParse(Name("library"), out var lib): Effects.Add(new PlayClipEffect(Name("object"), lib, Name("clip"))); break;
             case LogicKind.Wait:
-                _waits.Add((t + Math.Max(0, D(n, "ms")) + (D(n, "ms") <= 0 ? 0.001 : 0), _order++, n));   // Wait 0 = next frame
+                _waits.Add((t + Math.Max(0, n.Number("ms")) + (n.Number("ms") <= 0 ? 0.001 : 0), _order++, n));   // Wait 0 = next frame
                 return;
             case LogicKind.LoadScene when Guid.TryParse(Name("scene"), out var sc):
                 Effects.Add(new LoadSceneEffect(sc));

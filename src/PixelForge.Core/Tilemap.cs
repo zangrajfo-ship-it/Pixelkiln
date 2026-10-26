@@ -10,14 +10,7 @@ public sealed record Tileset(uint[] Pixels, int Width, int Height, int TileSize)
     public int Rows => Height / TileSize;
     public int Count => Columns * Rows;
 
-    public uint[] Tile(int index)
-    {
-        var t = new uint[TileSize * TileSize];
-        int ox = index % Columns * TileSize, oy = index / Columns * TileSize;
-        for (int y = 0; y < TileSize; y++)
-            Array.Copy(Pixels, (oy + y) * Width + ox, t, y * TileSize, TileSize);
-        return t;
-    }
+    public uint[] Tile(int index) => PixelOps.Crop(Pixels, Width, index % Columns * TileSize, index / Columns * TileSize, TileSize, TileSize);
 }
 
 public sealed class MapLayer : ILayer
@@ -60,12 +53,15 @@ public sealed class Tilemap
     public string? TilesetSource { get; set; }
     public List<MapLayer> Layers { get; } = [];
     public List<MapObject> Objects { get; } = [];
-    /// <summary>Auto-tile terrains: top-left tile index of each 4×4 block (see <see cref="Autotile"/>).</summary>
+    /// <summary>Auto-tile terrain rules: block start, 16- or 47-tile layout, variants (see <see cref="Autotile"/>).</summary>
     public List<TerrainRule> Terrains { get; } = [];
     /// <summary>Collision per tile index (tiles without an entry are not solid).</summary>
     public Dictionary<int, TileCollision> TileCollisions { get; } = [];
 
     public int NextObjectId => Objects.Count == 0 ? 1 : Objects.Max(o => o.Id) + 1;
+
+    /// <summary>The tileset, for operations that cannot work without one.</summary>
+    public Tileset RequireTileset() => Tileset ?? throw new InvalidOperationException("Load a tileset first.");
 
     public Tilemap(int width, int height, int tileSize, bool empty = false)
     {
@@ -120,9 +116,7 @@ public sealed class Tilemap
                 int t = l.Tiles[i];
                 if (t < 0 || t >= ts.Count) continue;
                 if (!tiles.TryGetValue(t, out var tp)) tiles[t] = tp = ts.Tile(t);
-                int ox = i % Width * TileSize, oy = i / Width * TileSize;
-                for (int y = 0; y < TileSize; y++)
-                    Array.Copy(tp, y * TileSize, layerPx, (oy + y) * pw + ox, TileSize);
+                PixelOps.Paste(layerPx, pw, tp, TileSize, TileSize, i % Width * TileSize, i / Width * TileSize);
             }
             Compositor.Blend(dst, layerPx);
         }

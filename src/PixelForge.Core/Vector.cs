@@ -258,16 +258,7 @@ public static class VectorGeometry
         rtb.Render(visual);
         var px = new uint[w * h];
         rtb.CopyPixels(px, w * 4, 0);
-        // RenderTargetBitmap is premultiplied; PixelForge pictures are straight alpha. Aliased: every pixel is either
-        // fully on or off (RenderTargetBitmap ignores EdgeMode), so the result is clean pixel art.
-        for (int i = 0; i < px.Length; i++)
-        {
-            uint p = px[i], a = p >> 24;
-            if (a is 0 or 255) continue;
-            if (aliased && a < 128) { px[i] = 0; continue; }
-            uint U(int s) => Math.Min(255u, ((p >> s & 0xFF) * 255 + a / 2) / a) << s;
-            px[i] = (aliased ? 255u : a) << 24 | U(16) | U(8) | U(0);
-        }
+        ImageIO.Unpremultiply(px, aliased);
         return px;
     });
 

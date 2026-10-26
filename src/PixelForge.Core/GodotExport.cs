@@ -491,9 +491,7 @@ public static class GodotExport
         if (keys.Any(k => k.ScaleX != 1 || k.ScaleY != 1)) Add(next++, "scale", keys.Select(k => $"Vector2({F((flipped ? -1 : 1) * k.ScaleX)}, {F(k.ScaleY)})"));
         if (keys.Any(k => k.Rotation != 0)) Add(next++, "rotation", keys.Select(k => F(k.Rotation * Math.PI / 180)));
         if (keys.Any(k => k.Opacity != 1)) Add(next++, "modulate", keys.Select(k => $"Color(1, 1, 1, {F(k.Opacity)})"));
-        string anim = d.Sub("Animation", [.. props]);
-        string lib = d.Sub("AnimationLibrary", $"_data = {{\n&\"track\": {anim}\n}}");
-        d.Body.Append($"[node name=\"AnimationPlayer\" type=\"AnimationPlayer\" parent={Q(nodePath)}]\nroot_node = NodePath(\"..\")\nlibraries = {{\n&\"\": {lib}\n}}\nautoplay = \"track\"\n\n");
+        Player(d, nodePath, new() { ["track"] = d.Sub("Animation", [.. props]) }, "track");
     }
 
     /// <summary>Node names may not contain . : @ / " %.</summary>
@@ -504,7 +502,8 @@ public static class GodotExport
         return sb.Length == 0 ? "Node" : sb.ToString();
     }
 
-    static string Unique(HashSet<string> used, string name)
+    /// <summary>A node name not yet in <paramref name="used"/> (Name, Name2, Name3 …); adds it.</summary>
+    internal static string Unique(HashSet<string> used, string name)
     {
         string n = NodeName(name), u = n;
         for (int k = 2; !used.Add(u); k++) u = $"{n}{k}";

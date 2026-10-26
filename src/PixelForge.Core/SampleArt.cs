@@ -189,7 +189,7 @@ public static class SampleArt
     // ---------- tileset: eight 16 px tiles in a row ----------
 
     /// <summary>Tile names in order (index = tile number in the tileset).</summary>
-    public static readonly string[] TileNames = ["grass", "dirt", "stone", "brick", "ladder", "water", "platform", "spikes"];
+    static readonly string[] TileNames = ["grass", "dirt", "stone", "brick", "ladder", "water", "platform", "spikes"];
 
     static Sprite Tiles()
     {

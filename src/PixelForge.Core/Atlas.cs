@@ -19,7 +19,7 @@ public static class Atlas
     public sealed record Result(List<Page> Pages, List<Placed> Frames);
 
     /// <summary>Bounds of the non-transparent pixels (W = 0 when the picture is empty).</summary>
-    public static (int X, int Y, int W, int H) TrimBounds(uint[] px, int w, int h)
+    static (int X, int Y, int W, int H) TrimBounds(uint[] px, int w, int h)
     {
         int x0 = w, y0 = h, x1 = -1, y1 = -1;
         for (int y = 0; y < h; y++)
@@ -118,7 +118,7 @@ public static class Atlas
             {
                 var u = unique[i];
                 int x = p!.Value.X + padding, y = p.Value.Y + padding;
-                for (int row = 0; row < u.H; row++) Array.Copy(u.Px, row * u.W, page, (y + row) * pw + x, u.W);
+                PixelOps.Paste(page, pw, u.Px, u.W, u.H, x, y);
                 all[u.Item.Key] = new Placed(u.Item.Key, pages.Count, x, y, u.W, u.H, u.TX, u.TY, u.Item.W, u.Item.H, null);
             }
             pages.Add(new Page(page, pw, ph));
@@ -138,5 +138,5 @@ public static class Atlas
         {
             key = f.Key, page = f.Page, x = f.X, y = f.Y, w = f.W, h = f.H, trimX = f.TrimX, trimY = f.TrimY, sourceW = f.SourceW, sourceH = f.SourceH, sameAs = f.SameAs,
         }),
-    }, new JsonSerializerOptions { WriteIndented = true });
+    }, DocumentFile.Indented);
 }
