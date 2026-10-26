@@ -196,17 +196,18 @@ public partial class MainWindow : Window
             OpenFromCommandLine(arg);
             return;
         }
-        if (App.Settings.LastProject is not string path) return;
-        if (File.Exists(path)) ProjectCommands.OpenPath(path);
-        else App.SetProject(null);   // forget a project that is gone
+        if (App.Settings.LastProject is string path && File.Exists(path)) { ProjectCommands.OpenPath(path); return; }
+        if (App.Settings.LastProject is not null) App.SetProject(null);   // forget a project that is gone
+        ShowHome();   // nothing to continue: start here
     }
 
-    /// <summary>"PixelForge.App.exe game.pfproj" opens it; a folder opens its project or becomes one.</summary>
-    static void OpenFromCommandLine(string arg)
+    /// <summary>"PixelForge.App.exe game.pfproj" opens it; a folder opens its project or becomes one; a sprite, character or map file opens in its tab.</summary>
+    void OpenFromCommandLine(string arg)
     {
         try
         {
             if (File.Exists(arg) && arg.EndsWith(Project.Extension, StringComparison.OrdinalIgnoreCase)) { ProjectCommands.OpenPath(arg); return; }
+            if (File.Exists(arg) && OpenDocument(arg)) return;
             if (!Directory.Exists(arg)) throw new FileNotFoundException($"“{arg}” is neither a project nor a folder.");
             var existing = Directory.GetFiles(arg, "*" + Project.Extension).FirstOrDefault();
             if (existing is not null) ProjectCommands.OpenPath(existing);
@@ -368,6 +369,7 @@ public partial class MainWindow : Window
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
         if (e.Key == Key.F1) { HelpWindow.Show(this); e.Handled = true; return; }
         if (e.Key == Key.OemComma && ctrl) { PreferencesWindow.Show(this); e.Handled = true; return; }
+        if (Home.IsVisible) return;   // the start screen handles its own keys; editor shortcuts would act on a hidden editor
         if (!(e.OriginalSource is TextBoxBase) && HandleStyleKeys(e)) return;
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         if (e.Key == Key.P && ctrl && shift) { ShowCommandPalette(); e.Handled = true; return; }

@@ -52,7 +52,7 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
         Loaded += Init;
         IsVisibleChanged += (_, _) => UpdateTitle();
 
-        void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadCharacter(_char, null); }
+        void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadCharacter(_char, _path); }   // keeps a file opened before the first layout
     }
 
     // ---------- document ----------
@@ -162,9 +162,10 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
                 _char.Animations[s] = t;
                 RenderPreview();
             };
-            var label = new TextBlock { Text = state, Width = 70, VerticalAlignment = VerticalAlignment.Center, Foreground = tags.Contains(tag) ? null : Brushes.OrangeRed, ToolTip = tags.Contains(tag) ? null : "No sprite tag with this name yet" };
+            var label = new TextBlock { Text = state, Width = 70, VerticalAlignment = VerticalAlignment.Center };
+            if (!tags.Contains(tag)) (label.Foreground, label.ToolTip) = ((Brush)FindResource("DangerBrush"), "No sprite tag with this name yet");   // a null Foreground would hide the text
             DockPanel.SetDock(label, Dock.Left);
-            StatesPanel.Children.Add(new DockPanel { Margin = new Thickness(0, 1, 0, 1), Children = { label, box } });
+            StatesPanel.Children.Add(new DockPanel { Margin = new Thickness(0, 2, 0, 2), Children = { label, box } });
         }
         var names = _char.Animations.Keys.ToList();
         StateBox.ItemsSource = names;

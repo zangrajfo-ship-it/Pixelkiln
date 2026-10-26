@@ -18,12 +18,54 @@ public partial class MainWindow
             var b = new RadioButton { Content = name, GroupName = "modes", Style = (Style)FindResource("ModeTab"), Tag = tab };
             AutomationProperties.SetName(b, name);
             b.Checked += (_, _) => { if (Tabs.SelectedItem != tab) Tabs.SelectedItem = tab; };
+            b.Click += (_, _) => Home.Hide();
             ModeTabs.Children.Add(b);
         }
         SyncModeTabs();
         // editors write "PixelForge — name *" into the title; the chip shows the same
         DependencyPropertyDescriptor.FromProperty(TitleProperty, typeof(Window)).AddValueChanged(this, (_, _) => UpdateDocChip());
         UpdateDocChip();
+
+        Home.CreateSprite = (w, h) => { Reveal(SpriteEd); SpriteEd.NewSprite(w, h); };
+        Home.OpenFile = path => OpenDocument(path);
+        Home.OpenFileDialog = OpenDocumentDialog;
+        Home.OpenProject = () => ProjectCommands.Open(this);
+        Home.NewProject = () => ProjectCommands.New(this);
+        Home.OpenSample = () => OpenSampleAsset("art/hero.pxf");
+        Home.Learn = () => GettingStarted.Show(this, OpenSampleAsset);
+        Home.Closed = () => (Current as UIElement)?.Focus();
+    }
+
+    void ShowHome()
+    {
+        Home.Visibility = Visibility.Visible;
+        Home.Focus();
+    }
+
+    /// <summary>Opens a sprite, character, tilemap or project file; a file inside a project opens with its project.</summary>
+    public bool OpenDocument(string path)
+    {
+        if (path.EndsWith(Core.Project.Extension, StringComparison.OrdinalIgnoreCase)) { ProjectCommands.OpenPath(path); return true; }
+        string ext = Path.GetExtension(path).ToLowerInvariant();
+        if (Editors.FirstOrDefault(ed => ed.FileExtensions.Contains(ext) && Tabs.Items.Cast<TabItem>()
+                .Any(t => (t.Content == ed || t.Content is ModeHost h && h.Contains(ed)) && Shown.Contains((string)t.Header))) is not { } editor) return false;
+        // linked sprites and tilesets resolve through the project
+        if (App.Project is not { } open || !path.StartsWith(open.Root, StringComparison.OrdinalIgnoreCase))
+            try
+            {
+                for (var dir = new DirectoryInfo(Path.GetDirectoryName(Path.GetFullPath(path))!); dir is not null; dir = dir.Parent)
+                    if (dir.GetFiles("*" + Core.Project.Extension).FirstOrDefault() is { } proj) { ProjectCommands.OpenPath(proj.FullName); break; }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }   // a folder we may not list: open the file alone
+        Reveal(editor);
+        editor.OpenPath(path);
+        return true;
+    }
+
+    void OpenDocumentDialog()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Sprites, characters and maps (*.pxf;*.png;*.pxchar;*.pxm)|*.pxf;*.png;*.pxchar;*.pxm|Projects (*.pfproj)|*.pfproj" };
+        if (dlg.ShowDialog(this) == true) OpenDocument(dlg.FileName);
     }
 
     /// <summary>The tabs of the simplified app: make art, animate it, build tilemaps. Add a name to bring a tab back.</summary>
@@ -79,7 +121,7 @@ public partial class MainWindow
     void OnUndo(object sender, RoutedEventArgs e) => InvokeMenu("_Undo");
     void OnRedo(object sender, RoutedEventArgs e) => InvokeMenu("_Redo");
     void OnGettingStarted(object sender, RoutedEventArgs e) => GettingStarted.Show(this, OpenSampleAsset);
-    void OnLogo(object sender, RoutedEventArgs e) => GettingStarted.Show(this, OpenSampleAsset);
+    void OnLogo(object sender, RoutedEventArgs e) => ShowHome();
 
     void OnExport(object sender, RoutedEventArgs e) => ShowExport();
 

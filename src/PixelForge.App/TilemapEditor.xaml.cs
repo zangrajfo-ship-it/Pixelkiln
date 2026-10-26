@@ -28,7 +28,7 @@ public partial class TilemapEditor : UserControl
         Loaded += Init;
         IsVisibleChanged += (_, _) => UpdateTitle();
 
-        void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadMap(_map, null); UpdateToolHint(); }
+        void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadMap(_map, _path); UpdateToolHint(); }   // keeps a file opened before the first layout
         App.SettingsChanged += () => { ApplyZoom(); RefreshTileset(); };
         IsKeyboardFocusedChanged += (_, _) => Scroller.BorderBrush = IsKeyboardFocused ? (Brush)FindResource("FocusRing") : Brushes.Transparent;
     }
@@ -71,7 +71,23 @@ public partial class TilemapEditor : UserControl
         if (_bmp is null || _bmp.PixelWidth != w || _bmp.PixelHeight != h)
             MapImage.Source = _bmp = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
         _bmp.WritePixels(new Int32Rect(0, 0, w, h), _map.Render(), w * 4, 0);
+        RenderCollision();
     }
+
+    /// <summary>Collision view: one pixel per cell, red where the top tile is solid, blue where it is a one-way platform.</summary>
+    void RenderCollision()
+    {
+        CollisionImage.Visibility = CollisionToggle.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        if (CollisionToggle.IsChecked != true) return;
+        var px = new uint[_map.Width * _map.Height];
+        for (int y = 0; y < _map.Height; y++)
+            for (int x = 0; x < _map.Width; x++)
+                if (_map.TileCollisions.GetValueOrDefault(_map.Pick(x, y)) is { } c)
+                    px[y * _map.Width + x] = c.OneWay ? 0x7300B4FFu : 0x73E8505Bu;
+        CollisionImage.Source = ImageIO.ToBitmap(px, _map.Width, _map.Height);
+    }
+
+    void OnCollisionToggle(object sender, RoutedEventArgs e) => RenderCollision();
 
     void UpdateTitle()
     {
@@ -96,6 +112,7 @@ public partial class TilemapEditor : UserControl
         CanvasHost.Height = _map.Height * CellPx;
         GridOverlay.Fill = GridToggle.IsChecked == true && CellPx >= 4 ? Ui.GridBrush(CellPx, Color.FromArgb(0x60, 0xFF, 0xFF, 0xFF)) : null;   // light lines on the dark map
         Status.Text = $"{_map.Width}×{_map.Height} tiles of {_map.TileSize} px";
+        MapInfo.Text = $"Tile {_map.TileSize} px · {_map.Width} × {_map.Height}";
         ZoomText.Text = $"{_zoom * 100} %";
         RefreshObjects();
     }
@@ -365,6 +382,7 @@ public partial class TilemapEditor : UserControl
             case Key.I when !ctrl: SetTool(PickBtn); break;
             case Key.A when !ctrl: SetTool(AutoBtn); break;
             case Key.O when !ctrl: SetTool(ObjectBtn); break;
+            case Key.K when !ctrl: CollisionToggle.IsChecked = CollisionToggle.IsChecked != true; RenderCollision(); break;
             case Key.Delete when _selObj is not null: OnDeleteObject(null, null); break;
             default: e.Handled = false; break;
         }

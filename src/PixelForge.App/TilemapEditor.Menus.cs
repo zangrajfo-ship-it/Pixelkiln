@@ -56,13 +56,20 @@ public partial class TilemapEditor : IEditor
             Ui.Item("Zoom _out", "Ctrl+-", () => ZoomStep(-1)),
             Ui.Item("_Fit to window", "Ctrl+0", ZoomFit),
             new Separator(),
-            Ui.Toggle("_Grid", "Ctrl+G", GridToggle)),
+            Ui.Toggle("_Grid", "Ctrl+G", GridToggle),
+            Ui.Toggle("Show _collision", "K", CollisionToggle)),
         Ui.Menu("_Layer",
             Ui.Item("_Add layer", null, Do(OnAddLayer)),
             Ui.Item("_Delete layer", null, Do(OnDeleteLayer)),
             Ui.Item("Move _up", null, Do(OnLayerUp)),
             Ui.Item("Move d_own", null, Do(OnLayerDown))),
     ];
+
+    void OnTilesetMenu(object sender, RoutedEventArgs e)
+    {
+        TilesetMenuBtn.ContextMenu.PlacementTarget = TilesetMenuBtn;
+        TilesetMenuBtn.ContextMenu.IsOpen = true;
+    }
 
     void OnZoomIn(object sender, RoutedEventArgs e) => ZoomStep(+1);
     void OnZoomOut(object sender, RoutedEventArgs e) => ZoomStep(-1);
@@ -82,9 +89,12 @@ public partial class TilemapEditor : IEditor
         ZoomTo(ZoomLevels.LastOrDefault(l => _map.Width * px * l <= w && _map.Height * px * l <= h, 1), new Point(0, 0));
     }
 
+    /// <summary>The context bar: icon, name and key of the current tool (from its Tag "Name|Key|icon"), then a hint.</summary>
     void UpdateToolHint()
     {
         var t = CurrentTool;
+        var look = ((string)t.Tag).Split('|');
+        (ToolName.Text, ToolKey.Text, ToolIcon.Kind) = (look[0], look[1], look[2]);
         ToolHint.Text =
             t == PaintBtn ? "Paints the tiles selected in the tileset. Right mouse erases." :
             t == EraseBtn ? "Removes tiles from the current layer." :

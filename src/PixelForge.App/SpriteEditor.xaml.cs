@@ -30,7 +30,7 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         Loaded += Init;
         IsVisibleChanged += (_, _) => UpdateTitle();
 
-        void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadSprite(_sprite, null); UpdateToolOptions(); }
+        void Init(object s, RoutedEventArgs e) { Loaded -= Init; LoadSprite(_sprite, _path); UpdateToolOptions(); }   // keeps a file opened before the first layout
         Checker.Fill = Ui.CheckerBrush();
         App.SettingsChanged += () => { Checker.Fill = Ui.CheckerBrush(); ApplyZoom(); };
         Picker.ColorChanged += c =>
@@ -520,6 +520,14 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         var style = App.Project?.Settings.Style;
         int sw = style is { Grid: > 0 } ? Math.Max(1, _sprite.Width / style.Grid) * style.Grid : _sprite.Width, sh = style is { Grid: > 0 } ? Math.Max(1, _sprite.Height / style.Grid) * style.Grid : _sprite.Height;
         if (Ui.AskSize(this, "New sprite", sw, sh, anchor: false) is not (int w, int h, _, _)) return;
+        NewSprite(w, h, confirmed: true);
+    }
+
+    /// <summary>A blank sprite of this size (the start screen's Create); the project's style guide gives the palette.</summary>
+    public void NewSprite(int w, int h, bool confirmed = false)
+    {
+        if (!confirmed && !ConfirmDiscard()) return;
+        var style = App.Project?.Settings.Style;
         var s = new Sprite(w, h);
         if (App.Project is { } p && style is not null && StyleCheck.Colors(p, style) is { Count: > 0 } colors)
         {
