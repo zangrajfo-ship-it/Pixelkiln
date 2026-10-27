@@ -307,8 +307,7 @@ public static class Textures
                 double ex = Math.Min(x + 0.5, w - x - 0.5) / blend, ey = Math.Min(y + 0.5, h - y - 0.5) / blend;
                 double keep = Math.Clamp(Math.Min(ex, ey), 0, 1);   // 1 in the middle, 0 at the border
                 uint a = px[y * w + x], b = px[(y + h / 2) % h * w + (x + w / 2) % w];
-                uint C(int s) => (uint)Math.Round((a >> s & 0xFF) * keep + (b >> s & 0xFF) * (1 - keep)) << s;
-                o[y * w + x] = C(24) | C(16) | C(8) | C(0);
+                o[y * w + x] = ColorUtil.Lerp(b, a, keep);
             }
         return o;
     }

@@ -289,7 +289,7 @@ public static class TemplateEngine
             };
             var rng = new Rng(seed ^ 0xA5A5);
             int count = m.Tileset.Count;
-            for (int i = 0; i < solid.Length; i++) m.Layers[0].Tiles[i] = solid[i] ? rng.Next(count) : -1;   // variants for variety
+            for (int i = 0; i < solid.Length; i++) m.Layers[0].Tiles[i] = solid[i] ? rng.Next(count) : Core.Tilemap.Empty;   // variants for variety
             for (int t = 0; t < count; t++) m.TileCollisions[t] = new TileCollision(0, 0, tile, tile);
             string f = FileFor(Name("map"), ".pxm");
             Core.Tilemap.Save(m, f);

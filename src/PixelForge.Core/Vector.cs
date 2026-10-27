@@ -183,7 +183,7 @@ public static class VectorGeometry
                         break;
                 }
             // a closed figure whose last point repeats the start: merge them so the start keeps its incoming handle
-            if (f.IsClosed && nodes.Count > 1 && (Point)new Point(nodes[^1].X, nodes[^1].Y) == new Point(nodes[0].X, nodes[0].Y))
+            if (f.IsClosed && nodes.Count > 1 && nodes[^1].X == nodes[0].X && nodes[^1].Y == nodes[0].Y)
             {
                 var last = nodes[^1];
                 nodes.RemoveAt(nodes.Count - 1);

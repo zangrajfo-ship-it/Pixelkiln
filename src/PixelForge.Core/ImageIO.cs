@@ -39,6 +39,10 @@ public static class ImageIO
         }
     }
 
+    /// <summary>Decodes a PNG (or other WPF image) from a seekable stream.</summary>
+    public static (uint[] Pixels, int Width, int Height) Decode(Stream s) =>
+        FromBitmap(BitmapFrame.Create(s, BitmapCreateOptions.None, BitmapCacheOption.OnLoad));
+
     public static (uint[] Pixels, int Width, int Height) FromBitmap(BitmapSource src)
     {
         var bmp = new FormatConvertedBitmap(src, PixelFormats.Bgra32, null, 0);

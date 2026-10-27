@@ -54,7 +54,7 @@ public static class Autotile
         if (rule.Variants.Any(v => v < 0 || v >= ts.Count)) throw new InvalidOperationException("A terrain variant points outside the tileset.");
     }
 
-    /// <summary>Blob16 tile for a mask (kept for callers that only know the block's base).</summary>
+    /// <summary>Blob16 tile for a mask, counted from the block's top-left tile.</summary>
     public static int TileFor(Tileset ts, int terrainBase, int mask) => terrainBase + mask / 4 * ts.Columns + mask % 4;
 
     public static int TileFor(Tileset ts, TerrainRule rule, int mask)
@@ -72,9 +72,6 @@ public static class Autotile
         int dc = tile % ts.Columns - rule.Base % ts.Columns, dr = tile / ts.Columns - rule.Base / ts.Columns;
         return Tools.InBounds(bc, br, dc, dr);
     }
-
-    public static void Apply(Tilemap map, MapLayer layer, int terrainBase, int x, int y, bool on) =>
-        Apply(map, layer, new TerrainRule { Base = terrainBase }, x, y, on);
 
     /// <summary>Paints (on) or clears (off) a terrain cell and re-picks it and its 8 neighbours.</summary>
     public static void Apply(Tilemap map, MapLayer layer, TerrainRule rule, int x, int y, bool on)
@@ -107,8 +104,6 @@ public static class Autotile
     }
 
     /// <summary>A guide image for the block: each tile shows which sides (and corners, for 47) connect.</summary>
-    public static uint[] Template(int tileSize) => Template(tileSize, TerrainMode.Blob16);
-
     public static uint[] Template(int tileSize, TerrainMode mode)
     {
         const uint Bg = 0xFF3A3A3A, Fill = 0xFF6ABE30, Corner = 0xFF37946E, Line = 0xFF222034;
