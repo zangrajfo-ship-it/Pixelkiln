@@ -8,7 +8,7 @@ using PixelForge.Core;
 namespace PixelForge.App;
 
 /// <summary>
-/// Device preview (View, Ctrl+Shift+D): the current picture inside the game's view as a phone, tablet or monitor would
+/// Device preview (Options › Device preview, Ctrl+Shift+D; switched off in the simplified app): the current picture inside the game's view as a phone, tablet or monitor would
 /// show it (whole-number scaling, like a pixel-perfect game), with the real on-screen size in pixels and centimetres.
 /// </summary>
 static class DevicePreview

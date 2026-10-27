@@ -99,7 +99,6 @@ public partial class SpriteEditor : IEditor
     void OnZoomOut(object sender, RoutedEventArgs e) => ZoomStep(-1);
     void OnZoomFit(object sender, RoutedEventArgs e) => ZoomFit();
 
-    /// <summary>One zoom level up/down, keeping the middle of the view in place.</summary>
     /// <summary>One zoom level in or out, around <paramref name="anchor"/> (the mouse) or the middle of the view.</summary>
     void ZoomStep(int dir, Point? anchor = null)
     {

@@ -86,8 +86,7 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         _frame = Math.Clamp(_frame, 0, _sprite.Frames.Count - 1);
         ApplyZoom();
         RefreshPalette();
-        RefreshLayers();
-        RefreshOpacity();
+        RefreshLayers();   // also shows the layer opacity
         RefreshSwatches();
         RefreshFrames();
         RefreshTags();
@@ -351,8 +350,7 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
             FramesList.Items.Add(pill);
         }
         FramesList.SelectedIndex = _frame;
-        DurationBox.Text = _sprite.Frames[_frame].DurationMs.ToString();
-        Ui.MarkInvalid(DurationBox, null);
+        ShowDuration();
         _refreshingFrames = false;
     }
 
@@ -363,9 +361,14 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         _refreshingFrames = true;
         FramesList.SelectedIndex = f;
         _refreshingFrames = false;
-        DurationBox.Text = _sprite.Frames[f].DurationMs.ToString();
-        Ui.MarkInvalid(DurationBox, null);
+        ShowDuration();
         Render();
+    }
+
+    void ShowDuration()
+    {
+        DurationBox.Text = _sprite.Frames[_frame].DurationMs.ToString();
+        Ui.MarkInvalid(DurationBox, null);
     }
 
     void OnFrameSelected(object sender, SelectionChangedEventArgs e)

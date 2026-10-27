@@ -32,7 +32,7 @@ public partial class SpriteEditor
         {
             var t = _sprite.Tags[i];
             int index = i;
-            // coloured tag bars: blue and orange in turn, like the timeline of the redesign
+            // coloured tag chips: the TagColors in turn, like the timeline of the redesign
             var (back, fore) = TagColors[i % TagColors.Length];
             var chip = new ToggleButton
             {
@@ -62,9 +62,16 @@ public partial class SpriteEditor
         RefreshTags();
     }
 
+    /// <summary>The tag chosen in the Tags row, or null after telling the user to choose one.</summary>
+    FrameTag? ChosenTag()
+    {
+        if (ActiveTag is null) Ui.Error(new InvalidOperationException("Choose a tag first (click it in the Tags row)."));
+        return ActiveTag;
+    }
+
     void OnSetTagRange(object sender, RoutedEventArgs e)
     {
-        if (ActiveTag is not { } t) { Ui.Error(new InvalidOperationException("Choose a tag first (click it in the Tags row).")); return; }
+        if (ChosenTag() is not { } t) return;
         Snapshot();
         (t.From, t.To) = SelectedFrames();
         RefreshTags();
@@ -72,7 +79,7 @@ public partial class SpriteEditor
 
     void OnRenameTag(object sender, RoutedEventArgs e)
     {
-        if (ActiveTag is not { } t) { Ui.Error(new InvalidOperationException("Choose a tag first (click it in the Tags row).")); return; }
+        if (ChosenTag() is not { } t) return;
         if (Ui.Ask(this, "Rename tag", "Name:", t.Name) is not string name || name.Trim().Length == 0 || name.Trim() == t.Name) return;
         Snapshot();
         t.Name = name.Trim();
@@ -81,9 +88,9 @@ public partial class SpriteEditor
 
     void OnDeleteTag(object sender, RoutedEventArgs e)
     {
-        if (_activeTag is not int i || ActiveTag is null) { Ui.Error(new InvalidOperationException("Choose a tag first (click it in the Tags row).")); return; }
+        if (ChosenTag() is null) return;
         Snapshot();
-        _sprite.Tags.RemoveAt(i);
+        _sprite.Tags.RemoveAt(_activeTag!.Value);
         _activeTag = null;
         RefreshTags();
     }

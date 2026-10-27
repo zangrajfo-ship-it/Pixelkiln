@@ -11,12 +11,9 @@ public sealed record Command(string Title, string Category, string? Gesture, Fun
     public override string ToString() => Title;
 }
 
-/// <summary>Collects commands: menu items (recursively), tab switches, assets of the open project, plugin macros.</summary>
+/// <summary>Turns menus into commands (recursively) and filters them by typed words; MainWindow.AllCommands adds tabs, assets and plugin macros.</summary>
 public static class CommandRegistry
 {
-    /// <summary>Extra command sources (e.g. plugin macros); each is asked again every time the palette opens.</summary>
-    public static readonly List<Func<IEnumerable<Command>>> Sources = [];
-
     public static IEnumerable<Command> FromMenu(ItemsControl menu, string path = "")
     {
         foreach (var mi in menu.Items.OfType<MenuItem>())

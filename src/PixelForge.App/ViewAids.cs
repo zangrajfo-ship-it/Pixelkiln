@@ -73,7 +73,7 @@ sealed class ViewAids
         parent.Children.Insert(index, grid);
     }
 
-    public void InvalidateRulers()
+    void InvalidateRulers()
     {
         _top.InvalidateVisual();
         _left.InvalidateVisual();
@@ -166,8 +166,6 @@ sealed class ViewAids
 
     // ---------- guides ----------
 
-    public IReadOnlyList<double> GuidesX => _view.GuidesX;
-    public IReadOnlyList<double> GuidesY => _view.GuidesY;
 
     /// <summary>Snaps a document coordinate to a guide within 6 screen pixels (when snapping and guides are on).</summary>
     public double Snap(double v, bool vertical, double screenPerDoc) =>

@@ -58,8 +58,7 @@ public partial class TilemapEditor : UserControl
         ApplyZoom();
         RefreshTileset();
         RefreshTerrains();
-        RefreshLayers();
-        RefreshObjects();
+        RefreshLayers();   // ApplyZoom already placed the objects
         Render();
         UpdateTitle();
     }

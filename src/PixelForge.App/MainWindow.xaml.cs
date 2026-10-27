@@ -252,7 +252,6 @@ public partial class MainWindow : Window
         if (App.Project is { } p) TemplateStudio.Show(this, p, Assets.SelectedAll, OpenAsset);
     }
 
-
     /// <summary>Opens an asset in the tab that edits its type.</summary>
     void OpenAsset(AssetEntry a)
     {
