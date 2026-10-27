@@ -249,11 +249,7 @@ public static class GodotExport
         int i = 0;
         foreach (var (path, at) in tracks)
         {
-            props.Add($"tracks/{i}/type = \"value\"");
-            props.Add($"tracks/{i}/path = NodePath({Q(path)})");
-            props.Add($"tracks/{i}/interp = 1");
-            props.Add($"tracks/{i}/keys = {{\"times\": PackedFloat32Array({string.Join(", ", times.Select(t => F(t / 1000)))}), \"transitions\": PackedFloat32Array({string.Join(", ", times.Select(_ => "1.0"))}), \"update\": 0, \"values\": [{string.Join(", ", times.Select(at))}]}}");
-            i++;
+            ValueTrack(props, i++, path, string.Join(", ", times.Select(t => F(t / 1000))), string.Join(", ", times.Select(_ => "1.0")), string.Join(", ", times.Select(at)));
         }
         return d.Sub("Animation", [.. props]);
     }
@@ -366,7 +362,17 @@ public static class GodotExport
         return d.ToString();
     }
 
-    static string Col(uint c) => $"Color({F((c >> 16 & 0xFF) / 255.0)}, {F((c >> 8 & 0xFF) / 255.0)}, {F((c & 0xFF) / 255.0)}, {F((c >> 24) / 255.0)})";
+    static string ColArgs(uint c) => $"{F((c >> 16 & 0xFF) / 255.0)}, {F((c >> 8 & 0xFF) / 255.0)}, {F((c & 0xFF) / 255.0)}, {F((c >> 24) / 255.0)}";
+    static string Col(uint c) => $"Color({ColArgs(c)})";
+
+    /// <summary>One "value" track of a Godot Animation: keys at the given times, with transitions and values (comma lists).</summary>
+    static void ValueTrack(List<string> props, int i, string path, string times, string transitions, string values)
+    {
+        props.Add($"tracks/{i}/type = \"value\"");
+        props.Add($"tracks/{i}/path = NodePath({Q(path)})");
+        props.Add($"tracks/{i}/interp = 1");
+        props.Add($"tracks/{i}/keys = {{\"times\": PackedFloat32Array({times}), \"transitions\": PackedFloat32Array({transitions}), \"update\": 0, \"values\": [{values}]}}");
+    }
 
     /// <summary>
     /// Lighting and particles: CanvasModulate for the ambient light, PointLight2D (radial gradient texture; spots get a
@@ -428,7 +434,7 @@ public static class GodotExport
             }
         foreach (var e in s.Emitters)
         {
-            string ramp = d.Sub("Gradient", "offsets = PackedFloat32Array(0, 1)", $"colors = PackedColorArray({Col(e.Color)[6..^1]}, {Col(e.EndColor)[6..^1]})");
+            string ramp = d.Sub("Gradient", "offsets = PackedFloat32Array(0, 1)", $"colors = PackedColorArray({ColArgs(e.Color)}, {ColArgs(e.EndColor)})");
             double endScale = e.Size > 0 ? e.EndSize / e.Size : 1;
             string curve = d.Sub("Curve", $"_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, {F(endScale)}), 0.0, 0.0, 0, 0]", "point_count = 2");
             b.Append($"[node name={Q(Unique(names, e.Name))} type=\"CPUParticles2D\" parent=\".\"]\nposition = Vector2({F(e.X + e.W / 2.0)}, {F(e.Y + e.H / 2.0)})\n");
@@ -479,13 +485,7 @@ public static class GodotExport
         string times = string.Join(", ", keys.Select(k => F(k.TimeMs / 1000.0)));
         string trans = string.Join(", ", keys.Select(k => F(k.Easing switch { Easing.EaseIn => 2, Easing.EaseOut => 0.5, Easing.EaseInOut => -2, Easing.Step => 0, _ => 1 })));
         var props = new List<string> { $"resource_name = \"track\"", $"length = {F(Math.Max(0.001, keys[^1].TimeMs / 1000.0))}", $"loop_mode = {(t.Loop ? 1 : 0)}" };
-        void Add(int n, string prop, IEnumerable<string> values)
-        {
-            props.Add($"tracks/{n}/type = \"value\"");
-            props.Add($"tracks/{n}/path = NodePath(\".:{prop}\")");
-            props.Add($"tracks/{n}/interp = 1");
-            props.Add($"tracks/{n}/keys = {{\"times\": PackedFloat32Array({times}), \"transitions\": PackedFloat32Array({trans}), \"update\": 0, \"values\": [{string.Join(", ", values)}]}}");
-        }
+        void Add(int n, string prop, IEnumerable<string> values) => ValueTrack(props, n, ".:" + prop, times, trans, string.Join(", ", values));
         Add(0, "position", keys.Select(k => $"Vector2({F(i.X + k.X)}, {F(i.Y + k.Y)})"));
         int next = 1;
         if (keys.Any(k => k.ScaleX != 1 || k.ScaleY != 1)) Add(next++, "scale", keys.Select(k => $"Vector2({F((flipped ? -1 : 1) * k.ScaleX)}, {F(k.ScaleY)})"));

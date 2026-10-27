@@ -53,8 +53,9 @@ public static class PaletteTools
         s.Layers.SelectMany(l => l.Cels).Sum(cel => PixelOps.ReplaceColor(cel, from, to));
 
     /// <summary>
-    /// Light-to-shadow ramp around a base color: darker steps shift hue toward blue/purple and lighter ones
-    /// toward yellow, the usual pixel-art shading. <paramref name="steps"/> colors, base in the middle.
+    /// Light-to-shadow ramp around a base color, <paramref name="steps"/> colors with the base in the middle.
+    /// Each step away from the base shifts the hue by <paramref name="hueShift"/> degrees, the same way for darker
+    /// and lighter steps: down for greens, cyans and blues (60° to 240°), up for the other hues.
     /// </summary>
     public static List<uint> Ramp(uint baseColor, int steps = 5, double hueShift = 12)
     {
@@ -64,7 +65,7 @@ public static class PaletteTools
         for (int i = 0; i < steps; i++)
         {
             int d = i - mid;   // negative = darker
-            double nh = h + d * hueShift * (d < 0 ? (h > 60 && h < 240 ? 1 : -1) : (h > 60 && h < 240 ? -1 : 1));
+            double nh = h - Math.Abs(d) * hueShift * (h > 60 && h < 240 ? 1 : -1);
             double nv = Math.Clamp(v + d * 0.15, 0.05, 1);
             double ns = Math.Clamp(s + (d < 0 ? 0.08 : -0.1) * Math.Abs(d), 0, 1);
             ramp.Add(ColorUtil.FromHsv(nh, ns, nv));

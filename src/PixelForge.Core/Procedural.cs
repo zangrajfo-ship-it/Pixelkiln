@@ -183,7 +183,7 @@ public static class Procedural
                         for (int dx = -1; dx <= 1; dx++)
                         {
                             int nx = x + dx, ny = y + dy;
-                            if ((dx, dy) != (0, 0) && (nx < 0 || ny < 0 || nx >= w || ny >= h || m[ny * w + nx])) n++;
+                            if ((dx, dy) != (0, 0) && (!Tools.InBounds(w, h, nx, ny) || m[ny * w + nx])) n++;
                         }
                     next[y * w + x] = n > 4 || (m[y * w + x] && n == 4);
                 }
@@ -253,7 +253,8 @@ public static class Procedural
         var s = new Song(16, empty: true) { Bpm = Math.Clamp(bpm, 40, 300) };
         int Note(int degree, int octave) => root + octave * 12 + sc[Tools.Wrap(degree, sc.Length)] + 12 * (int)Math.Floor(degree / (double)sc.Length);
         int melody = 2;
-        for (int bar = 0; bar < Math.Clamp(patterns, 1, 16); bar++)
+        int bars = Math.Clamp(patterns, 1, 16);
+        for (int bar = 0; bar < bars; bar++)
         {
             var pat = Pattern.Empty(16);
             int chord = prog[bar % prog.Length] % sc.Length;
@@ -267,7 +268,7 @@ public static class Procedural
                 melody = Math.Clamp(melody + r.Next(5) - 2, -2, 9);
                 st += len;
             }
-            DrumBeats.Apply(pat, bar == Math.Clamp(patterns, 1, 16) - 1 && bar > 0 ? "Tom fill" : bpm >= 130 ? "Four on the floor" : "Rock");
+            DrumBeats.Apply(pat, bar == bars - 1 && bar > 0 ? "Tom fill" : bpm >= 130 ? "Four on the floor" : "Rock");
             s.Patterns.Add(pat);
             s.Order.Add(bar);
         }
@@ -278,7 +279,7 @@ public static class Procedural
     public static void Fill(Tilemap map, MapLayer layer, bool[] solid, TerrainRule? terrain, int tile)
     {
         if (solid.Length != map.Width * map.Height) throw new ArgumentException("The layout does not match the map size.", nameof(solid));
-        Array.Fill(layer.Tiles, -1);
+        Array.Fill(layer.Tiles, Tilemap.Empty);
         for (int i = 0; i < solid.Length; i++)
         {
             if (!solid[i]) continue;

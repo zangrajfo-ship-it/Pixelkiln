@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using static PixelForge.Core.GodotExport;
 
 namespace PixelForge.Core;
 
@@ -107,7 +108,7 @@ public static class UiExport
             if (i < 0) { ext.Add(file); i = ext.Count - 1; }
             string id = $"StyleBoxTexture_{++sub}";
             subs.Append($"[sub_resource type=\"StyleBoxTexture\" id=\"{id}\"]\ntexture = ExtResource(\"{i + 1}\")\n");
-            foreach (var side in new[] { "left", "top", "right", "bottom" }) subs.Append($"texture_margin_{side} = {GodotExport.F(e.Margin)}\n");
+            foreach (var side in new[] { "left", "top", "right", "bottom" }) subs.Append($"texture_margin_{side} = {F(e.Margin)}\n");
             subs.Append('\n');
             body.Append($"{target} = SubResource(\"{id}\")\n");
         }
@@ -142,7 +143,6 @@ public static class UiExport
 
     static string ScreenScene(UiKit kit, UiScreen s, string b, Dictionary<Guid, string> names, Func<string, string> res, string themePath)
     {
-        string F(double v) => GodotExport.F(v);
         var ext = new List<(string Type, string Path)> { ("Theme", themePath) };
         string Ext(string type, string path)
         {
@@ -151,7 +151,7 @@ public static class UiExport
             return $"ExtResource(\"{i + 1}\")";
         }
         var body = new StringBuilder();
-        body.Append($"[node name={GodotExport.Q(GodotExport.NodeName(s.Name))} type=\"Control\"]\nlayout_mode = 3\nanchors_preset = 15\nanchor_right = 1.0\nanchor_bottom = 1.0\ngrow_horizontal = 2\ngrow_vertical = 2\ntheme = ExtResource(\"1\")\n");
+        body.Append($"[node name={Q(NodeName(s.Name))} type=\"Control\"]\nlayout_mode = 3\nanchors_preset = 15\nanchor_right = 1.0\nanchor_bottom = 1.0\ngrow_horizontal = 2\ngrow_vertical = 2\ntheme = ExtResource(\"1\")\n");
         body.Append($"metadata/design_size = Vector2({s.Width}, {s.Height})\n\n");
         if (s.Background >> 24 != 0)
             body.Append($"[node name=\"Background\" type=\"ColorRect\" parent=\".\"]\nlayout_mode = 1\nanchors_preset = 15\nanchor_right = 1.0\nanchor_bottom = 1.0\ncolor = Color({C(s.Background)})\n\n");
@@ -159,7 +159,7 @@ public static class UiExport
         foreach (var i in s.Items)
         {
             if (kit.Element(i.ElementId) is not { } e) continue;
-            string u = GodotExport.Unique(used, i.Text is { Length: > 0 } t && t.Length <= 24 ? t : e.Name);
+            string u = Unique(used, i.Text is { Length: > 0 } t && t.Length <= 24 ? t : e.Name);
             var (al, at, ar, ab) = Anchors(i.Anchor);
             // offsets are distances from the anchor points in design pixels
             double ol = i.X - al * s.Width, ot = i.Y - at * s.Height, or = i.X + i.W - ar * s.Width, ob = i.Y + i.H - ab * s.Height;
@@ -168,13 +168,13 @@ public static class UiExport
                 UiElementKind.Button => "Button", UiElementKind.Panel => "Panel", UiElementKind.Dialog => "PanelContainer", UiElementKind.Slider => "HSlider",
                 UiElementKind.HealthBar => "ProgressBar", UiElementKind.Label => "Label", _ => "TextureRect",
             };
-            body.Append($"[node name={GodotExport.Q(u)} type=\"{type}\" parent=\".\"]\nlayout_mode = 1\n");
+            body.Append($"[node name={Q(u)} type=\"{type}\" parent=\".\"]\nlayout_mode = 1\n");
             body.Append($"anchor_left = {F(al)}\nanchor_top = {F(at)}\nanchor_right = {F(ar)}\nanchor_bottom = {F(ab)}\n");
             body.Append($"offset_left = {F(ol)}\noffset_top = {F(ot)}\noffset_right = {F(or)}\noffset_bottom = {F(ob)}\n");
             switch (type)
             {
-                case "Button": body.Append($"text = {GodotExport.Q(i.Text ?? e.Label)}\n"); if (i.State == UiState.Disabled) body.Append("disabled = true\n"); break;
-                case "Label": body.Append($"text = {GodotExport.Q(i.Text ?? e.Label)}\nhorizontal_alignment = 1\nvertical_alignment = 1\n"); break;
+                case "Button": body.Append($"text = {Q(i.Text ?? e.Label)}\n"); if (i.State == UiState.Disabled) body.Append("disabled = true\n"); break;
+                case "Label": body.Append($"text = {Q(i.Text ?? e.Label)}\nhorizontal_alignment = 1\nvertical_alignment = 1\n"); break;
                 case "HSlider": body.Append($"value = {F(i.Value * 100)}\n"); break;
                 case "ProgressBar": body.Append($"value = {F(i.Value * 100)}\nshow_percentage = false\n"); break;
                 case "TextureRect":
@@ -183,7 +183,7 @@ public static class UiExport
             }
             body.Append('\n');
             if (type == "PanelContainer" && (i.Text ?? e.Label) is { Length: > 0 } dt)
-                body.Append($"[node name=\"Text\" type=\"Label\" parent={GodotExport.Q(u)}]\nlayout_mode = 2\ntext = {GodotExport.Q(dt.Replace('|', '\n'))}\nautowrap_mode = 3\n\n");
+                body.Append($"[node name=\"Text\" type=\"Label\" parent={Q(u)}]\nlayout_mode = 2\ntext = {Q(dt.Replace('|', '\n'))}\nautowrap_mode = 3\n\n");
         }
         var sb = new StringBuilder($"[gd_scene load_steps={ext.Count + 1} format=3]\n\n");
         for (int k = 0; k < ext.Count; k++) sb.Append($"[ext_resource type=\"{ext[k].Type}\" path=\"{ext[k].Path}\" id=\"{k + 1}\"]\n");

@@ -1,7 +1,6 @@
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Windows.Media.Imaging;
 
 namespace PixelForge.Core;
 
@@ -171,7 +170,7 @@ public sealed class PaintDoc
                     using var ms = new MemoryStream();
                     using (var s = e.Open()) s.CopyTo(ms);
                     ms.Position = 0;
-                    var (px, w, h) = ImageIO.FromBitmap(BitmapFrame.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad));
+                    var (px, w, h) = ImageIO.Decode(ms);   // zip entry streams cannot seek, hence the copy
                     if (w != PaintLayer.Tile || h != PaintLayer.Tile) throw new InvalidDataException($"Tile “{e.FullName}” is not {PaintLayer.Tile}×{PaintLayer.Tile}.");
                     if (isMask) l.Mask![PaintLayer.Key(tx, ty)] = [.. px.Select(p => (byte)(p >> 24))];
                     else l.Tiles[PaintLayer.Key(tx, ty)] = px;

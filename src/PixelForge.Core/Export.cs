@@ -176,7 +176,7 @@ public static class Exporter
                 // assets only clash when their output files can (hero.pxf and hero.pxchar can share "hero")
                 string group = a.Type switch
                 {
-                    AssetType.Sprite or AssetType.Image or AssetType.Paint or AssetType.Vector or AssetType.Texture => "picture", AssetType.Tilemap or AssetType.Scene => "scene", AssetType.Character => "character",
+                    AssetType t when AssetLoader.IsPicture(t) => "picture", AssetType.Tilemap or AssetType.Scene => "scene", AssetType.Character => "character",
                     AssetType.Palette => "palette", _ => "audio",
                 };
                 string name = stem;
@@ -300,12 +300,12 @@ public static class Exporter
                     string? script = null;
                     if (Godot && sc.LogicAssetId is Guid lid && _assets.Logic(lid) is { } graph)
                     {
-                        string? Path(Guid id) => !_base.TryGetValue(id, out var nb) ? null : p.Find(id)?.Type switch
+                        string? ResOf(Guid id) => !_base.TryGetValue(id, out var nb) ? null : p.Find(id)?.Type switch
                         {
                             AssetType.Song or AssetType.Sound or AssetType.Audio or AssetType.Mix => Res(nb + ".wav"), AssetType.Scene => Res(nb + ".tscn"), _ => null,
                         };
                         string? player = sc.Instances.FirstOrDefault(i => _assets.Look(i)?.Character?.Kind == CharacterKind.Player) is { } pl ? (pl.Name.Length > 0 ? pl.Name : "object") : null;
-                        Add(b + "_logic.gd", LogicExport.Gd(graph, a.Name, Path, player));
+                        Add(b + "_logic.gd", LogicExport.Gd(graph, a.Name, ResOf, player));
                         script = Res(b + "_logic.gd");
                     }
                     if (Godot) Add(b + ".tscn", GodotExport.LevelScene(sc, a.Name, p, _assets, id => Res(_base[id]), r.Warnings,

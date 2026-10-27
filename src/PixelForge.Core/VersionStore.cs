@@ -169,8 +169,7 @@ public static class VersionDiff
             }
             case AssetType.Image:
             {
-                var (px, w, h) = ImageIO.FromBitmap(System.Windows.Media.Imaging.BitmapFrame.Create(new MemoryStream(data),
-                    System.Windows.Media.Imaging.BitmapCreateOptions.None, System.Windows.Media.Imaging.BitmapCacheOption.OnLoad));
+                var (px, w, h) = ImageIO.Decode(new MemoryStream(data));
                 return new Picture(px, w, h);
             }
             default: return null;

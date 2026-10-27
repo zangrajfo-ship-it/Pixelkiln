@@ -68,6 +68,7 @@ public class TilemapUpgradeTests
     // 8×4 tiles tileset of 1px tiles; terrain block at index 2 (cols 2..5, rows 0..3)
     static Tilemap Map(int w = 5, int h = 5) => new(w, h, 1) { Tileset = new Tileset(new uint[8 * 4], 8, 4, 1) };
     const int Base = 2;
+    static TerrainRule Rule => new() { Base = Base };
     static int Tile(Tilemap m, int mask) => Autotile.TileFor(m.Tileset!, Base, mask);
 
     [Fact]
@@ -75,20 +76,20 @@ public class TilemapUpgradeTests
     {
         var m = Map();
         var l = m.Layers[0];
-        Autotile.Apply(m, l, Base, 2, 2, on: true);
+        Autotile.Apply(m, l, Rule, 2, 2, on: true);
         Assert.Equal(Tile(m, 0), l.Tiles[2 * 5 + 2]);                        // lone island
 
-        Autotile.Apply(m, l, Base, 3, 2, on: true);                           // row of two
+        Autotile.Apply(m, l, Rule, 3, 2, on: true);                           // row of two
         Assert.Equal(Tile(m, Autotile.E), l.Tiles[2 * 5 + 2]);
         Assert.Equal(Tile(m, Autotile.W), l.Tiles[2 * 5 + 3]);
 
-        Autotile.Apply(m, l, Base, 1, 2, on: true);
-        Autotile.Apply(m, l, Base, 2, 1, on: true);
-        Autotile.Apply(m, l, Base, 2, 3, on: true);                           // plus sign
+        Autotile.Apply(m, l, Rule, 1, 2, on: true);
+        Autotile.Apply(m, l, Rule, 2, 1, on: true);
+        Autotile.Apply(m, l, Rule, 2, 3, on: true);                           // plus sign
         Assert.Equal(Tile(m, 15), l.Tiles[2 * 5 + 2]);
         Assert.Equal(Tile(m, Autotile.S), l.Tiles[1 * 5 + 2]);
 
-        Autotile.Apply(m, l, Base, 2, 2, on: false);                          // remove center: arms become islands
+        Autotile.Apply(m, l, Rule, 2, 2, on: false);                          // remove center: arms become islands
         Assert.Equal(Tilemap.Empty, l.Tiles[2 * 5 + 2]);
         Assert.Equal(Tile(m, 0), l.Tiles[1 * 5 + 2]);
         Assert.Equal(Tile(m, 0), l.Tiles[2 * 5 + 3]);
@@ -99,11 +100,11 @@ public class TilemapUpgradeTests
     {
         var m = Map();
         m.Layers[0].Tiles[2 * 5 + 3] = 0;                                     // a non-terrain tile to the east
-        Autotile.Apply(m, m.Layers[0], Base, 2, 2, on: true);
+        Autotile.Apply(m, m.Layers[0], Rule, 2, 2, on: true);
         Assert.Equal(Tile(m, 0), m.Layers[0].Tiles[2 * 5 + 2]);
         Assert.Equal(0, m.Layers[0].Tiles[2 * 5 + 3]);
-        Assert.Throws<InvalidOperationException>(() => Autotile.Apply(m, m.Layers[0], 5, 0, 0, on: true));   // block overflows columns
-        Assert.Equal(16 * 16 * 4, Autotile.Template(8).Length);
+        Assert.Throws<InvalidOperationException>(() => Autotile.Apply(m, m.Layers[0], new TerrainRule { Base = 5 }, 0, 0, on: true));   // block overflows columns
+        Assert.Equal(16 * 16 * 4, Autotile.Template(8, TerrainMode.Blob16).Length);
     }
 
     [Fact]
