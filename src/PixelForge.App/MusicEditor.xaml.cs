@@ -264,6 +264,7 @@ public partial class MusicEditor : UserControl
         Status.Text = "Generated: melody on Pulse 1, chords on Pulse 2, bass on Triangle, drums on channel 4. Press Space to play.";
     }
 
+    // the channel buttons are named "Ch0" … "Ch3": the digit is the channel
     void OnChannel(object sender, RoutedEventArgs e) => SelectChannel(((FrameworkElement)sender).Name[2] - '0');
 
     // ---------- instrument (per channel) ----------

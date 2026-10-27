@@ -10,7 +10,7 @@ namespace PixelForge.App;
 
 /// <summary>
 /// A line icon drawn from a path in a 24×24 box (the redesign's icon set), stroked with the inherited foreground
-/// so it follows hover, active and disabled colours. Use Kind (a name from <see cref="Icons"/>) or Data.
+/// so it follows hover, active and disabled colours. Use Kind (a name from <see cref="Icons"/>).
 /// </summary>
 sealed class PathIcon : Viewbox
 {
@@ -46,7 +46,7 @@ sealed class PathIcon : Viewbox
     }
 }
 
-/// <summary>Icon paths from the redesign mockups (24-unit box).</summary>
+/// <summary>Icon paths from the redesign mockups (24-unit box). The whole set is kept, so some names are not used yet.</summary>
 static class Icons
 {
     public static readonly Dictionary<string, string> Paths = new()

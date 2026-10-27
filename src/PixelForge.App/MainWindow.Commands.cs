@@ -42,7 +42,6 @@ public partial class MainWindow
                 commands.Add(new Command($"Open asset: {a.Path}", "Asset", null, () => File.Exists(p.FullPath(asset)), () => OpenAsset(asset)));
             }
         commands.AddRange(PluginCommands());
-        foreach (var source in CommandRegistry.Sources) commands.AddRange(source());
         return commands;
     }
 
@@ -102,7 +101,7 @@ public partial class MainWindow
             try { p.Save(); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Ui.Error(ex); return; }
         }
-        ExportWindow.Show(this, p, [.. Editors.Where(ed => ed.IsDirty).Select(ed => ed.CurrentPath ?? "untitled")]);
+        ShowExport();
     }
 
     /// <summary>Runs the named commands in order; checks all names first, stops at the first one that cannot run now.</summary>

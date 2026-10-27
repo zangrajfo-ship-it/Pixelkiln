@@ -36,7 +36,6 @@ public partial class AudioStudio : UserControl, IEditor
     bool _dragSnapshotDone;
 
     readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(30) };
-    int _playOffset;   // the rendered mix starts at this sample
 
     public AudioStudio()
     {
@@ -312,7 +311,6 @@ public partial class AudioStudio : UserControl, IEditor
         int from = AudioEdit.Samples(_playheadMs);
         bool loop = LoopToggle.IsChecked == true && _mix.LoopStartMs is int ls && _mix.LoopEndMs is int le && _playheadMs < le;
         if (from >= s.Length && !loop) { Status.Text = "Nothing to play after the playhead."; StopPlay(); return; }
-        _playOffset = 0;
         AudioOut.Shared.PlayClip(s, from, loop ? AudioEdit.Samples(_mix.LoopStartMs!.Value) : -1, loop ? AudioEdit.Samples(_mix.LoopEndMs!.Value) : -1);
         PlayBtn.IsChecked = true;
         PlayBtn.Content = "■ Stop";
@@ -331,7 +329,7 @@ public partial class AudioStudio : UserControl, IEditor
     void FollowPlayback()
     {
         if (AudioOut.Shared.ClipPosition is not int pos) { StopPlay(); return; }
-        int ms = AudioEdit.Ms(pos + _playOffset);
+        int ms = AudioEdit.Ms(pos);
         MovePlayhead(ms);
         double x = X(ms);
         if (x > Scroller.HorizontalOffset + Scroller.ViewportWidth - 40 || x < Scroller.HorizontalOffset) Scroller.ScrollToHorizontalOffset(Math.Max(0, x - 40));
