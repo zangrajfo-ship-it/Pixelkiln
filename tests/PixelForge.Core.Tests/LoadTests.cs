@@ -33,7 +33,7 @@ public sealed class LoadTests() : TempDirTest("load")
     {
         var s = new Sprite(512, 512);
         for (int i = 1; i < 32; i++) s.AddFrame(i);   // 32 MB per snapshot
-        long size = 4L * 512 * 512 * 32;
+        long size = Bytes(s);
         var h = new History<Sprite>(x => x.Clone(), 100, Bytes, maxBytes: 256L * 1024 * 1024);
         for (int i = 0; i < 20; i++) h.Push(s);
         Assert.InRange(h.Bytes, size, 256L * 1024 * 1024);

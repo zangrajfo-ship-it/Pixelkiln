@@ -2,7 +2,7 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public class SettingsTests
+public class SettingsTests() : TempDirTest("settings")
 {
     [Fact]
     public void Round_trip_and_sanitize()
@@ -34,14 +34,9 @@ public class SettingsTests
     [Fact]
     public void Missing_or_broken_file_gives_defaults()
     {
-        Assert.Equal(100, Settings.Load(Path.Combine(Path.GetTempPath(), $"none-{Guid.NewGuid()}.json")).UndoLimit);
-        var bad = Path.Combine(Path.GetTempPath(), $"pf-{Guid.NewGuid()}.json");
-        try
-        {
-            File.WriteAllText(bad, "{ not json");
-            Assert.Equal("Modern", Settings.Load(bad).Theme);
-        }
-        finally { File.Delete(bad); }
+        Assert.Equal(100, Settings.Load(P("none.json")).UndoLimit);
+        File.WriteAllText(P("bad.json"), "{ not json");
+        Assert.Equal("Modern", Settings.Load(P("bad.json")).Theme);
     }
 
     [Fact]

@@ -11,6 +11,8 @@ dotnet run --project src/PixelForge.App
 Za razvoj: `dotnet build`, `dotnet test`, `powershell -File tools/smoke.ps1` (UI smoke test v ločenem začasnem domu).
 
 ## Kaj zna
+Poenostavljena različica (od 21. 10. 2026) kaže samo zavihke **Sprite** (način Pixel), **Character** (način States) in **Tilemap** ter začetni zaslon. Ostali deli v tabeli so v kodi, a izklopljeni (`MainWindow.Shown` in `HostModes` v `MainWindow.xaml.cs`); vklopiš jih tako, da odstraniš komentar.
+
 | Zavihek ali okno | Za kaj |
 |---|---|
 | **Sprite** | načini (Ctrl+1 … 5): **Pixel** (plasti, sličice, oznake animacij, onion skin, palete, izbor, preoblikovanje, Aseprite JSON, GIF, generator s semenom), **Paint** (digitalno slikanje: čopiči, pritisk pisala, načini mešanja, maske, platna do 8192²), **Vector** (poti Bezier, oblike, gradienti, združevanje oblik, SVG), **Texture** (brezšivni materiali z normalno, višinsko in okluzijsko mapo), **UI** (gumbi, okna, vrstice v štirih stanjih, nine-slice, zasloni s sidri) |
@@ -19,11 +21,11 @@ Za razvoj: `dotnet build`, `dotnet test`, `powershell -File tools/smoke.ps1` (UI
 | **Scene** | **Layout**: stopnje iz map, slik, sprajtov in likov, paralaksa, gibalne sledi in posnetki, območja, kamera in njeni premiki, glasba, UI nad igro, **luči, sence in delci**, preverjanje, **predogled igre (F5)**; **Motion**: knjižnice animacij s časovnico in krivuljami Bezier; **Logic**: vizualna logika (dogodki, pogoji, dejanja), ki teče v predogledu igre |
 | **Audio** | mešalnik projektnih zvokov: sledi, rez, pojemanje, ponovitve, združevanje, zanka za glasbo, predvajalni seznami, izvoz WAV |
 | **Music, SFX** | sekvencer v slogu čipovske glasbe: dva pravokotna kanala, trikotni bas in **boben komplet** (kick, snare, hi-hat, toms, clap, crash) s pripravljenimi ritmi in generatorjem pesmi; generator zvočnih učinkov |
-| **Projekt** | Template Studio (Ctrl+T, 34 vgrajenih predlog za like, stopnje, sredstva, materiale, UI in glasbo), Optimize assets (velikosti, neuporabljena in enaka sredstva, atlas), Style guide (pravila sloga in preverjanje), brskalnik sredstev (iskanje, oznake, priljubljeni, predogledi, varno preimenovanje), preverjanje projekta, nastavitve in matrika trkov, Palette studio, **zgodovina različic** (Ctrl+H), **izvoz** (Ctrl+Shift+E) |
-| **Povsod** | predogled naprave (Ctrl+Shift+D), ravnila, vodila in referenčna slika, kopiranje sloga (Ctrl+Alt+C/V), delovni profili, paketna obdelava v brskalniku, paleta ukazov (Ctrl+Shift+P), vtičniki s podatki, samodejno shranjevanje in obnovitev, temna/svetla tema, tipkovnica in bralniki zaslona (F1 = bližnjice) |
+| **Projekt** | Template Studio (Ctrl+T, 40 vgrajenih predlog za like, stopnje, sredstva, materiale, UI in glasbo), Optimize assets (velikosti, neuporabljena in enaka sredstva, atlas; izklopljeno), Style guide (pravila sloga in preverjanje; izklopljeno), brskalnik sredstev (iskanje, oznake, priljubljeni, predogledi, varno preimenovanje), preverjanje projekta, nastavitve in matrika trkov, Palette studio, **zgodovina različic** (Ctrl+H), **izvoz** (Ctrl+Shift+E) |
+| **Povsod** | predogled naprave (Ctrl+Shift+D; izklopljeno), ravnila, vodila in referenčna slika, kopiranje sloga (Ctrl+Alt+C/V), delovni profili (izklopljeno), paketna obdelava v brskalniku, paleta ukazov (Ctrl+Shift+P), vtičniki s podatki, samodejno shranjevanje in obnovitev, temna/svetla tema, tipkovnica in bralniki zaslona (F1 = bližnjice) |
 
 ## Za začetek
-**Help › Getting started** ima sedem kratkih lekcij (sprajt, lik, mapa ploščic, stopnja, ritem, pesem, zvoki in svetloba). Vsaka odpre pravi del **vzorčne igre** (Help › Open sample game ali Project › Open sample game): dve stopnji z ročno narisano grafiko, kovanci, logiko, glasbo z bobni in zvoki, v `Dokumenti\PixelForge samples`. Template Studio (Ctrl+T) ima še predloge »Sample: …« z narisanimi liki, kovancem, predmeti in ploščicami ter »Drum beat«.
+**Help › Getting started** ima tri kratke lekcije (sprajt, lik, mapa ploščic); lekcije za izklopljene dele so v kodi zakomentirane. Vsaka odpre pravi del **vzorčne igre** (Help › Open sample game ali Project › Open sample game): dve stopnji z ročno narisano grafiko, kovanci, logiko, glasbo z bobni in zvoki, v `Dokumenti\PixelForge samples`. Template Studio (Ctrl+T) ima še predloge »Sample: …« z narisanimi liki, kovancem, predmeti in ploščicami ter »Drum beat«.
 
 ## Projekt
 **Project → New project** ali **Make project from folder** ustvari `.pfproj` v mapi z vsebinami. Sredstva dobijo stalne ID-je, zato preimenovanje in premikanje ne pokvarita referenc. Izbrisana sredstva gredo v `.trash`, različice v `.history`, izvozi v `export/`.

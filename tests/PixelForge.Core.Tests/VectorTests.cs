@@ -1,4 +1,3 @@
-using System.Windows;
 using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;

@@ -2,7 +2,7 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public class SpriteTests
+public class SpriteTests() : TempDirTest("sprite")
 {
     const uint Red = 0xFFFF0000, Blue = 0xFF0000FF;
 
@@ -84,16 +84,12 @@ public class SpriteTests
     [Fact]
     public void Png_round_trip()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"pf-{Guid.NewGuid()}.png");
+        var path = P("a.png");
         uint[] px = [Red, 0, 0x80112233, Blue];
-        try
-        {
-            ImageIO.SavePng(path, px, 2, 2);
-            var (back, w, h) = ImageIO.LoadImage(path);
-            Assert.Equal((2, 2), (w, h));
-            Assert.Equal(px, back);
-        }
-        finally { File.Delete(path); }
+        ImageIO.SavePng(path, px, 2, 2);
+        var (back, w, h) = ImageIO.LoadImage(path);
+        Assert.Equal((2, 2), (w, h));
+        Assert.Equal(px, back);
     }
 
     [Fact]

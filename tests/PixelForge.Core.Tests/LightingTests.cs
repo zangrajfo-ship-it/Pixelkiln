@@ -3,7 +3,7 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public sealed class LightingTests
+public sealed class LightingTests() : TempDirTest("light")
 {
     const uint Gray = 0xFF808080;
 
@@ -99,34 +99,28 @@ public sealed class LightingTests
     [Fact]
     public void Godot_and_generic_exports_carry_lights_occluders_and_particles()
     {
-        var dir = Path.Combine(Path.GetTempPath(), "pf-light-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(dir);
-        try
-        {
-            var p = Project.Create(dir, "L");
-            var s = new Scene { Ambient = 0xFF101020 };
-            s.Lights.Add(SceneLight.Presets["Torch"]());
-            s.Lights.Add(SceneLight.Presets["Spotlight"]());
-            s.Occluders.Add(SceneOccluder.Rect(10, 10, 5, 5));
-            s.Emitters.Add(SceneEmitter.FromPreset(EmitterPreset.Fire));
-            Scene.Save(s, Path.Combine(dir, "cave.pxscene"));
-            p.Add(Path.Combine(dir, "cave.pxscene"));
+        var p = Project.Create(_dir, "L");
+        var s = new Scene { Ambient = 0xFF101020 };
+        s.Lights.Add(SceneLight.Presets["Torch"]());
+        s.Lights.Add(SceneLight.Presets["Spotlight"]());
+        s.Occluders.Add(SceneOccluder.Rect(10, 10, 5, 5));
+        s.Emitters.Add(SceneEmitter.FromPreset(EmitterPreset.Fire));
+        Scene.Save(s, P("cave.pxscene"));
+        p.Add(P("cave.pxscene"));
 
-            var r = Exporter.Plan(p, new ExportProfile());
-            Assert.True(r.Ok, string.Join("\n", r.Errors));
-            string level = r.TextEnding("cave.tscn");
-            foreach (var part in new[] { "type=\"CanvasModulate\"", "type=\"PointLight2D\"", "shadow_enabled = true", "type=\"GradientTexture2D\"", "_spot1.png",
-                         "polygon = PackedVector2Array(10.0, 10.0, 15.0, 10.0, 15.0, 15.0, 10.0, 15.0)", "type=\"CPUParticles2D\"", "blend_mode = 1", "metadata/flicker" })
-                Assert.Contains(part, level);
-            Assert.Contains(r.Files.Keys, k => k.EndsWith("cave_spot1.png"));
+        var r = Exporter.Plan(p, new ExportProfile());
+        Assert.True(r.Ok, string.Join("\n", r.Errors));
+        string level = r.TextEnding("cave.tscn");
+        foreach (var part in new[] { "type=\"CanvasModulate\"", "type=\"PointLight2D\"", "shadow_enabled = true", "type=\"GradientTexture2D\"", "_spot1.png",
+                     "polygon = PackedVector2Array(10.0, 10.0, 15.0, 10.0, 15.0, 15.0, 10.0, 15.0)", "type=\"CPUParticles2D\"", "blend_mode = 1", "metadata/flicker" })
+            Assert.Contains(part, level);
+        Assert.Contains(r.Files.Keys, k => k.EndsWith("cave_spot1.png"));
 
-            var g = Exporter.Plan(p, new ExportProfile { Target = ExportTarget.Generic });
-            var json = System.Text.Json.JsonDocument.Parse(g.Files.Single(f => f.Key.EndsWith("cave_scene.json")).Value).RootElement;
-            Assert.Equal("#FF101020", json.GetProperty("ambient").GetString());
-            Assert.Equal(2, json.GetProperty("lights").GetArrayLength());
-            Assert.Equal("Fire", json.GetProperty("emitters")[0].GetProperty("preset").GetString());
-        }
-        finally { Directory.Delete(dir, true); }
+        var g = Exporter.Plan(p, new ExportProfile { Target = ExportTarget.Generic });
+        var json = System.Text.Json.JsonDocument.Parse(g.Files.Single(f => f.Key.EndsWith("cave_scene.json")).Value).RootElement;
+        Assert.Equal("#FF101020", json.GetProperty("ambient").GetString());
+        Assert.Equal(2, json.GetProperty("lights").GetArrayLength());
+        Assert.Equal("Fire", json.GetProperty("emitters")[0].GetProperty("preset").GetString());
     }
 
     [Fact]
@@ -136,16 +130,10 @@ public sealed class LightingTests
         for (int i = 0; i < 4; i++) s.Lights.Add(new SceneLight { X = 40 + i * 80, Y = 90, Radius = 100, Glow = 0.3 });
         s.Occluders.Add(SceneOccluder.Rect(100, 60, 20, 60));
         s.Emitters.Add(new SceneEmitter { X = 0, Y = 0, W = 320, Rate = 2000, LifeMs = 1000, Speed = 50, Direction = 90 });
-        var dir = Path.Combine(Path.GetTempPath(), "pf-light-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(dir);
-        try
-        {
-            var a = new SceneAssets(Project.Create(dir, "L"));
-            SceneRenderer.Render(s, a, 0, 0, 320, 180, 0);   // warm-up
-            var sw = Stopwatch.StartNew();
-            for (int f = 0; f < 10; f++) SceneRenderer.Render(s, a, 0, 0, 320, 180, f * 16);
-            Assert.True(sw.ElapsedMilliseconds / 10 < 100, $"{sw.ElapsedMilliseconds / 10} ms per frame");
-        }
-        finally { Directory.Delete(dir, true); }
+        var a = new SceneAssets(Project.Create(_dir, "L"));
+        SceneRenderer.Render(s, a, 0, 0, 320, 180, 0);   // warm-up
+        var sw = Stopwatch.StartNew();
+        for (int f = 0; f < 10; f++) SceneRenderer.Render(s, a, 0, 0, 320, 180, f * 16);
+        Assert.True(sw.ElapsedMilliseconds / 10 < 100, $"{sw.ElapsedMilliseconds / 10} ms per frame");
     }
 }
