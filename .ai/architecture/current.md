@@ -47,4 +47,4 @@ graph LR
 
 ## Preverjanje
 - `dotnet test`: enotski, regresijski (zlati primerki) in obremenitveni testi (`Category=Load`).
-- `tools/smoke.ps1`: zažene aplikacijo v ločenem domu, obišče vse zavihke, odpre predogled igre, paleto ukazov, zgodovino in izvozi projekt.
+- `tools/smoke.ps1`: zažene aplikacijo v ločenem domu, obišče zavihke Sprite, Character in Tilemap, odpre Getting started, začetni zaslon, paleto ukazov, Template Studio in zgodovino ter izvozi projekt (koraki za izklopljene dele so v `if ($false)`).

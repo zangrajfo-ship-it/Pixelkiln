@@ -39,7 +39,7 @@ Levi stolpec 460 px (`#18191d`): znamka, »New sprite« s karticami prednastavit
 - **Music:** transportna vrstica (na začetek, Play 44×40, zanka, položaj v Mono 20, BPM, tonaliteta, takt); levo CHANNELS (barvni čip, ime, instrument, M in S); piano roll (tipke 56 px, celice 24 px, takti in dobe z različnim ozadjem, bobni kot vrstice z imeni); spodaj SONG razporeditev; desno INSTRUMENT.
 
 ## Stanje
-Prenesena so okno, Sprite, Tilemap, Character (brez vzorca, v istem slogu) in domači zaslon. Scene, SFX in Music so v poenostavljeni aplikaciji izklopljeni (Faza 24).
+Prenesena so okno, Sprite, Tilemap, Character (brez vzorca, v istem slogu) in domači zaslon. Scene, Audio, Music in SFX so v poenostavljeni aplikaciji izklopljeni (Faza 24).
 
 ## Pravila prenosa
 - Teme Dark in Light ostanejo; »Modern« je nova izbira v Preferences in privzeta za nove namestitve.

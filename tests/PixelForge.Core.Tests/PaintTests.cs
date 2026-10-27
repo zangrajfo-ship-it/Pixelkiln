@@ -139,7 +139,7 @@ public sealed class PaintTests() : TempDirTest("paint")
         Assert.InRange(l.Get(100, 10) & 0xFF, 120u, 135u);
         var small = PaintOps.Downscale(d, 20, 10);
         Assert.Equal(200, small.Length);
-        Assert.Equal(0xFFFFFFFFu & 0xFF000000, small[19] & 0xFF000000);
+        Assert.Equal(0xFF000000u, small[19] & 0xFF000000);
     }
 }
 

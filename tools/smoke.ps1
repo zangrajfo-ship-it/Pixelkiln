@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  UI smoke test for PixelForge: starts the built app, visits every tab, checks the menu bar,
+  UI smoke test for PixelForge: starts the built app, visits every shown tab (Sprite, Character, Tilemap), checks the menu bar,
   optionally screenshots ONLY the app window (PrintWindow, never the screen), then closes it.
 .EXAMPLE
   powershell -File tools/smoke.ps1
@@ -96,6 +96,7 @@ try {
     # the editors are mode tabs (radio buttons) in the top bar
     $tabs = @(Find-All $root ([System.Windows.Automation.ControlType]::RadioButton) | Where-Object { $_.Current.Name -in 'Sprite', 'Character', 'Tilemap' })
     if ($tabs.Count -ne 3) { $failures += "expected 3 tabs (Sprite, Character, Tilemap), found $($tabs.Count)" }
+    if ($ShotDir) { New-Item -ItemType Directory -Force $ShotDir | Out-Null }
     foreach ($t in $tabs) {
         $name = $t.Current.Name
         $t.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
@@ -106,7 +107,7 @@ try {
             if ($items -notcontains $required) { $failures += "${name}: menu '$required' missing" }
         }
         Write-Host ("{0,-8} menus: {1}" -f $name, ($items -join ', '))
-        if ($ShotDir) { New-Item -ItemType Directory -Force $ShotDir | Out-Null; Save-Shot $p.MainWindowHandle (Join-Path $ShotDir "$name.png") }
+        if ($ShotDir) { Save-Shot $p.MainWindowHandle (Join-Path $ShotDir "$name.png") }
     }
     # simplified app (21. 10. 2026): switched off with the parts it tests; set to $true to run it again
     if ($false) {
@@ -221,7 +222,8 @@ try {
         if ($back) { $back.GetCurrentPattern($SIP).Select(); Start-Sleep -Milliseconds 400 }
     }
     }
-    # project windows open and close (Optimize assets and Style guide are switched off in the simplified app)
+    # project windows open and close; only Help > Getting started is left in the simplified app (Optimize assets and
+    # Style guide are switched off). Their report windows show an Edit box whose first line is printed; others print "opened".
     foreach ($mw in @(, @('Help', 'Getting started'))) {
         $w = $mw[1]
         $item = Find-MenuItem $root $mw[0] "$w*"

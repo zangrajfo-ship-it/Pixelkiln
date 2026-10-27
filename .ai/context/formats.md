@@ -34,12 +34,12 @@ Slikovne pike so `uint` ARGB (`0xAARRGGBB`), vrstica za vrstico, kodirane v base
 | `TileCollisions[]` | v5 | `Tile`, `X`, `Y`, `W`, `H` (v ploščici), `OneWay`, `Category` (0–31); pravokotnik mora biti znotraj ploščice |
 
 ## `.pxchar`: lik (`Character`)
-v1. `Kind` (Player, Enemy, Npc, Item), `SpriteAssetId`, `Animations{stanje → oznaka sprajta}`, `OriginX/Y`, `Facing`, `Boxes[]` (`Kind` Hurt/Hit/Solid/Trigger, `State`, `Frame` ali `null` za vse, `X`, `Y`, `W`, `H`, `Category`), `Properties{}`. Enumi kot besedilo.
+v1 (trenutno v2, glej Faza 17). `Kind` (Player, Enemy, Npc, Item), `SpriteAssetId`, `Animations{stanje → oznaka sprajta}`, `OriginX/Y`, `Facing`, `Boxes[]` (`Kind` Hurt/Hit/Solid/Trigger, `State`, `Frame` ali `null` za vse, `X`, `Y`, `W`, `H`, `Category`), `Properties{}`. Enumi kot besedilo.
 
 ## `.pxscene`: prizor (`Scene`)
 | Polje | Od | Opis |
 |---|---|---|
-| `Version` | v1 | trenutno 2 |
+| `Version` | v1 | trenutno 5 (glej v2 do v5 spodaj) |
 | `Width`, `Height`, `Background` | v1 | velikost v pikah (16–65536), barva ARGB |
 | `Level`, `Order` | v1 | ime stopnje in vrstni red v igri |
 | `CameraX`, `CameraY` | v1 | začetek kamere (velikost pogleda = `TargetWidth/Height` projekta) |
@@ -53,7 +53,7 @@ Podvojeni ID-ji in prizor brez plasti se zavrnejo. Reference so samo ID-ji sreds
 ## `.pxs`: pesem (`Song.Serialize`)
 | Polje | Od | Opis |
 |---|---|---|
-| `Version` | v1 | trenutno 2 |
+| `Version` | v1 | trenutno 3 (glej v3 spodaj) |
 | `Bpm` | v1 | 20–400 |
 | `Steps` | v1 | koraki na vzorec (16-inke), 1–256 |
 | `Order` | v1 | indeksi vzorcev za predvajanje |
@@ -136,7 +136,7 @@ JSON prek `DocumentFile`: `Version` 1, `Texture`: `Source` (Procedural, Painting
 Doda neobvezni `UiAssetId` (UI komplet) in `UiScreen` (ime zaslona), ki se v predogledu igre in v izvozu za Godot (`CanvasLayer` z instanco zaslona) pokaže nad igro. Datoteke v1 se naložijo brez prekrivnega sloja (zlati primerek `current/level.v1.pxscene` in `current/level.v2.pxscene`).
 
 ## `.pxui`: UI komplet (`UiKit`, Faza 16)
-JSON prek `DocumentFile`: `Version` 1, `Style` (`Base`, `Accent`, `Dark`, `Light`, `Text`, `Radius`, `Border`, `Pixel`, `FontSize`), `Elements[]` (`Id`, `Name`, `Kind` = Button, Panel, Dialog, Slider, HealthBar, InventorySlot, Icon, Label; `W`, `H`, `Margin` za nine-slice, največ polovica manjše stranice; `Label`; `Art{stanje → ID slike}`, prazno = narisano iz sloga; `IconAssetId`), `Screens[]` (`Name` edinstveno, `Width`, `Height` 16–8192, `Background` 0 = prosojen sloj, `Items[]`: `ElementId`, `X`, `Y`, `W`, `H`, `Anchor` = TopLeft … BottomRight ali Stretch, `Text` (dialog: naslov|besedilo), `Value` 0–1, `State`). Izvoz: PNG vsakega stanja v `ime_ui/`, `ime_atlas.png`, `ime_ui.json`; Godot še `ime_theme.tres` (`StyleBoxTexture` za stanja gumbov, panel, dialog, vrstica) in `ime_<zaslon>.tscn` (`Control` s sidri in odmiki).
+JSON prek `DocumentFile`: `Version` 1 (trenutno 2, glej Faza 17), `Style` (`Base`, `Accent`, `Dark`, `Light`, `Text`, `Radius`, `Border`, `Pixel`, `FontSize`), `Elements[]` (`Id`, `Name`, `Kind` = Button, Panel, Dialog, Slider, HealthBar, InventorySlot, Icon, Label; `W`, `H`, `Margin` za nine-slice, največ polovica manjše stranice; `Label`; `Art{stanje → ID slike}`, prazno = narisano iz sloga; `IconAssetId`), `Screens[]` (`Name` edinstveno, `Width`, `Height` 16–8192, `Background` 0 = prosojen sloj, `Items[]`: `ElementId`, `X`, `Y`, `W`, `H`, `Anchor` = TopLeft … BottomRight ali Stretch, `Text` (dialog: naslov|besedilo), `Value` 0–1, `State`). Izvoz: PNG vsakega stanja v `ime_ui/`, `ime_atlas.png`, `ime_ui.json`; Godot še `ime_theme.tres` (`StyleBoxTexture` za stanja gumbov, panel, dialog, vrstica) in `ime_<zaslon>.tscn` (`Control` s sidri in odmiki).
 
 **Izvozni profil:** `Scales[]` (2–16) zapiše še `ime@2x.png` …; vektorske risbe se narišejo znova v večji velikosti, ostalo se poveča po pikslih.
 

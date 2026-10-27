@@ -12,7 +12,8 @@ public sealed class TextureTests() : TempDirTest("tex")
             var t = new TextureDoc { Material = m, Size = 64, Seed = "s", Scale = 5 };
             var (a, h) = Textures.Generate(t);
             // the jump across the wrap-around edge is no bigger than the jumps next to it
-            Assert.True(Textures.SeamError(a, 64, 64) <= 24, $"{m}: seam {Textures.SeamError(a, 64, 64)}");
+            int seam = Textures.SeamError(a, 64, 64);
+            Assert.True(seam <= 24, $"{m}: seam {seam}");
             Assert.Equal(a, Textures.Generate(t).Albedo);
             Assert.NotEqual(a, Textures.Generate(new TextureDoc { Material = m, Size = 64, Seed = "other", Scale = 5 }).Albedo);
             Assert.All(h, v => Assert.InRange(v, 0f, 1f));

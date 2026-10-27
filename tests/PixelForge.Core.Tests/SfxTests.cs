@@ -2,7 +2,7 @@ using PixelForge.Core;
 
 namespace PixelForge.Core.Tests;
 
-public class SfxTests
+public class SfxTests() : TempDirTest("sfx")
 {
     [Fact]
     public void Presets_are_deterministic_bounded_and_right_length()
@@ -26,16 +26,12 @@ public class SfxTests
     [Fact]
     public void Save_load_round_trip_clamps()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"pf-{Guid.NewGuid()}.sfx");
-        try
-        {
-            Sfx.Save(new Sfx { Wave = SfxWave.Saw, Freq = 99999, Decay = 0.3 }, path);
-            var s = Sfx.Load(path);
-            Assert.Equal(SfxWave.Saw, s.Wave);
-            Assert.Equal(4000, s.Freq);
-            Assert.Equal(0.3, s.Decay);
-        }
-        finally { File.Delete(path); }
+        var path = P("a.sfx");
+        Sfx.Save(new Sfx { Wave = SfxWave.Saw, Freq = 99999, Decay = 0.3 }, path);
+        var s = Sfx.Load(path);
+        Assert.Equal(SfxWave.Saw, s.Wave);
+        Assert.Equal(4000, s.Freq);
+        Assert.Equal(0.3, s.Decay);
     }
 
     // ---------- drum kit (song v3) ----------

@@ -56,6 +56,7 @@ public class AnimationTests
         Assert.Equal(0, f4.GetProperty("x").GetInt32());
         Assert.Equal(6, f4.GetProperty("y").GetInt32());
 
-        Assert.Equal((10, 3), (SpriteSheet.Build(s).Width, SpriteSheet.Build(s).Height));
+        var built = SpriteSheet.Build(s);
+        Assert.Equal((10, 3), (built.Width, built.Height));
     }
 }

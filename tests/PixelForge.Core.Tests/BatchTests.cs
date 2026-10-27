@@ -29,8 +29,9 @@ public sealed class BatchTests() : TempDirTest("batch")
 
         Batch.Rename(p, [s[0].Id, s[1].Id], "{name}_x");
         Assert.Equal("enemy_02_x", s[1].Name);
-        // swap two names: works because of the temporary names
+        // the same names again: a target that is one of the batch's own files is no clash
         Batch.Rename(p, [s[2].Id, s[3].Id], "{name}");
+        Assert.Equal(("enemy_03", "enemy_04"), (s[2].Name, s[3].Name));
         Assert.Throws<ArgumentException>(() => Batch.Rename(p, [s[2].Id, s[3].Id], "same"));
         Assert.Throws<IOException>(() => Batch.Rename(p, [s[4].Id], "enemy_06"));
         Assert.Equal("enemy_05", s[4].Name);                               // nothing changed after a refused batch
@@ -46,7 +47,8 @@ public sealed class BatchTests() : TempDirTest("batch")
         Assert.Equal(["enemy"], s[1].Tags);
 
         Batch.ScaleSprites(p, [s[0].Id], 300);
-        Assert.Equal((12, 6), (ProjectFile.Load(p.FullPath(s[0])).Width, ProjectFile.Load(p.FullPath(s[0])).Height));
+        var big = ProjectFile.Load(p.FullPath(s[0]));
+        Assert.Equal((12, 6), (big.Width, big.Height));
         Assert.Throws<ArgumentOutOfRangeException>(() => Batch.ScaleSprites(p, [s[0].Id], 100000));
 
         var png = Batch.Convert(p, [s[1].Id]).Single();

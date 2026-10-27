@@ -1,6 +1,6 @@
 # PixelForge: navodila za delo v projektu
 
-Namizno orodje za izdelavo vsebin za 2D igre: Sprite, Character, Tilemap, Scene, Audio, Music, SFX, s projektom in brskalnikom sredstev.
+Namizno orodje za izdelavo vsebin za 2D igre: Sprite, Character, Tilemap, s projektom in brskalnikom sredstev. Scene, Audio, Music in SFX so v kodi, a izklopljeni (`MainWindow.Shown`).
 Ob začetku dela preberi še `AGENT.md`, zadnji zapis v `.ai/sessions/` in `.ai/architecture/`.
 
 ## Sklad

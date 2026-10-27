@@ -1,6 +1,6 @@
 # Ciljna arhitektura (predlog Faze 0)
 
-> **Stanje po Fazi 10:** vsi moduli iz predloga so izvedeni (glej `current.md`). Odstopanja so zavestna. Core je ostal ena ravna mapa brez podmap, App nima ločene mape `Shell/` in `Editors/`. Prestavljanje datotek ne bi prineslo nič razen večjega diffa; uvedemo ga, ko bo projekt težko pregleden. `IDocumentFormat` ni postal vmesnik: vsak format ima statične `Serialize`/`Deserialize`/`Load`/`Save` prek skupnega `DocumentFile`.
+> **Stanje po Fazi 10:** vsi moduli iz predloga so izvedeni (glej `current.md`). Odstopanja so zavestna. Core je ostal ena ravna mapa brez podmap, App nima ločene mape `Shell/` in `Editors/`. Prestavljanje datotek ne bi prineslo nič razen večjega diffa; uvedemo ga, ko bo projekt težko pregleden. `IDocumentFormat` ni postal vmesnik: vsak format ima statične `Serialize`/`Deserialize`/`Load`/`Save` prek skupnega `DocumentFile`. `DocumentHost` ni nastal: urejevalniki (13) imajo vsak svoje stanje dokumenta, skupni deli (naslov, potrditev ob zaprtju) so pomožne metode v `Ui`.
 
 Obstoječe datoteke ostanejo enote vsebine; projekt jih povezuje s stabilnimi ID-ji. Core ostane en sklop z mapami; App dobi lupino (Shell) in mape urejevalnikov.
 
