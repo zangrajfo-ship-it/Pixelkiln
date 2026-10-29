@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Pixelkiln.App/Pixelkiln.App.csproj" />
+    <Project Path="src/Pixelkiln.Core/Pixelkiln.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Pixelkiln.Core.Tests/Pixelkiln.Core.Tests.csproj" />
+  </Folder>
+</Solution>

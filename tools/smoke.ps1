@@ -1,26 +1,26 @@
 <#
 .SYNOPSIS
-  UI smoke test for PixelForge: starts the built app, visits every shown tab (Sprite, Character, Tilemap), checks the menu bar,
+  UI smoke test for Pixelkiln: starts the built app, visits every shown tab (Sprite, Character, Tilemap), checks the menu bar,
   optionally screenshots ONLY the app window (PrintWindow, never the screen), then closes it.
 .EXAMPLE
   powershell -File tools/smoke.ps1
   powershell -File tools/smoke.ps1 -ShotDir $env:TEMP\pf-shots
 #>
 param(
-    [string]$Exe = "$PSScriptRoot\..\src\PixelForge.App\bin\Debug\net10.0-windows\PixelForge.App.exe",
+    [string]$Exe = "$PSScriptRoot\..\src\Pixelkiln.App\bin\Debug\net10.0-windows\Pixelkiln.App.exe",
     [string]$ShotDir = ""
 )
 $ErrorActionPreference = 'Stop'
 # settings, autosave and the test project live in a temp folder: the user's real settings are never touched
 $work = Join-Path $env:TEMP ("pf-smoke-" + [guid]::NewGuid().ToString('N'))
-$env:PIXELFORGE_HOME = Join-Path $work 'home'
+$env:PIXELKILN_HOME = Join-Path $work 'home'
 $projectDir = Join-Path $work 'game'
 New-Item -ItemType Directory -Force $projectDir | Out-Null
-Get-ChildItem -File (Join-Path $PSScriptRoot "../tests/PixelForge.Core.Tests/Fixtures") | Copy-Item -Destination $projectDir   # top level only: Fixtures/current refers to asset ids of no project
+Get-ChildItem -File (Join-Path $PSScriptRoot "../tests/Pixelkiln.Core.Tests/Fixtures") | Copy-Item -Destination $projectDir   # top level only: Fixtures/current refers to asset ids of no project
 $expectedAssets = (Get-ChildItem $projectDir).Count
 # the sample data plugin, installed into the temp home
-New-Item -ItemType Directory -Force (Join-Path $env:PIXELFORGE_HOME 'plugins') | Out-Null
-Copy-Item -Recurse (Join-Path $PSScriptRoot '../samples/plugins/retro-pack') (Join-Path $env:PIXELFORGE_HOME 'plugins')
+New-Item -ItemType Directory -Force (Join-Path $env:PIXELKILN_HOME 'plugins') | Out-Null
+Copy-Item -Recurse (Join-Path $PSScriptRoot '../samples/plugins/retro-pack') (Join-Path $env:PIXELKILN_HOME 'plugins')
 Add-Type -AssemblyName System.Drawing, UIAutomationClient, UIAutomationTypes
 Add-Type @'
 using System; using System.Runtime.InteropServices;

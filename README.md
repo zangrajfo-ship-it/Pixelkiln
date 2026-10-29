@@ -1,4 +1,4 @@
-# PixelForge
+# Pixelkiln
 
 Namizno orodje za izdelavo vsebin za 2D igre v enem programu: pikselna grafika, liki, ploščice in mape, prizori in stopnje, glasba, zvočni učinki, predogled igre in izvoz za Godot 4.
 
@@ -6,7 +6,7 @@ Teče na Windows (.NET 10, WPF). Brez omrežja, brez računov; vse ostane v tvoj
 
 ## Zagon
 ```bash
-dotnet run --project src/PixelForge.App
+dotnet run --project src/Pixelkiln.App
 ```
 Za razvoj: `dotnet build`, `dotnet test`, `powershell -File tools/smoke.ps1` (UI smoke test v ločenem začasnem domu).
 
@@ -25,7 +25,7 @@ Poenostavljena različica (od 21. 10. 2026) kaže samo zavihke **Sprite** (nači
 | **Povsod** | predogled naprave (Ctrl+Shift+D; izklopljeno), ravnila, vodila in referenčna slika, kopiranje sloga (Ctrl+Alt+C/V), delovni profili (izklopljeno), paketna obdelava v brskalniku, paleta ukazov (Ctrl+Shift+P), vtičniki s podatki, samodejno shranjevanje in obnovitev, temna/svetla tema, tipkovnica in bralniki zaslona (F1 = bližnjice) |
 
 ## Za začetek
-**Help › Getting started** ima tri kratke lekcije (sprajt, lik, mapa ploščic); lekcije za izklopljene dele so v kodi zakomentirane. Vsaka odpre pravi del **vzorčne igre** (Help › Open sample game ali Project › Open sample game): dve stopnji z ročno narisano grafiko, kovanci, logiko, glasbo z bobni in zvoki, v `Dokumenti\PixelForge samples`. Template Studio (Ctrl+T) ima še predloge »Sample: …« z narisanimi liki, kovancem, predmeti in ploščicami ter »Drum beat«.
+**Help › Getting started** ima tri kratke lekcije (sprajt, lik, mapa ploščic); lekcije za izklopljene dele so v kodi zakomentirane. Vsaka odpre pravi del **vzorčne igre** (Help › Open sample game ali Project › Open sample game): dve stopnji z ročno narisano grafiko, kovanci, logiko, glasbo z bobni in zvoki, v `Dokumenti\Pixelkiln samples`. Template Studio (Ctrl+T) ima še predloge »Sample: …« z narisanimi liki, kovancem, predmeti in ploščicami ter »Drum beat«.
 
 ## Projekt
 **Project → New project** ali **Make project from folder** ustvari `.pfproj` v mapi z vsebinami. Sredstva dobijo stalne ID-je, zato preimenovanje in premikanje ne pokvarita referenc. Izbrisana sredstva gredo v `.trash`, različice v `.history`, izvozi v `export/`.
@@ -41,7 +41,7 @@ Izvoz za Godot še ni preizkušen v pravem Godotu, zato ob prvi rabi preveri uvo
 Samo podatki (palete, prednastavitve generatorjev, izvozni profili, makri ukazov), brez kode. Glej [docs/plugins.md](docs/plugins.md) in vzorec v `samples/plugins/retro-pack`.
 
 ## Formati
-Opis vseh datotek in različic: [.ai/context/formats.md](.ai/context/formats.md). Stari formati se vedno odprejo (zlati primerki v `tests/PixelForge.Core.Tests/Fixtures`).
+Opis vseh datotek in različic: [.ai/context/formats.md](.ai/context/formats.md). Stari formati se vedno odprejo (zlati primerki v `tests/Pixelkiln.Core.Tests/Fixtures`).
 
 ## Za razvijalce
 `CLAUDE.md` (pravila projekta), `AGENT.md`, `.ai/architecture/` (arhitektura in ADR), `.ai/sessions/` (dnevnik dela po fazah).

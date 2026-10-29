@@ -1,9 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/PixelForge.App/PixelForge.App.csproj" />
-    <Project Path="src/PixelForge.Core/PixelForge.Core.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/PixelForge.Core.Tests/PixelForge.Core.Tests.csproj" />
-  </Folder>
-</Solution>

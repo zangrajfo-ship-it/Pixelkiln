@@ -15,7 +15,7 @@ Enaki parametri dajo enak rezultat; drugo seme da drugo različico.
 |---|---|---|
 | Built-in | v aplikaciji | 22 predlog: liki (junak za platformer in pogled od zgoraj, sovražnik, NPC, trgovec, boss), stopnje (gozd, jama, grad, mesto, puščava, led, ječa, uganka), predmeti (vrata, lestev, stikalo, premična ploščad, kompleti predmetov in ikon), glasbena zanka |
 | Project | `<projekt>/templates/<id>@<različica>/` | samo ta projekt |
-| User | `%AppData%\PixelForge\templates\` (ali `PIXELFORGE_HOME`) | vsi tvoji projekti |
+| User | `%AppData%\Pixelkiln\templates\` (ali `PIXELKILN_HOME`) | vsi tvoji projekti |
 
 ## Lastne predloge
 V brskalniku sredstev izberi sredstva (Ctrl ali Shift + klik) in v Template Studiu klikni **Save selected assets as template…**. Datoteke se kopirajo v predlogo skupaj z vsem, kar uporabljajo (npr. sprajt lika). Ko predlogo uporabiš, se reference preusmerijo na nove kopije. Novo različico shraniš z višjo številko; stare različice ostanejo na voljo v izbirniku **Version**.

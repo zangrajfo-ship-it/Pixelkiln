@@ -1,10 +1,10 @@
-# Vtičniki za PixelForge
+# Vtičniki za Pixelkiln
 
-Vtičnik je mapa s datoteko `plugin.json`. Vsebuje samo podatke: palete, prednastavitve generatorjev, izvozne profile in makre ukazov. PixelForge kode iz vtičnikov ne nalaga in ne izvaja (ADR-0002), zato vtičnik ne more brati datotek, dostopati do omrežja ali spreminjati sistema.
+Vtičnik je mapa s datoteko `plugin.json`. Vsebuje samo podatke: palete, prednastavitve generatorjev, izvozne profile in makre ukazov. Pixelkiln kode iz vtičnikov ne nalaga in ne izvaja (ADR-0002), zato vtičnik ne more brati datotek, dostopati do omrežja ali spreminjati sistema.
 
 ## Namestitev
 - **Options → Plugins… → Install from folder…** preveri vtičnik in ga kopira v mapo vtičnikov.
-- Ročno: mapo kopiraj v `%AppData%\PixelForge\plugins\` (ali `<PIXELFORGE_HOME>\plugins\`) in klikni **Reload**.
+- Ročno: mapo kopiraj v `%AppData%\Pixelkiln\plugins\` (ali `<PIXELKILN_HOME>\plugins\`) in klikni **Reload**.
 - Ime mape mora biti enako `id` vtičnika.
 
 Ukazi vtičnikov so v paleti ukazov (Ctrl+Shift+P) pod »Plugin › ime vtičnika ›«.

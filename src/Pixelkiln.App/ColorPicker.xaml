@@ -1,0 +1,75 @@
+<UserControl x:Class="Pixelkiln.App.ColorPicker"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel>
+        <Grid Height="130">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="22" />
+            </Grid.ColumnDefinitions>
+
+            <!-- saturation (x) / value (y) for the current hue -->
+            <Grid x:Name="SvArea" Focusable="True" Cursor="Cross" ClipToBounds="True"
+                  AutomationProperties.Name="Saturation and brightness. Arrow keys adjust."
+                  MouseLeftButtonDown="OnSvDown" MouseMove="OnSvMove" MouseLeftButtonUp="OnAreaUp" KeyDown="OnSvKey">
+                <Rectangle x:Name="HueFill" Fill="Red" />
+                <Rectangle>
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                            <GradientStop Color="White" Offset="0" />
+                            <GradientStop Color="#00FFFFFF" Offset="1" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <Rectangle>
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#00000000" Offset="0" />
+                            <GradientStop Color="Black" Offset="1" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <Canvas>
+                    <Ellipse x:Name="SvMarker" Width="11" Height="11" Stroke="White" StrokeThickness="2" />
+                    <Ellipse x:Name="SvMarkerIn" Width="9" Height="9" Stroke="Black" StrokeThickness="1" />
+                </Canvas>
+            </Grid>
+
+            <!-- hue strip -->
+            <Grid x:Name="HueArea" Grid.Column="1" Margin="4,0,0,0" Focusable="True" Cursor="Hand" ClipToBounds="True"
+                  AutomationProperties.Name="Hue. Up and down arrows adjust."
+                  MouseLeftButtonDown="OnHueDown" MouseMove="OnHueMove" MouseLeftButtonUp="OnAreaUp" KeyDown="OnHueKey">
+                <Rectangle>
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#FF0000" Offset="0" />
+                            <GradientStop Color="#FFFF00" Offset="0.1667" />
+                            <GradientStop Color="#00FF00" Offset="0.3333" />
+                            <GradientStop Color="#00FFFF" Offset="0.5" />
+                            <GradientStop Color="#0000FF" Offset="0.6667" />
+                            <GradientStop Color="#FF00FF" Offset="0.8333" />
+                            <GradientStop Color="#FF0000" Offset="1" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <Canvas>
+                    <Rectangle x:Name="HueMarker" Height="4" Width="18" Stroke="White" StrokeThickness="1" Fill="#40000000" />
+                </Canvas>
+            </Grid>
+        </Grid>
+
+        <DockPanel Margin="0,6,0,0">
+            <TextBlock Text="Alpha" Width="44" VerticalAlignment="Center" />
+            <TextBlock x:Name="AlphaValue" DockPanel.Dock="Right" Width="34" TextAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource MutedText}" />
+            <Slider x:Name="AlphaSlider" Minimum="0" Maximum="255" SmallChange="1" LargeChange="16" IsSnapToTickEnabled="True" TickFrequency="1"
+                    AutomationProperties.Name="Alpha (opacity), 0 to 255" ValueChanged="OnAlpha" />
+        </DockPanel>
+
+        <DockPanel Margin="0,4,0,0">
+            <Border x:Name="Preview" DockPanel.Dock="Right" Width="32" Margin="6,0,0,0" BorderBrush="Gray" BorderThickness="1" />
+            <TextBlock Text="Hex" Width="44" VerticalAlignment="Center" />
+            <TextBox x:Name="HexBox" AutomationProperties.Name="Color as hex, RRGGBB or AARRGGBB" ToolTip="RRGGBB or AARRGGBB, Enter to apply"
+                     KeyDown="OnHexKey" LostKeyboardFocus="OnHexCommit" />
+        </DockPanel>
+    </StackPanel>
+</UserControl>
