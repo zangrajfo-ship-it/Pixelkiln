@@ -1,11 +1,11 @@
 {
-  // Sample PixelForge plugin: data only, no code (ADR-0002).
+  // Sample Pixelkiln plugin: data only, no code (ADR-0002).
   "apiVersion": 1,
   "id": "retro-pack",
   "name": "Retro pack",
   "version": "1.0.0",
   "description": "A 16-colour fantasy-console palette, generator presets, a Godot export profile and a macro.",
-  "author": "PixelForge samples",
+  "author": "Pixelkiln samples",
   "contributions": {
     "palettes": [
       {

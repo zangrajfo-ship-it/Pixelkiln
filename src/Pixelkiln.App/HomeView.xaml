@@ -1,0 +1,161 @@
+<UserControl x:Class="Pixelkiln.App.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pixelkiln.App"
+             Background="{DynamicResource Bg0Brush}" Focusable="True" FocusVisualStyle="{x:Null}" KeyDown="OnKey"
+             AutomationProperties.Name="Start screen">
+    <UserControl.Resources>
+        <Style x:Key="Lbl" TargetType="Label">
+            <Setter Property="Foreground" Value="{DynamicResource Text2Brush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <!-- a row in the "more ways to start" list -->
+        <Style x:Key="Act" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="Height" Value="40" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" CornerRadius="8" Background="Transparent" Padding="14,0" BorderThickness="0" BorderBrush="{DynamicResource AccentBrush}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <ControlTemplate x:Key="PresetTemplate" TargetType="RadioButton">
+            <Border x:Name="Bd" CornerRadius="8" Background="{DynamicResource Bg0Brush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Cursor="Hand">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource OutlineHoverBrush}" />
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentFaintBrush}" />
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                    <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+        <ControlTemplate x:Key="CardTemplate" TargetType="Button">
+            <Border x:Name="Bd" CornerRadius="10" Background="{DynamicResource Bg1Brush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Cursor="Hand">
+                <ContentPresenter Margin="1" />
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource OutlineHoverBrush}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                    <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                    <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="460" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <!-- left: create -->
+        <Border Background="{DynamicResource Bg1Brush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="36,36,36,24">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,28">
+                        <Border Width="40" Height="40" CornerRadius="10" Background="{DynamicResource AccentBrush}" Margin="0,0,12,0">
+                            <Canvas Width="20" Height="20">
+                                <Rectangle Canvas.Left="2" Canvas.Top="2" Width="7" Height="7" Fill="{DynamicResource OnAccentBrush}" />
+                                <Rectangle Canvas.Left="11" Canvas.Top="2" Width="7" Height="7" Fill="{DynamicResource OnAccentBrush}" Opacity="0.55" />
+                                <Rectangle Canvas.Left="2" Canvas.Top="11" Width="7" Height="7" Fill="{DynamicResource OnAccentBrush}" Opacity="0.55" />
+                                <Rectangle Canvas.Left="11" Canvas.Top="11" Width="7" Height="7" Fill="{DynamicResource OnAccentBrush}" />
+                            </Canvas>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Pixelkiln" FontSize="18" FontWeight="Bold" />
+                            <TextBlock x:Name="VersionText" FontSize="12" Foreground="{DynamicResource Text3Brush}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="New sprite" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,14" />
+                    <UniformGrid x:Name="PresetGrid" Columns="3" Margin="-4,0,-4,10" AutomationProperties.Name="Size presets" />
+                    <Grid Margin="0,0,0,18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <Label Content="_Width" Target="{Binding ElementName=WidthBox}" Style="{StaticResource Lbl}" />
+                            <TextBox x:Name="WidthBox" Height="40" FontFamily="{DynamicResource MonoFont}" VerticalContentAlignment="Center" TextChanged="OnSizeTyped"
+                                     AutomationProperties.Name="Width in pixels" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Style="{StaticResource IconButton}" Width="40" Height="40" Margin="8,0" VerticalAlignment="Bottom" ToolTip="Swap width and height"
+                                AutomationProperties.Name="Swap width and height" Click="OnSwap"><local:PathIcon Kind="swap" Width="16" Height="16" /></Button>
+                        <StackPanel Grid.Column="2">
+                            <Label Content="_Height" Target="{Binding ElementName=HeightBox}" Style="{StaticResource Lbl}" />
+                            <TextBox x:Name="HeightBox" Height="40" FontFamily="{DynamicResource MonoFont}" VerticalContentAlignment="Center" TextChanged="OnSizeTyped"
+                                     AutomationProperties.Name="Height in pixels" />
+                        </StackPanel>
+                    </Grid>
+                    <Button x:Name="CreateBtn" Style="{StaticResource PrimaryButton}" Height="46" FontSize="14" HorizontalAlignment="Stretch" Click="OnCreate">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock x:Name="CreateText" Text="Create 32 × 32 sprite" VerticalAlignment="Center" />
+                            <TextBlock Text="Enter" FontFamily="{DynamicResource MonoFont}" FontSize="11" Opacity="0.7" Margin="10,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Rectangle Height="1" Fill="{DynamicResource LineBrush}" Margin="0,28,0,16" />
+                    <StackPanel Margin="-14,0" AutomationProperties.Name="More ways to start">
+                        <Button Style="{StaticResource Act}" Click="OnOpenFile">
+                            <DockPanel><TextBlock DockPanel.Dock="Right" Text="Ctrl+O" FontFamily="{DynamicResource MonoFont}" FontSize="11" Foreground="{DynamicResource Text3Brush}" VerticalAlignment="Center" /><TextBlock Text="Open file…" /></DockPanel>
+                        </Button>
+                        <Button Style="{StaticResource Act}" Click="OnOpenProject"><TextBlock Text="Open project…" /></Button>
+                        <Button Style="{StaticResource Act}" Click="OnNewProject"><TextBlock Text="New project…" /></Button>
+                        <Button Style="{StaticResource Act}" Click="OnSample"><TextBlock Text="Open the sample game" /></Button>
+                        <Button Style="{StaticResource Act}" Click="OnLearn">
+                            <TextBlock Text="Getting started" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- right: recent files -->
+        <DockPanel Grid.Column="1" Margin="44,40,44,24">
+            <DockPanel DockPanel.Dock="Top" Margin="0,0,0,24">
+                <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Width="38" Height="38" Margin="8,0,0,0" ToolTip="Close the start screen  Esc"
+                        AutomationProperties.Name="Close start screen" Click="OnClose"><local:PathIcon Kind="close" Width="16" Height="16" /></Button>
+                <Border DockPanel.Dock="Right" Width="280" Height="38" CornerRadius="9" Background="{DynamicResource Bg1Brush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="10,0">
+                    <DockPanel>
+                        <local:PathIcon DockPanel.Dock="Left" Kind="search" Width="15" Height="15" TextElement.Foreground="{DynamicResource Text3Brush}" Margin="0,0,8,0" />
+                        <TextBox x:Name="SearchBox" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center" TextChanged="OnSearch"
+                                 AutomationProperties.Name="Search recent files" />
+                    </DockPanel>
+                </Border>
+                <TextBlock Text="Recent files" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </DockPanel>
+            <TextBlock x:Name="EmptyText" DockPanel.Dock="Top" Foreground="{DynamicResource Text2Brush}" TextWrapping="Wrap" Visibility="Collapsed" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <WrapPanel x:Name="RecentPanel" AutomationProperties.Name="Recent files" />
+            </ScrollViewer>
+        </DockPanel>
+    </Grid>
+</UserControl>

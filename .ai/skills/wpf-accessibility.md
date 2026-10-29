@@ -1,4 +1,4 @@
-# Dostopnost v WPF (PixelForge)
+# Dostopnost v WPF (Pixelkiln)
 
 - **Ikone in simboli:** gumb z ikono ali simbolom dobi `ToolTip`, `Ui.NameSymbolButtons` ga uporabi kot `AutomationProperties.Name`. Bližnjico zapiši v oklepaju: `"Zoom in (Ctrl+=)"`.
 - **Polja:** `Label Content="_Ime" Target="{Binding ElementName=Polje}"` (dostopna tipka in ime za bralnik).

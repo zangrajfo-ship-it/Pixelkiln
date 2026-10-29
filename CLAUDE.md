@@ -1,17 +1,17 @@
-# PixelForge: navodila za delo v projektu
+# Pixelkiln: navodila za delo v projektu
 
 Namizno orodje za izdelavo vsebin za 2D igre: Sprite, Character, Tilemap, s projektom in brskalnikom sredstev. Scene, Audio, Music in SFX so v kodi, a izklopljeni (`MainWindow.Shown`).
 Ob začetku dela preberi še `AGENT.md`, zadnji zapis v `.ai/sessions/` in `.ai/architecture/`.
 
 ## Sklad
 - .NET 10, C#, WPF (`net10.0-windows`), tema Fluent (`Application.ThemeMode`, opozorilo WPF0001 je namerno utišano).
-- Edina zunanja odvisnost: `NAudio.WinMM` 2.2.1 (samo `PixelForge.App`). Nove odvisnosti samo z utemeljitvijo v ADR.
-- Testi: xUnit (`tests/PixelForge.Core.Tests`).
+- Edina zunanja odvisnost: `NAudio.WinMM` 2.2.1 (samo `Pixelkiln.App`). Nove odvisnosti samo z utemeljitvijo v ADR.
+- Testi: xUnit (`tests/Pixelkiln.Core.Tests`).
 
 ## Struktura
 ```
-src/PixelForge.Core   domena: modeli, algoritmi, formati, izvoz. Brez UI (WPF samo za kodiranje slik).
-src/PixelForge.App    WPF: urejevalniki (UserControl + code-behind, delne datoteke *.Drawing.cs, *.Menus.cs …)
+src/Pixelkiln.Core   domena: modeli, algoritmi, formati, izvoz. Brez UI (WPF samo za kodiranje slik).
+src/Pixelkiln.App    WPF: urejevalniki (UserControl + code-behind, delne datoteke *.Drawing.cs, *.Menus.cs …)
 tests/…Core.Tests     enotski in regresijski testi; Fixtures/ = zlati primerki formatov
 tools/smoke.ps1       UI smoke test (UI Automation)
 .ai/                  arhitektura, ADR, seje, vloge agentov
@@ -19,7 +19,7 @@ tools/smoke.ps1       UI smoke test (UI Automation)
 
 ## Konvencije
 - Logika gre v Core in dobi test; App le povezuje UI z domeno.
-- Urejevalnik implementira `IEditor` (`src/PixelForge.App/IEditor.cs`); ukazi v menijih prek `Ui.Item`/`Ui.Toggle`.
+- Urejevalnik implementira `IEditor` (`src/Pixelkiln.App/IEditor.cs`); ukazi v menijih prek `Ui.Item`/`Ui.Toggle`.
 - Vsaka sprememba dokumenta: najprej `Snapshot()` (undo), nato sprememba.
 - Imena v kodi so angleška; besedila za uporabnika v aplikaciji so angleška, dokumentacija v `.ai/` in tu je slovenska.
 - Kratki komentarji pojasnjujejo *zakaj*; zavestne poenostavitve označi s `// ponytail:` in mejo.
@@ -30,7 +30,7 @@ tools/smoke.ps1       UI smoke test (UI Automation)
 dotnet build
 dotnet test
 powershell -File tools/smoke.ps1   # 0 = OK, 1 = napaka, 2 = nepopolno (okno ni v ospredju, koraki z meniji niso tekli)
-dotnet run --project src/PixelForge.App
+dotnet run --project src/Pixelkiln.App
 ```
 Zlate primerke v2 zapiše samo `PF_WRITE_FIXTURES=1 PF_FIXTURES_DIR=<pot do Fixtures> dotnet test --filter WriteV2Fixtures`, in to le ob namerni spremembi formata.
 
@@ -42,7 +42,7 @@ Zlate primerke v2 zapiše samo `PF_WRITE_FIXTURES=1 PF_FIXTURES_DIR=<pot do Fixt
 - Izvoz Aseprite JSON in Tiled TMJ je javna pogodba: spremembe samo dodajajo polja.
 
 ## Varnost
-- Ne beri in ne piši zunaj repozitorija, razen v `%AppData%\PixelForge` (to počne aplikacija sama).
+- Ne beri in ne piši zunaj repozitorija, razen v `%AppData%\Pixelkiln` (to počne aplikacija sama).
 - Brez poverilnic, brez omrežnih klicev iz aplikacije.
 - Vtičniki so samo podatki (JSON); tuje kode ne nalagamo in ne izvajamo (ADR-0002).
 - Posnetke zaslona delaj samo z oknom aplikacije (`PrintWindow`), nikoli celega zaslona.

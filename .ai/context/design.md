@@ -1,6 +1,6 @@
 # Prenova videza (tema »Modern«), Faze 23–26
 
-Vir: `E:\CLAUDE\test\LibreSprite\design-handoff` (DESIGN_HANDOFF.md in `mockups/*.dc.html`). Napisan je za LibreSprite; uporabnik je 21. 10. 2026 izbral prenos na PixelForge, vse zaslone po fazah, pisave Inter in JetBrains Mono (prenesene, OFL, `src/PixelForge.App/Fonts`).
+Vir: `E:\CLAUDE\test\LibreSprite\design-handoff` (DESIGN_HANDOFF.md in `mockups/*.dc.html`). Napisan je za LibreSprite; uporabnik je 21. 10. 2026 izbral prenos na Pixelkiln, vse zaslone po fazah, pisave Inter in JetBrains Mono (prenesene, OFL, `src/Pixelkiln.App/Fonts`).
 
 ## Žetoni
 | Žeton | Barva | Raba |

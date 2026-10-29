@@ -4,13 +4,13 @@ Diagram vsebuje samo dejanske tipe iz `src/`. Puščica pomeni »uporablja«. St
 
 ```mermaid
 graph LR
-  subgraph App[PixelForge.App - WPF]
+  subgraph App[Pixelkiln.App - WPF]
     MainWindow -->|IEditor| SpriteEditor & CharacterEditor & TilemapEditor & SceneEditor & AudioStudio & MusicEditor & SfxEditor
     MainWindow --> AssetBrowser & CommandPalette & PluginsWindow & ExportWindow & HistoryWindow & HealthWindow & ProjectSettingsWindow & PaletteStudio
     SceneEditor --> GamePreview
     AudioStudio & GamePreview & MusicEditor & SfxEditor & AssetBrowser --> AudioOut
   end
-  subgraph Core[PixelForge.Core]
+  subgraph Core[Pixelkiln.Core]
     Project --- AssetEntry & ProjectSettings
     DocumentFile
     Sprite & Tilemap & Song & Sfx & Character & Scene & Mix
@@ -43,7 +43,7 @@ graph LR
 - **Predogled igre:** `Sandbox` dela na kopiji prizora; `SceneRenderer` riše v ločljivosti igre.
 - **Izvoz:** `Exporter` gradi datoteke v pomnilniku, zamenja izhodno mapo v enem koraku; profila Generic in Godot 4.
 - **Vtičniki** (ADR-0002): samo podatki, strogo preverjeni; ukazi v paleti ukazov.
-- **Nastavitve in samodejno shranjevanje:** `%AppData%\PixelForge` ali `PIXELFORGE_HOME`.
+- **Nastavitve in samodejno shranjevanje:** `%AppData%\Pixelkiln` ali `PIXELKILN_HOME`.
 
 ## Preverjanje
 - `dotnet test`: enotski, regresijski (zlati primerki) in obremenitveni testi (`Category=Load`).

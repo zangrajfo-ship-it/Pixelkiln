@@ -1,0 +1,121 @@
+<UserControl x:Class="Pixelkiln.App.VectorEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Pixelkiln.App"
+             Focusable="True" FocusVisualStyle="{x:Null}">
+    <UserControl.Resources>
+        <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+        <Style x:Key="Small" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Margin" Value="0,0,4,4" />
+            <Setter Property="Padding" Value="8,3" />
+        </Style>
+    </UserControl.Resources>
+    <DockPanel>
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <Button ToolTip="New drawing (Ctrl+N)" Click="OnNew"><TextBlock Style="{StaticResource Icon}" Text="&#xE7C3;" /></Button>
+                <Button ToolTip="Open (Ctrl+O)" Click="OnOpen"><TextBlock Style="{StaticResource Icon}" Text="&#xE8E5;" /></Button>
+                <Button ToolTip="Save (Ctrl+S)" Click="OnSave"><TextBlock Style="{StaticResource Icon}" Text="&#xE74E;" /></Button>
+                <Separator />
+                <Button ToolTip="Undo (Ctrl+Z)" Click="OnUndo"><TextBlock Style="{StaticResource Icon}" Text="&#xE7A7;" /></Button>
+                <Button ToolTip="Redo (Ctrl+Y)" Click="OnRedo"><TextBlock Style="{StaticResource Icon}" Text="&#xE7A6;" /></Button>
+                <Separator />
+                <Button ToolTip="Zoom out (Ctrl+-)" Click="OnZoomOut"><TextBlock Style="{StaticResource Icon}" Text="&#xE71F;" /></Button>
+                <TextBlock x:Name="ZoomText" Width="56" TextAlignment="Center" VerticalAlignment="Center" AutomationProperties.Name="Zoom level" />
+                <Button ToolTip="Zoom in (Ctrl+=)" Click="OnZoomIn"><TextBlock Style="{StaticResource Icon}" Text="&#xE8A3;" /></Button>
+                <Button ToolTip="Fit to window (Ctrl+0)" Click="OnZoomFit"><TextBlock Style="{StaticResource Icon}" Text="&#xE9A6;" /></Button>
+                <Separator />
+                <Button Content="Import SVG…" Click="OnImportSvg" />
+                <Button Content="Export SVG…" Click="OnExportSvg" />
+                <Button Content="Export PNG…" Click="OnExportPng" ToolTip="One PNG per size, or one sprite sheet" />
+                <Button Content="To pixel art…" Click="OnToPixel" ToolTip="Rasterise at a small size and open it in Pixel mode" />
+            </ToolBar>
+        </ToolBarTray>
+        <Border DockPanel.Dock="Bottom" Padding="10,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource LineBrush}">
+            <TextBlock x:Name="Status" />
+        </Border>
+
+        <StackPanel x:Name="ToolsPanel" DockPanel.Dock="Left" Width="104" Margin="4">
+            <RadioButton Tag="Select" Content="Select  V" ToolTip="Select, move and scale shapes (V). Shift adds to the selection." IsChecked="True" GroupName="vectool" Click="OnToolClick" />
+            <RadioButton Tag="Nodes" Content="Nodes  A" ToolTip="Edit the points and curve handles of a path (A). Double-click a point: smooth or corner." GroupName="vectool" Click="OnToolClick" />
+            <RadioButton Tag="Pen" Content="Pen  P" ToolTip="Click for corners, drag for curves; click the first point or press Enter to finish (P)" GroupName="vectool" Click="OnToolClick" />
+            <RadioButton Tag="Rect" Content="Rect  R" ToolTip="Drag a rectangle (R). Shift: square" GroupName="vectool" Click="OnToolClick" />
+            <RadioButton Tag="Ellipse" Content="Ellipse  E" ToolTip="Drag an ellipse (E). Shift: circle" GroupName="vectool" Click="OnToolClick" />
+            <RadioButton Tag="Polygon" Content="Polygon  Y" ToolTip="Drag from the centre (Y); sides on the right" GroupName="vectool" Click="OnToolClick" />
+            <RadioButton Tag="Line" Content="Line  L" ToolTip="Drag a line (L). Shift: 45°" GroupName="vectool" Click="OnToolClick" />
+        </StackPanel>
+
+        <ScrollViewer DockPanel.Dock="Right" Width="270" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="10,4,8,4">
+                <TextBlock x:Name="SelectionTitle" FontWeight="SemiBold" Text="Nothing selected" TextWrapping="Wrap" />
+                <Label Content="_Name" Target="{Binding ElementName=NameBox}" Padding="0" Margin="0,6,0,0" />
+                <TextBox x:Name="NameBox" LostKeyboardFocus="OnNameCommit" />
+
+                <TextBlock Text="Fill" FontWeight="SemiBold" Margin="0,12,0,0" />
+                <ComboBox x:Name="FillKindBox" Margin="0,4,0,0" SelectionChanged="OnPaintChanged" AutomationProperties.Name="Fill kind" />
+                <TextBlock Text="Stroke" FontWeight="SemiBold" Margin="0,12,0,0" />
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <CheckBox x:Name="StrokeBox" Content="Outline" Click="OnPaintChanged" Margin="0,0,10,0" />
+                    <TextBox x:Name="StrokeWidthBox" Width="50" AutomationProperties.Name="Stroke width" LostKeyboardFocus="OnPaintChanged" />
+                    <TextBlock Text=" px" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Text="Colour being edited" Margin="0,12,0,0" />
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                    <RadioButton x:Name="EditFill1" Content="Fill" IsChecked="True" GroupName="vcolor" Width="62" Height="28" Click="OnColorTarget" />
+                    <RadioButton x:Name="EditFill2" Content="Fill end" GroupName="vcolor" Width="70" Height="28" Click="OnColorTarget" ToolTip="Second colour of a gradient" />
+                    <RadioButton x:Name="EditStroke" Content="Stroke" GroupName="vcolor" Width="62" Height="28" Click="OnColorTarget" />
+                </StackPanel>
+                <local:ColorPicker x:Name="Picker" Margin="0,6,0,0" />
+                <TextBlock Text="Opacity" Margin="0,8,0,0" />
+                <Slider x:Name="OpacitySlider" Minimum="0" Maximum="1" Value="1" SmallChange="0.05" LargeChange="0.1" AutomationProperties.Name="Shape opacity"
+                        Thumb.DragCompleted="OnOpacityDone" KeyUp="OnOpacityKey" />
+
+                <TextBlock Text="Arrange" FontWeight="SemiBold" Margin="0,12,0,0" />
+                <WrapPanel Margin="0,4,0,0">
+                    <Button Style="{StaticResource Small}" Content="To front" Click="OnToFront" ToolTip="Ctrl+Shift+]" />
+                    <Button Style="{StaticResource Small}" Content="To back" Click="OnToBack" ToolTip="Ctrl+Shift+[" />
+                    <Button Style="{StaticResource Small}" Content="Group" Click="OnGroup" ToolTip="Ctrl+G" />
+                    <Button Style="{StaticResource Small}" Content="Ungroup" Click="OnUngroup" ToolTip="Ctrl+Shift+G" />
+                    <Button Style="{StaticResource Small}" Content="To path" Click="OnToPath" ToolTip="Make rectangles, ellipses and groups editable as points" />
+                </WrapPanel>
+                <TextBlock Text="Combine (2 or more)" Margin="0,6,0,0" />
+                <WrapPanel Margin="0,4,0,0">
+                    <Button Style="{StaticResource Small}" Content="Union" Click="OnUnion" />
+                    <Button Style="{StaticResource Small}" Content="Intersect" Click="OnIntersect" />
+                    <Button Style="{StaticResource Small}" Content="Subtract" Click="OnSubtract" ToolTip="Removes the later shapes from the first" />
+                    <Button Style="{StaticResource Small}" Content="Exclude" Click="OnExclude" />
+                </WrapPanel>
+                <TextBlock Text="Align (one shape: to the art board)" Margin="0,6,0,0" />
+                <WrapPanel Margin="0,4,0,0">
+                    <Button Style="{StaticResource Small}" Content="Left" Click="OnAlign" Tag="Left" />
+                    <Button Style="{StaticResource Small}" Content="Center" Click="OnAlign" Tag="Center" />
+                    <Button Style="{StaticResource Small}" Content="Right" Click="OnAlign" Tag="Right" />
+                    <Button Style="{StaticResource Small}" Content="Top" Click="OnAlign" Tag="Top" />
+                    <Button Style="{StaticResource Small}" Content="Middle" Click="OnAlign" Tag="Middle" />
+                    <Button Style="{StaticResource Small}" Content="Bottom" Click="OnAlign" Tag="Bottom" />
+                    <Button Style="{StaticResource Small}" Content="Space ↔" Click="OnDistributeH" ToolTip="Equal gaps left to right (3 or more)" />
+                    <Button Style="{StaticResource Small}" Content="Space ↕" Click="OnDistributeV" ToolTip="Equal gaps top to bottom (3 or more)" />
+                </WrapPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <Label Content="Polygon _sides" Target="{Binding ElementName=SidesBox}" Padding="0,0,8,0" VerticalAlignment="Center" />
+                    <TextBox x:Name="SidesBox" Width="40" Text="6" />
+                    <CheckBox x:Name="StarBox" Content="Star" Margin="10,0,0,0" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="{DynamicResource Bg0Brush}"
+                      PreviewMouseWheel="OnWheel" BorderThickness="2" BorderBrush="Transparent" AutomationProperties.Name="Vector art board">
+            <Grid x:Name="CanvasHost" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Cross"
+                  MouseDown="OnMouseDown" MouseMove="OnMouseMove" MouseUp="OnMouseUp">
+                <Rectangle x:Name="Board" />
+                <Canvas x:Name="ShapesLayer" ClipToBounds="False" />
+                <Canvas x:Name="Overlay" IsHitTestVisible="False" />
+            </Grid>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

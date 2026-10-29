@@ -4,7 +4,7 @@
 **Datum:** 19. 10. 2026
 
 ## Kontekst
-PixelForge ureja posamezne datoteke. Tilemap kopira pike tileseta in hrani absolutno pot do vira. Za prizore, like, brskalnik sredstev in izvoz morajo sredstva sklicevati drugo na drugo, tudi po preimenovanju ali premiku.
+Pixelkiln ureja posamezne datoteke. Tilemap kopira pike tileseta in hrani absolutno pot do vira. Za prizore, like, brskalnik sredstev in izvoz morajo sredstva sklicevati drugo na drugo, tudi po preimenovanju ali premiku.
 
 ## Odločitev
 - Projekt je mapa z manifestom `.pfproj` (JSON, `Version`).

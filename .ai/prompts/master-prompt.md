@@ -1,10 +1,10 @@
-# PixelForge: Master Implementation Prompt
+# Pixelkiln: Master Implementation Prompt
 
 > Poziv lastnika (19. 10. 2026). Razdelki 1–4 so dobesedni; razdelki 5–10 so skrajšani na vsebino, merila za sprejem posameznih faz pa so ohranjena. Odločitve, sprejete ob Fazi 0, so v `../architecture/adr/` in v zapisu seje.
 
 ## 1. Vloga in cilj
-Deluj kot Principal Software Architect, Senior Software Engineer in Technical Lead. Tvoja naloga je postopoma razširiti obstoječo aplikacijo PixelForge v profesionalno, večnamensko razvojno okolje za 2D igre.
-PixelForge trenutno vsebuje štiri glavne module:
+Deluj kot Principal Software Architect, Senior Software Engineer in Technical Lead. Tvoja naloga je postopoma razširiti obstoječo aplikacijo Pixelkiln v profesionalno, večnamensko razvojno okolje za 2D igre.
+Pixelkiln trenutno vsebuje štiri glavne module:
 
 * Sprite: pixel-art urejevalnik, plasti, barve, animacije in izvoz.
 * Tilemap: tileseti, samodejno povezovanje ploščic, objekti in zemljevidi.
@@ -65,7 +65,7 @@ Uporabljaj vzorce in standarde, ki ustrezajo ugotovljenemu tehnološkemu skladu:
 * Asinhrono izvajanje dolgotrajnih opravil, kjer je potrebno.
 * Brez nepotrebnih odvisnosti, podvojenih implementacij ali prezgodnje kompleksnosti.
 
-Ne uvajaj mikroservisov ali zunanjih storitev, če za to ni konkretne potrebe. PixelForge naj ostane preprosta aplikacija za namestitev in uporabo, razen če obstoječa arhitektura utemeljuje drugače.
+Ne uvajaj mikroservisov ali zunanjih storitev, če za to ni konkretne potrebe. Pixelkiln naj ostane preprosta aplikacija za namestitev in uporabo, razen če obstoječa arhitektura utemeljuje drugače.
 
 ### 2.4 Uporabniška izkušnja
 
@@ -220,4 +220,4 @@ Preveri stanje Git; nikoli ne zavrzi uporabnikovih sprememb; majhne povezane spr
 ## 10. Začetno navodilo agentu
 Začni izključno s Fazo 0. Na koncu pripravi poročilo z razdelki: trenutno stanje, ponovno uporabne funkcije, manjkajoče funkcije, arhitekturne omejitve, predlagani podatkovni modeli, struktura modulov, migracije in združljivost, testni načrt, vrstni red faz, tveganja in odprta vprašanja, naslednji koraki. Ne začni Faze 1, dokler analiza ni zaključena in načrt dokumentiran. Po vsaki fazi preveri merila, posodobi zapis seje in šele nato nadaljuj.
 
-Končni cilj je stabilen, vzdrževan in razširljiv PixelForge, v katerem so grafika, animacije, nivoji, zvok, sredstva in izvoz povezani v enoten delovni proces, brez nepotrebnega podvajanja kode in brez izgube obstoječih funkcionalnosti.
+Končni cilj je stabilen, vzdrževan in razširljiv Pixelkiln, v katerem so grafika, animacije, nivoji, zvok, sredstva in izvoz povezani v enoten delovni proces, brez nepotrebnega podvajanja kode in brez izgube obstoječih funkcionalnosti.

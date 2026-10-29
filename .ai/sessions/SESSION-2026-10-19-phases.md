@@ -326,3 +326,5 @@ Uporabnik je želel preprosto kodo, ki se jo da urejati ročno, s smiselnimi kom
 - **Opažena napaka (ne popravljena, spremenila bi videz):** `PathIcon.StrokeWidth` je navadna lastnost, ki jo `Build()` prebere ob nastavitvi `Kind`; v XAML je `StrokeWidth` za `Kind`, zato se ne upošteva in vse ikone imajo debelino 1.7.
 - **Preverjanje:** Debug in Release brez opozoril, 220/220, smoke OK.
 
+## Preimenovanje v Pixelkiln (29. 10. 2026)
+Ime izbral uporabnik. Preimenovani so projekti, mape, imenski prostori, besedila, mapa nastavitev (`%AppData%\Pixelkiln`, spremenljivka `PIXELKILN_HOME`) in dokumentacija; zapisi sej ostanejo, kot so bili napisani. Končnice datotek (`.pfproj`, `.pxf` …) ostanejo. Zgodovina je pred objavo na GitHubu dobila avtorja `zangrajfo-ship-it <…@users.noreply.github.com>`.

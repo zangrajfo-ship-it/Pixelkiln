@@ -12,7 +12,7 @@ Vtičnik je mapa `plugins/<id>/` z `plugin.json` (`apiVersion`, `id`, `name`, `v
 - barvne palete;
 - makri ukazov (zaporedje obstoječih ukazov iz CommandRegistry).
 
-PixelForge ne nalaga in ne izvaja kode iz vtičnikov.
+Pixelkiln ne nalaga in ne izvaja kode iz vtičnikov.
 
 ## Posledice
 - Varnost: vtičnik ne more brati datotek, omrežja ali sistema; le ponudi podatke, ki jih aplikacija preveri po shemi.

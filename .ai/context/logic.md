@@ -1,6 +1,6 @@
 # Vizualna logika (`.pxlogic`): specifikacija semantike
 
-Velja za interpreter v PixelForge (predogled igre) in za izvoz v GDScript. Kjer se Godot obnaša drugače, je to navedeno.
+Velja za interpreter v Pixelkiln (predogled igre) in za izvoz v GDScript. Kjer se Godot obnaša drugače, je to navedeno.
 
 ## Graf
 - **Vozlišče:** `Id` (edinstven niz), `Kind`, `X`, `Y` (položaj v urejevalniku), `Params` (niz → niz).
@@ -44,5 +44,5 @@ Velja za interpreter v PixelForge (predogled igre) in za izvoz v GDScript. Kjer 
 - opozorilo: vozlišče, ki ni dosegljivo iz nobenega dogodka.
 
 ## Izvoz
-- **Godot:** `ime_logic.gd` (`extends Node`), vozlišče `Logic` s to skripto v sceni stopnje. Vsako vozlišče je funkcija, `Wait` je `await get_tree().create_timer()`. `EnterArea` uporablja signal `body_entered` območja, `Touch` primerja razdaljo do igralca v `_physics_process` (polmer 12 px), `Timer` je vozlišče `Timer`. Igralec je prvi objekt z likom vrste Player. Koda je ustvarjena za igro; PixelForge je ne izvaja.
+- **Godot:** `ime_logic.gd` (`extends Node`), vozlišče `Logic` s to skripto v sceni stopnje. Vsako vozlišče je funkcija, `Wait` je `await get_tree().create_timer()`. `EnterArea` uporablja signal `body_entered` območja, `Touch` primerja razdaljo do igralca v `_physics_process` (polmer 12 px), `Timer` je vozlišče `Timer`. Igralec je prvi objekt z likom vrste Player. Koda je ustvarjena za igro; Pixelkiln je ne izvaja.
 - **Generično:** `ime_logic.json` (enaka shema kot `.pxlogic`).
