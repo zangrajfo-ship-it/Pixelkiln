@@ -67,6 +67,7 @@ static class HelpWindow
         */
         ("Tilemap", [
             ("B E G I", "Paint, erase, fill, pick"), ("A", "Auto-tile terrain"), ("O", "Objects"),
+            ("X / Y / R", "Flip the brush left-right / up-down / rotate it a quarter turn"), ("K", "Show collision"),
             ("Shift (objects)", "Snap to tiles"), ("Del", "Delete selected object"),
             ("Tileset: arrows / Shift+arrows", "Select tile / several tiles"),
             ("Ctrl+= / Ctrl+- / Ctrl+0", "Zoom in / out / fit"), ("Ctrl+G", "Grid"),

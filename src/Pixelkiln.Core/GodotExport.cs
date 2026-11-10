@@ -114,17 +114,21 @@ public static class GodotExport
         return d.ToString();
     }
 
-    /// <summary>Godot's TileMap cell encoding: (y &lt;&lt; 16 | x), (source | atlasX &lt;&lt; 16), (atlasY | alternative &lt;&lt; 16).</summary>
+    /// <summary>
+    /// Godot's TileMap cell encoding: (y &lt;&lt; 16 | x), (source | atlasX &lt;&lt; 16), (atlasY | alternative &lt;&lt; 16).
+    /// A turned tile sets Godot's transform bits in the alternative id (flip h 4096, flip v 8192, transpose 16384; Godot 4.2+).
+    /// </summary>
     public static int[] CellData(MapLayer l, int width, int columns)
     {
         var o = new List<int>();
         for (int i = 0; i < l.Tiles.Length; i++)
         {
-            int t = l.Tiles[i];
+            int t = l.Tiles[i], flip = l.FlipAt(i);
             if (t < 0) continue;
+            int alternative = ((flip & TileFlip.H) != 0 ? 1 << 12 : 0) | ((flip & TileFlip.V) != 0 ? 1 << 13 : 0) | ((flip & TileFlip.D) != 0 ? 1 << 14 : 0);
             o.Add(i / width << 16 | i % width & 0xFFFF);
             o.Add(0 | t % columns << 16);
-            o.Add(t / columns);
+            o.Add(t / columns | alternative << 16);
         }
         return [.. o];
     }

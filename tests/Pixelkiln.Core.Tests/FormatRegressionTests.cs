@@ -112,6 +112,18 @@ public class FormatRegressionTests
         Assert.Equal(TerrainMode.Blob47, m.Terrains[0].Mode);
         Assert.Equal([3], m.Terrains[0].Variants);
         Assert.Equal(new TileCollision(0, 0, 2, 1, true, 2), m.TileCollisions[1]);
+        Assert.Empty(m.Layers[0].Flips);                                            // v5: no tile is turned
+    }
+
+    [Fact]
+    public void Map_v6_with_a_turned_tile()
+    {
+        var m = Tilemap.Load(Fixture("current/map.v6.pxm"));
+        Assert.Equal(1, m.Layers[0].Tiles[0]);
+        Assert.Equal(TileFlip.RotateCw, m.Layers[0].FlipAt(0));
+        Assert.Equal(0, m.Layers[0].FlipAt(1));
+        Assert.Equal(MapId, m.TilesetAssetId);                                      // everything from v5 is still there
+        Assert.Equal(new TileCollision(0, 0, 2, 1, true, 2), m.TileCollisions[1]);
     }
 
     [Fact]
@@ -264,6 +276,8 @@ public class FormatRegressionTests
         m.Terrains.Add(new TerrainRule { Base = 0, Mode = TerrainMode.Blob47, Variants = [3] });
         m.TileCollisions[1] = new TileCollision(0, 0, 2, 1, OneWay: true, Category: 2);
         if (New("map.v5.pxm")) Tilemap.Save(m, Path.Combine(dir, "map.v5.pxm"));
+        m.Layers[0].SetFlip(0, TileFlip.RotateCw);   // v6: a turned tile
+        if (New("map.v6.pxm")) Tilemap.Save(m, Path.Combine(dir, "map.v6.pxm"));
 
         var c = new Character { Kind = CharacterKind.Player, SpriteAssetId = SpriteId, OriginX = 4, OriginY = 8, Facing = Facing.Left };
         c.Animations["idle"] = "idle";

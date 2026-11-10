@@ -80,6 +80,7 @@ public static class Autotile
         Validate(ts, rule);
         if (!Tools.InBounds(map.Width, map.Height, x, y)) return;
         layer.Tiles[y * map.Width + x] = on ? rule.Base : Tilemap.Empty;
+        layer.SetFlip(y * map.Width + x, 0);   // terrain tiles are never turned
         for (int dy = -1; dy <= 1; dy++)
             for (int dx = -1; dx <= 1; dx++) Update(x + dx, y + dy);
 
@@ -97,6 +98,7 @@ public static class Autotile
                 if (pick > 0) tile = rule.Variants[pick - 1];
             }
             layer.Tiles[cy * map.Width + cx] = tile;
+            layer.SetFlip(cy * map.Width + cx, 0);
         }
 
         bool Is(int cx, int cy) =>

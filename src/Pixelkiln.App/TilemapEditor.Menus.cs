@@ -28,6 +28,10 @@ public partial class TilemapEditor : IEditor
             Ui.Item("_Undo", "Ctrl+Z", Do(OnUndo)),
             Ui.Item("_Redo", "Ctrl+Y", Do(OnRedo)),
             new Separator(),
+            Ui.Item("Flip brush _horizontally", "X", () => TurnStamp(TileFlip.H)),
+            Ui.Item("Flip brush _vertically", "Y", () => TurnStamp(TileFlip.V)),
+            Ui.Item("Ro_tate brush", "R", () => TurnStamp(TileFlip.RotateCw)),
+            new Separator(),
             Ui.Item("Map _size…", null, Do(OnMapSize)),
             Ui.Item("_Generate layout from seed…", null, GenerateLayout),
             Ui.Item("_Delete selected object", "Del", () => OnDeleteObject(null, null))),
@@ -92,6 +96,7 @@ public partial class TilemapEditor : IEditor
         var t = CurrentTool;
         var look = ((string)t.Tag).Split('|');
         (ToolName.Text, ToolKey.Text, ToolIcon.Kind) = (look[0], look[1], look[2]);
+        BrushTurn.Visibility = t == PaintBtn || t == FillBtn ? Visibility.Visible : Visibility.Collapsed;
         ToolHint.Text =
             t == PaintBtn ? "Paints the tiles selected in the tileset. Right mouse erases." :
             t == EraseBtn ? "Removes tiles from the current layer." :

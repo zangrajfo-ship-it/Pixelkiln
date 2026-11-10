@@ -51,8 +51,11 @@ public sealed class SceneAssets(Project project)
         var o = new List<Collider>();
         foreach (var layer in m.Layers.Where(x => x.Visible))
             for (int i = 0; i < layer.Tiles.Length; i++)
-                if (layer.Tiles[i] >= 0 && m.TileCollisions.TryGetValue(layer.Tiles[i], out var c))
+                if (layer.Tiles[i] >= 0 && m.TileCollisions.TryGetValue(layer.Tiles[i], out var box))
+                {
+                    var c = TileFlip.Turn(box, m.TileSize, layer.FlipAt(i));   // the box turns with its tile
                     o.Add(new(i % m.Width * m.TileSize + c.X, i / m.Width * m.TileSize + c.Y, c.W, c.H, c.OneWay));
+                }
         return o;
     });
 

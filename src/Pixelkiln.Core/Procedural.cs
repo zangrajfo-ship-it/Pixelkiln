@@ -280,6 +280,7 @@ public static class Procedural
     {
         if (solid.Length != map.Width * map.Height) throw new ArgumentException("The layout does not match the map size.", nameof(solid));
         Array.Fill(layer.Tiles, Tilemap.Empty);
+        layer.Flips = [];
         for (int i = 0; i < solid.Length; i++)
         {
             if (!solid[i]) continue;

@@ -144,6 +144,12 @@
                     <Border Style="{StaticResource Kbd}"><TextBlock x:Name="ToolKey" Text="B" FontFamily="{DynamicResource MonoFont}" FontSize="10" Foreground="{DynamicResource Text2Brush}" /></Border>
                 </StackPanel>
                 <Rectangle Style="{StaticResource Divider}" Margin="14,0" />
+                <!-- turn the brush (Paint and Fill only) -->
+                <StackPanel x:Name="BrushTurn" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <Button Style="{StaticResource IconButton}" ToolTip="Flip the brush left/right  X" AutomationProperties.Name="Flip brush horizontally" Click="OnFlipBrushH"><local:PathIcon Kind="flipH" Width="17" Height="17" /></Button>
+                    <Button Style="{StaticResource IconButton}" ToolTip="Flip the brush up/down  Y" AutomationProperties.Name="Flip brush vertically" Click="OnFlipBrushV"><local:PathIcon Kind="flipV" Width="17" Height="17" /></Button>
+                    <Button Style="{StaticResource IconButton}" ToolTip="Rotate the brush a quarter turn  R" AutomationProperties.Name="Rotate brush" Click="OnRotateBrush"><local:PathIcon Kind="rotate" Width="17" Height="17" /></Button>
+                </StackPanel>
                 <TextBlock x:Name="ToolHint" VerticalAlignment="Center" Foreground="{DynamicResource Text2Brush}" TextTrimming="CharacterEllipsis" />
             </DockPanel>
         </Border>

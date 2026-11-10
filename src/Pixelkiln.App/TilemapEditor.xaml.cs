@@ -370,6 +370,9 @@ public partial class TilemapEditor : UserControl
             case Key.I when !ctrl: SetTool(PickBtn); break;
             case Key.A when !ctrl: SetTool(AutoBtn); break;
             case Key.O when !ctrl: SetTool(ObjectBtn); break;
+            case Key.X when !ctrl: TurnStamp(TileFlip.H); break;
+            case Key.Y when !ctrl: TurnStamp(TileFlip.V); break;
+            case Key.R when !ctrl: TurnStamp(TileFlip.RotateCw); break;
             case Key.K when !ctrl: CollisionToggle.IsChecked = CollisionToggle.IsChecked != true; RenderCollision(); break;
             case Key.Delete when _selObj is not null: OnDeleteObject(null, null); break;
             default: e.Handled = false; break;

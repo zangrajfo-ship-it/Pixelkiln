@@ -2,9 +2,13 @@ using System.Text.Json;
 
 namespace Pixelkiln.Core;
 
-/// <summary>Tiled map editor JSON (.tmj). gid = tile index + 1, 0 = empty.</summary>
+/// <summary>Tiled map editor JSON (.tmj). gid = tile index + 1, 0 = empty; turned tiles carry Tiled's flip bits.</summary>
 public static class TiledExport
 {
+    /// <summary>Tiled keeps the flip flags in the top three bits of the gid: horizontal, vertical, diagonal.</summary>
+    static long Gid(int tile, int flip) => tile < 0 ? 0 :
+        (uint)(tile + 1) | ((flip & TileFlip.H) != 0 ? 0x80000000L : 0) | ((flip & TileFlip.V) != 0 ? 0x40000000L : 0) | ((flip & TileFlip.D) != 0 ? 0x20000000L : 0);
+
     public static string Json(Tilemap m, string tilesetImage)
     {
         var ts = m.RequireTileset();
@@ -18,7 +22,7 @@ public static class TiledExport
             {
                 id = i + 1, name = l.Name, type = "tilelayer", visible = l.Visible, opacity = 1,
                 x = 0, y = 0, width = m.Width, height = m.Height,
-                data = l.Tiles.Select(t => t < 0 ? 0 : t + 1),
+                data = l.Tiles.Select((t, cell) => Gid(t, l.FlipAt(cell))),
             }).Append(new
             {
                 id = m.Layers.Count + 1, name = "Objects", type = "objectgroup", visible = true, opacity = 1,

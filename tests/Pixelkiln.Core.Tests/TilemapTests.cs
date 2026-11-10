@@ -61,6 +61,74 @@ public class TilemapTests
         Assert.Equal(2, ts.GetProperty("tilecount").GetInt32());
         Assert.Equal("tiles.png", ts.GetProperty("image").GetString());
     }
+
+    // ---------- turned tiles (.pxm v6) ----------
+
+    [Fact]
+    public void Tile_flags_mirror_and_rotate()
+    {
+        uint[] t = [1, 2,
+                    3, 4];
+        Assert.Same(t, TileFlip.Orient(t, 2, 0));
+        Assert.Equal([2u, 1, 4, 3], TileFlip.Orient(t, 2, TileFlip.H));
+        Assert.Equal([3u, 4, 1, 2], TileFlip.Orient(t, 2, TileFlip.V));
+        Assert.Equal([3u, 1, 4, 2], TileFlip.Orient(t, 2, TileFlip.RotateCw));     // a quarter turn clockwise
+
+        // turning twice is the same as turning once by the combined flags
+        for (int a = 0; a < 8; a++)
+            for (int b = 0; b < 8; b++)
+                Assert.Equal(TileFlip.Orient(TileFlip.Orient(t, 2, a), 2, b), TileFlip.Orient(t, 2, TileFlip.Then(a, b)));
+        Assert.Equal(0, TileFlip.Then(TileFlip.H, TileFlip.H));
+        Assert.Equal(TileFlip.H | TileFlip.V, TileFlip.Then(TileFlip.RotateCw, TileFlip.RotateCw));   // half turn
+        int four = Enumerable.Repeat(TileFlip.RotateCw, 4).Aggregate(0, TileFlip.Then);
+        Assert.Equal(0, four);
+
+        // a collision box turns with its tile: the top strip of a 4 px tile becomes the right strip
+        Assert.Equal(new TileCollision(3, 0, 1, 4, true, 2), TileFlip.Turn(new TileCollision(0, 0, 4, 1, true, 2), 4, TileFlip.RotateCw));
+        Assert.Equal(new TileCollision(0, 3, 4, 1), TileFlip.Turn(new TileCollision(0, 0, 4, 1), 4, TileFlip.V));
+    }
+
+    [Fact]
+    public void Turned_tiles_render_save_and_export()
+    {
+        var m = new Tilemap(3, 1, 2) { Tileset = Set() };
+        var l = m.Layers[0];
+        l.Tiles[0] = 1;                                      // blue, transparent pixel top-left
+        l.Tiles[1] = 1;
+        l.SetFlip(1, TileFlip.H);                            // mirrored: transparent pixel top-right
+        l.SetFlip(2, TileFlip.V);                            // an empty cell: its flag is not saved
+        var px = m.Render();                                 // 6×2 px
+        Assert.Equal([0u, B, B, 0, 0, 0], px[..6]);
+        Assert.Equal((1, TileFlip.H), m.PickCell(1, 0));
+        Assert.Equal((Tilemap.Empty, 0), m.PickCell(2, 0));
+
+        var back = Tilemap.Deserialize(Tilemap.Serialize(m));
+        Assert.Equal([0, TileFlip.H, 0], back.Layers[0].Flips.Select(f => (int)f));
+        Assert.Equal(px, back.Render());
+        Assert.Equal(TileFlip.H, m.Clone().Layers[0].FlipAt(1));
+        Assert.Equal(TileFlip.H, m.Resized(4, 2, 1, 1).Layers[0].FlipAt(1 * 4 + 2));   // moved one cell right and down
+
+        // a map without turned tiles has no flags in the file, and wrong flags are refused
+        l.Flips = [];
+        Assert.Contains("\"Flips\":null", Tilemap.Serialize(m));
+        Assert.Throws<InvalidDataException>(() => Tilemap.Deserialize(Tilemap.Serialize(back).Replace("\"Flips\":\"AAEA\"", "\"Flips\":\"AAkA\"")));
+
+        // Tiled keeps the flags in the top bits of the gid, Godot in the alternative tile id
+        var data = JsonDocument.Parse(TiledExport.Json(back, "t.png")).RootElement.GetProperty("layers")[0].GetProperty("data");
+        Assert.Equal([2L, 0x80000002L, 0L], data.EnumerateArray().Select(e => e.GetInt64()));
+        Assert.Equal([0, 1 << 16, 0, 1, 1 << 16, (1 << 12) << 16], GodotExport.CellData(back.Layers[0], 3, 2));
+    }
+
+    [Fact]
+    public void Auto_tile_clears_the_flags()
+    {
+        var m = new Tilemap(3, 3, 1) { Tileset = new Tileset(new uint[4 * 4], 4, 4, 1) };
+        var l = m.Layers[0];
+        l.Tiles[4] = 0;
+        l.SetFlip(4, TileFlip.RotateCw);
+        Autotile.Apply(m, l, new TerrainRule { Base = 0 }, 1, 1, on: true);
+        Assert.Equal(0, l.FlipAt(4));
+    }
 }
 
 public class TilemapUpgradeTests

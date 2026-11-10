@@ -13,12 +13,80 @@ public sealed record Tileset(uint[] Pixels, int Width, int Height, int TileSize)
     public uint[] Tile(int index) => PixelOps.Crop(Pixels, Width, index % Columns * TileSize, index / Columns * TileSize, TileSize, TileSize);
 }
 
+/// <summary>
+/// How a tile is turned in its cell: three flags as in Tiled, applied in this order: <see cref="D"/> (mirror along
+/// the top-left to bottom-right diagonal), then <see cref="H"/> (mirror left/right), then <see cref="V"/> (up/down).
+/// Every rotation by 90° and every mirror is one of the 8 combinations, e.g. a quarter turn clockwise is D + H.
+/// </summary>
+public static class TileFlip
+{
+    public const int H = 1, V = 2, D = 4;
+    public const int RotateCw = D | H;
+
+    /// <summary>The pixels of an n×n tile turned by the flags.</summary>
+    public static uint[] Orient(uint[] tile, int n, int flip)
+    {
+        if (flip == 0) return tile;
+        var o = new uint[tile.Length];
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                // walk the steps backwards (V, H, D) from the turned pixel to the pixel it comes from
+                int sx = (flip & H) != 0 ? n - 1 - x : x, sy = (flip & V) != 0 ? n - 1 - y : y;
+                if ((flip & D) != 0) (sx, sy) = (sy, sx);
+                o[y * n + x] = tile[sy * n + sx];
+            }
+        return o;
+    }
+
+    // Combined[flip * 8 + op] = the flags that look like "turn by flip, then by op"; found by trying all 8 on a 2×2 tile
+    static readonly int[] Combined = BuildCombined();
+
+    static int[] BuildCombined()
+    {
+        uint[] probe = [0, 1, 2, 3];
+        var looks = Enumerable.Range(0, 8).Select(f => Orient(probe, 2, f)).ToList();
+        var table = new int[64];
+        for (int f = 0; f < 8; f++)
+            for (int op = 0; op < 8; op++)
+                table[f * 8 + op] = looks.FindIndex(l => l.SequenceEqual(Orient(looks[f], 2, op)));
+        return table;
+    }
+
+    /// <summary>The flags of a tile that is already turned by <paramref name="flip"/> and is now turned again by <paramref name="op"/>.</summary>
+    public static int Then(int flip, int op) => Combined[(flip & 7) * 8 + (op & 7)];
+
+    /// <summary>A tile's collision box after the tile is turned (one-way boxes stay one-way).</summary>
+    public static TileCollision Turn(TileCollision c, int n, int flip)
+    {
+        var (x, y, w, h) = (c.X, c.Y, c.W, c.H);
+        if ((flip & D) != 0) (x, y, w, h) = (y, x, h, w);
+        if ((flip & H) != 0) x = n - x - w;
+        if ((flip & V) != 0) y = n - y - h;
+        return c with { X = x, Y = y, W = w, H = h };
+    }
+}
+
 public sealed class MapLayer : ILayer
 {
     public string Name { get; set; } = "Layer";
     public bool Visible { get; set; } = true;
     /// <summary>Tile index per cell, row-major; -1 = empty.</summary>
     public int[] Tiles { get; init; } = [];
+    /// <summary><see cref="TileFlip"/> flags per cell; empty while no tile of the layer is turned.</summary>
+    public byte[] Flips { get; set; } = [];
+
+    public int FlipAt(int cell) => cell < Flips.Length ? Flips[cell] : 0;
+
+    public void SetFlip(int cell, int flip)
+    {
+        if (Flips.Length == 0)
+        {
+            if (flip == 0) return;
+            Flips = new byte[Tiles.Length];
+        }
+        Flips[cell] = (byte)(flip & 7);
+    }
 }
 
 /// <summary>Point (W = H = 0) or rectangle in map pixels, e.g. spawn points, triggers, collision boxes.</summary>
@@ -92,11 +160,14 @@ public sealed class Tilemap
     }
 
     /// <summary>Topmost visible tile at a cell, or Empty.</summary>
-    public int Pick(int x, int y)
+    public int Pick(int x, int y) => PickCell(x, y).Tile;
+
+    /// <summary>Topmost visible tile at a cell with its <see cref="TileFlip"/> flags, or (Empty, 0).</summary>
+    public (int Tile, int Flip) PickCell(int x, int y)
     {
         for (int i = Layers.Count - 1; i >= 0; i--)
-            if (Layers[i].Visible && Layers[i].Tiles[y * Width + x] != Empty) return Layers[i].Tiles[y * Width + x];
-        return Empty;
+            if (Layers[i].Visible && Layers[i].Tiles[y * Width + x] != Empty) return (Layers[i].Tiles[y * Width + x], Layers[i].FlipAt(y * Width + x));
+        return (Empty, 0);
     }
 
     /// <summary>Renders visible layers to pixels (Width*TileSize × Height*TileSize).</summary>
@@ -105,7 +176,7 @@ public sealed class Tilemap
         int pw = Width * TileSize, ph = Height * TileSize;
         var dst = new uint[pw * ph];
         if (Tileset is not { } ts || ts.TileSize != TileSize) return dst;
-        var tiles = new Dictionary<int, uint[]>();
+        var tiles = new Dictionary<int, uint[]>();   // key: tile * 8 + flip
         var layerPx = new uint[pw * ph];
         foreach (var l in Layers)
         {
@@ -113,9 +184,9 @@ public sealed class Tilemap
             Array.Clear(layerPx);
             for (int i = 0; i < l.Tiles.Length; i++)
             {
-                int t = l.Tiles[i];
+                int t = l.Tiles[i], flip = l.FlipAt(i);
                 if (t < 0 || t >= ts.Count) continue;
-                if (!tiles.TryGetValue(t, out var tp)) tiles[t] = tp = ts.Tile(t);
+                if (!tiles.TryGetValue(t * 8 + flip, out var tp)) tiles[t * 8 + flip] = tp = TileFlip.Orient(ts.Tile(t), TileSize, flip);
                 PixelOps.Paste(layerPx, pw, tp, TileSize, TileSize, i % Width * TileSize, i / Width * TileSize);
             }
             Compositor.Blend(dst, layerPx);
@@ -126,7 +197,7 @@ public sealed class Tilemap
     public Tilemap Clone()
     {
         var m = new Tilemap(Width, Height, TileSize, empty: true) { Tileset = Tileset, TilesetSource = TilesetSource, TilesetAssetId = TilesetAssetId };
-        foreach (var l in Layers) m.Layers.Add(new MapLayer { Name = l.Name, Visible = l.Visible, Tiles = (int[])l.Tiles.Clone() });
+        foreach (var l in Layers) m.Layers.Add(new MapLayer { Name = l.Name, Visible = l.Visible, Tiles = (int[])l.Tiles.Clone(), Flips = (byte[])l.Flips.Clone() });
         m.Objects.AddRange(Objects.Select(o => o.Clone()));
         m.Terrains.AddRange(Terrains.Select(t => t.Clone()));
         foreach (var kv in TileCollisions) m.TileCollisions[kv.Key] = kv.Value;
@@ -143,7 +214,11 @@ public sealed class Tilemap
             nl.Visible = l.Visible;
             for (int y = 0; y < Height; y++)
                 for (int x = 0; x < Width; x++)
-                    Tools.Set(nl.Tiles, w, h, x + ox, y + oy, l.Tiles[y * Width + x]);
+                {
+                    if (!Tools.InBounds(w, h, x + ox, y + oy)) continue;
+                    nl.Tiles[(y + oy) * w + x + ox] = l.Tiles[y * Width + x];
+                    nl.SetFlip((y + oy) * w + x + ox, l.FlipAt(y * Width + x));
+                }
         }
         foreach (var o in Objects)
         {
@@ -159,7 +234,7 @@ public sealed class Tilemap
 
     // ---------- .pxm file (JSON) ----------
 
-    record LayerDto(string Name, bool Visible, int[] Tiles);
+    record LayerDto(string Name, bool Visible, int[] Tiles, byte[]? Flips = null);
     record ObjectDto(int Id, string Name, string Type, int X, int Y, int W, int H);
     record RuleDto(int Base, TerrainMode Mode, int[]? Variants);
     record CollisionDto(int Tile, int X, int Y, int W, int H, bool OneWay, int Category);
@@ -169,13 +244,20 @@ public sealed class Tilemap
         LayerDto[] Layers, ObjectDto[]? Objects = null, int[]? Terrains = null, Guid? TilesetAssetId = null, RuleDto[]? TerrainRules = null,
         CollisionDto[]? TileCollisions = null);
 
-    // v5: TileCollisions
-    public const int Version = 5;
+    // v5: TileCollisions; v6: Flips per layer (left out while no tile is turned)
+    public const int Version = 6;
+
+    /// <summary>The layer's flags for the file: null when nothing is turned; empty cells never carry flags.</summary>
+    static byte[]? FlipsToSave(MapLayer l)
+    {
+        var flips = l.Tiles.Select((t, i) => t < 0 ? (byte)0 : (byte)l.FlipAt(i)).ToArray();
+        return flips.Any(f => f != 0) ? flips : null;
+    }
 
     public static string Serialize(Tilemap m) => JsonSerializer.Serialize(new MapDto(
         Version, m.Width, m.Height, m.TileSize, m.TilesetSource, m.Tileset?.Width ?? 0, m.Tileset?.Height ?? 0,
         m.Tileset is { } ts ? Convert.ToBase64String(MemoryMarshal.AsBytes(ts.Pixels.AsSpan())) : null,
-        [.. m.Layers.Select(l => new LayerDto(l.Name, l.Visible, l.Tiles))],
+        [.. m.Layers.Select(l => new LayerDto(l.Name, l.Visible, l.Tiles, FlipsToSave(l)))],
         [.. m.Objects.Select(o => new ObjectDto(o.Id, o.Name, o.Type, o.X, o.Y, o.W, o.H))],
         null, m.TilesetAssetId, [.. m.Terrains.Select(t => new RuleDto(t.Base, t.Mode, [.. t.Variants]))],
         [.. m.TileCollisions.OrderBy(kv => kv.Key).Select(kv => new CollisionDto(kv.Key, kv.Value.X, kv.Value.Y, kv.Value.W, kv.Value.H, kv.Value.OneWay, kv.Value.Category))]));
@@ -193,7 +275,9 @@ public sealed class Tilemap
         foreach (var l in d.Layers)
         {
             if (l.Tiles.Length != d.Width * d.Height) throw new InvalidDataException($"Layer '{l.Name}' has wrong size.");
-            m.Layers.Add(new MapLayer { Name = l.Name, Visible = l.Visible, Tiles = l.Tiles });
+            if (l.Flips is { } flips && (flips.Length != l.Tiles.Length || flips.Any(f => f > 7)))
+                throw new InvalidDataException($"Layer '{l.Name}' has wrong tile flips.");
+            m.Layers.Add(new MapLayer { Name = l.Name, Visible = l.Visible, Tiles = l.Tiles, Flips = l.Flips ?? [] });
         }
         if (m.Layers.Count == 0) throw new InvalidDataException("Map has no layers.");
         foreach (var o in d.Objects ?? [])

@@ -17,8 +17,9 @@ public partial class TilemapEditor
     (int X, int Y) _lastGrid;
     Point? _panFrom;
 
-    // stamp = block of tile indices (-1 = hole), from the tileset or picked from the map
+    // stamp = block of tile indices (-1 = hole) and their TileFlip flags, from the tileset or picked from the map
     int[] _stamp = [0];
+    byte[] _stampFlips = [0];
     int _sw = 1, _sh = 1;
     Int32Rect _tsSel = new(0, 0, 1, 1);   // tileset selection, in tiles
     (int X, int Y)? _tsDragFrom;
@@ -96,8 +97,12 @@ public partial class TilemapEditor
         else if (tool == FillBtn)
         {
             Snapshot();
+            int StampCell(int cx, int cy) => Mod(cy - y, _sh) * _sw + Mod(cx - x, _sw);
+            var area = Tools.Region(tiles, _map.Width, _map.Height, x, y);   // the cells the fill is about to change
             if (right) Tools.Fill(tiles, _map.Width, _map.Height, x, y, Tilemap.Empty);
-            else Tools.FillPattern(tiles, _map.Width, _map.Height, x, y, (cx, cy) => _stamp[Mod(cy - y, _sh) * _sw + Mod(cx - x, _sw)]);
+            else Tools.FillPattern(tiles, _map.Width, _map.Height, x, y, (cx, cy) => _stamp[StampCell(cx, cy)]);
+            for (int i = 0; i < area.Length; i++)
+                if (area[i]) _map.Layers[_layer].SetFlip(i, right ? 0 : _stampFlips[StampCell(i % _map.Width, i / _map.Width)]);
             Render();
             return;
         }
@@ -177,10 +182,15 @@ public partial class TilemapEditor
 
     void PaintStamp(int cx, int cy)
     {
-        var tiles = _map.Layers[_layer].Tiles;
+        var layer = _map.Layers[_layer];
         for (int j = 0; j < _sh; j++)
             for (int i = 0; i < _sw; i++)
-                if (_stamp[j * _sw + i] >= 0) Tools.Set(tiles, _map.Width, _map.Height, cx + i, cy + j, _stamp[j * _sw + i]);
+            {
+                if (_stamp[j * _sw + i] < 0 || !Tools.InBounds(_map.Width, _map.Height, cx + i, cy + j)) continue;
+                int cell = (cy + j) * _map.Width + cx + i;
+                layer.Tiles[cell] = _stamp[j * _sw + i];
+                layer.SetFlip(cell, _stampFlips[j * _sw + i]);
+            }
     }
 
     // ---------- pick ----------
@@ -208,19 +218,25 @@ public partial class TilemapEditor
         PickRect.Visibility = Visibility.Collapsed;
         var (x, y, w, h) = PickArea(end);
         var stamp = new int[w * h];
+        var flips = new byte[w * h];
         for (int j = 0; j < h; j++)
-            for (int i = 0; i < w; i++) stamp[j * w + i] = _map.Pick(x + i, y + j);
+            for (int i = 0; i < w; i++)
+            {
+                var (tile, flip) = _map.PickCell(x + i, y + j);
+                (stamp[j * w + i], flips[j * w + i]) = (tile, (byte)flip);
+            }
         if (stamp.All(t => t == Tilemap.Empty)) return;
-        SetStamp(stamp, w, h);
+        SetStamp(stamp, w, h, flips);
         SelectionRect.Visibility = Visibility.Collapsed;   // the stamp no longer matches a tileset area
         SetTool(PaintBtn);
     }
 
     // ---------- stamp + preview ----------
 
-    void SetStamp(int[] stamp, int w, int h)
+    /// <summary>Sets the brush; <paramref name="flips"/> = how each tile is turned (none when left out).</summary>
+    void SetStamp(int[] stamp, int w, int h, byte[]? flips = null)
     {
-        (_stamp, _sw, _sh) = (stamp, w, h);
+        (_stamp, _stampFlips, _sw, _sh) = (stamp, flips ?? new byte[stamp.Length], w, h);
         if (_map.Tileset is not { } ts) { BrushPreview.Source = StampPreview.Source = null; return; }
         int t = ts.TileSize, pw = w * t;
         var px = new uint[pw * h * t];
@@ -229,11 +245,38 @@ public partial class TilemapEditor
             {
                 int idx = stamp[j * w + i];
                 if (idx < 0 || idx >= ts.Count) continue;
-                var tile = ts.Tile(idx);
-                for (int y = 0; y < t; y++) Array.Copy(tile, y * t, px, (j * t + y) * pw + i * t, t);
+                PixelOps.Paste(px, pw, TileFlip.Orient(ts.Tile(idx), t, _stampFlips[j * w + i]), t, t, i * t, j * t);
             }
         BrushPreview.Source = StampPreview.Source = ImageIO.ToBitmap(px, pw, h * t);
     }
+
+    /// <summary>
+    /// Mirrors or rotates the whole brush: the block is rearranged and every tile in it is turned the same way.
+    /// <paramref name="op"/> is TileFlip.H, TileFlip.V or TileFlip.RotateCw.
+    /// </summary>
+    void TurnStamp(int op)
+    {
+        bool rotate = op == TileFlip.RotateCw;
+        int w = rotate ? _sh : _sw, h = rotate ? _sw : _sh;
+        var stamp = new int[w * h];
+        var flips = new byte[w * h];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                // the old cell that lands on (x, y)
+                int from = rotate ? (_sh - 1 - x) * _sw + y
+                    : op == TileFlip.H ? y * _sw + (_sw - 1 - x)
+                    : (_sh - 1 - y) * _sw + x;
+                stamp[y * w + x] = _stamp[from];
+                flips[y * w + x] = (byte)TileFlip.Then(_stampFlips[from], op);
+            }
+        SetStamp(stamp, w, h, flips);
+        if (CurrentTool != FillBtn) SetTool(PaintBtn);
+    }
+
+    void OnFlipBrushH(object sender, RoutedEventArgs e) => TurnStamp(TileFlip.H);
+    void OnFlipBrushV(object sender, RoutedEventArgs e) => TurnStamp(TileFlip.V);
+    void OnRotateBrush(object sender, RoutedEventArgs e) => TurnStamp(TileFlip.RotateCw);
 
     void UpdateStampPreview(int x, int y)
     {
