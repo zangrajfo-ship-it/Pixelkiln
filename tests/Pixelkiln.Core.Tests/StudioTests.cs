@@ -80,6 +80,16 @@ public class PaletteToolTests
         Assert.Equal(5, ramp.Count);
         Assert.Equal(0xFF3060C0u, ramp[2], (a, b) => Math.Abs((int)(a & 0xFF) - (int)(b & 0xFF)) <= 2);
         Assert.True(ColorUtil.ToHsv(ramp[0]).V < ColorUtil.ToHsv(ramp[4]).V);
+
+        // shadows go toward blue (240°), lights toward yellow (60°), never past the target
+        var green = PaletteTools.Ramp(0xFF40C040, 5);                    // hue 120
+        Assert.InRange(ColorUtil.ToHsv(green[0]).H, 138, 150);           // two steps of 12° toward blue
+        Assert.InRange(ColorUtil.ToHsv(green[4]).H, 90, 102);            // two steps toward yellow
+        var red = PaletteTools.Ramp(0xFFC04040, 5);                      // hue 0: the short way to blue is through purple
+        Assert.InRange(ColorUtil.ToHsv(red[0]).H, 330, 342);
+        Assert.InRange(ColorUtil.ToHsv(red[4]).H, 18, 30);
+        var nearYellow = PaletteTools.Ramp(0xFFC0B840, 5);               // hue about 56: lights stop at yellow
+        Assert.InRange(ColorUtil.ToHsv(nearYellow[4]).H, 55, 62);
     }
 }
 

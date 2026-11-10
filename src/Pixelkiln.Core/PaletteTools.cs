@@ -54,8 +54,9 @@ public static class PaletteTools
 
     /// <summary>
     /// Light-to-shadow ramp around a base color, <paramref name="steps"/> colors with the base in the middle.
-    /// Each step away from the base shifts the hue by <paramref name="hueShift"/> degrees, the same way for darker
-    /// and lighter steps: down for greens, cyans and blues (60° to 240°), up for the other hues.
+    /// Each step away from the base shifts the hue by <paramref name="hueShift"/> degrees the short way round the
+    /// colour wheel: darker steps toward blue (240°), lighter ones toward yellow (60°), the usual pixel-art
+    /// shading (cool shadows, warm lights). A step never passes its target hue.
     /// </summary>
     public static List<uint> Ramp(uint baseColor, int steps = 5, double hueShift = 12)
     {
@@ -65,7 +66,8 @@ public static class PaletteTools
         for (int i = 0; i < steps; i++)
         {
             int d = i - mid;   // negative = darker
-            double nh = h - Math.Abs(d) * hueShift * (h > 60 && h < 240 ? 1 : -1);
+            double toTarget = ((d < 0 ? 240 : 60) - h + 540) % 360 - 180;   // signed shortest way to the target hue
+            double nh = h + Math.Sign(toTarget) * Math.Min(Math.Abs(d) * hueShift, Math.Abs(toTarget));
             double nv = Math.Clamp(v + d * 0.15, 0.05, 1);
             double ns = Math.Clamp(s + (d < 0 ? 0.08 : -0.1) * Math.Abs(d), 0, 1);
             ramp.Add(ColorUtil.FromHsv(nh, ns, nv));

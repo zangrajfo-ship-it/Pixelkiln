@@ -18,11 +18,14 @@ sealed class PathIcon : Viewbox
         new PropertyMetadata(null, (d, e) => ((PathIcon)d).Build()));
     public static readonly DependencyProperty FilledProperty = DependencyProperty.Register(nameof(Filled), typeof(bool), typeof(PathIcon),
         new PropertyMetadata(false, (d, e) => ((PathIcon)d).Build()));
+    // a dependency property like the others: XAML sets attributes in order, so a plain property set after Kind was ignored
+    public static readonly DependencyProperty StrokeWidthProperty = DependencyProperty.Register(nameof(StrokeWidth), typeof(double), typeof(PathIcon),
+        new PropertyMetadata(1.7, (d, e) => ((PathIcon)d).Build()));
 
     public string? Kind { get => (string?)GetValue(KindProperty); set => SetValue(KindProperty, value); }
     /// <summary>Filled shapes (play triangle, squares) instead of strokes.</summary>
     public bool Filled { get => (bool)GetValue(FilledProperty); set => SetValue(FilledProperty, value); }
-    public double StrokeWidth { get; set; } = 1.7;
+    public double StrokeWidth { get => (double)GetValue(StrokeWidthProperty); set => SetValue(StrokeWidthProperty, value); }
 
     public PathIcon()
     {
