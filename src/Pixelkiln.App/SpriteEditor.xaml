@@ -76,6 +76,18 @@
                         <TextBlock Text="Left / right click. Alt+click removes." FontSize="11" Foreground="{DynamicResource Text3Brush}" Margin="0,8,0,0" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
+                <!-- the next steps with this sprite: animate it as a character, build maps from it -->
+                <Border DockPanel.Dock="Bottom" Padding="14,10" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0">
+                    <StackPanel>
+                        <TextBlock Text="USE THIS SPRITE" Style="{StaticResource SectionHeader}" Margin="0,0,0,8" />
+                        <UniformGrid Columns="2">
+                            <Button Style="{StaticResource OutlineButton}" Margin="0,0,4,0" Padding="4,0" Content="Make a character" Click="OnMakeCharacter"
+                                    ToolTip="A new character on this sprite, one state for each animation tag" />
+                            <Button Style="{StaticResource OutlineButton}" Margin="4,0,0,0" Padding="4,0" Content="Use as tileset" Click="OnUseAsTileset"
+                                    ToolTip="The Tilemap tab uses this sprite as its tiles and follows your changes when you save" />
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
                 <Border Padding="14">
                     <DockPanel>
                         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">

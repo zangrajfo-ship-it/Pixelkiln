@@ -116,6 +116,13 @@
                             <CheckBox x:Name="OneWayToggle" Content="One-way platform" Margin="0,0,0,8" Click="OnOneWayToggle"
                                       ToolTip="Gives the selected tiles a thin top you can jump through from below" />
                             <TextBlock Text="Other boxes: Tileset › Custom collision box." FontSize="11" Foreground="{DynamicResource Text3Brush}" TextWrapping="Wrap" />
+                            <Button Style="{StaticResource OutlineButton}" HorizontalAlignment="Left" Margin="0,12,0,0" Click="OnEditTile" AutomationProperties.Name="Edit tile in Sprite"
+                                    ToolTip="Opens the tileset's sprite in the Sprite tab with this tile selected; the map follows when you save it">
+                                <StackPanel Orientation="Horizontal">
+                                    <local:PathIcon Kind="pencil" Width="15" Height="15" Margin="0,0,6,0" />
+                                    <TextBlock Text="Edit tile in Sprite" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </Border>
 

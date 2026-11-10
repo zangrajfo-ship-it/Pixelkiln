@@ -534,10 +534,33 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
 
     const string Filter = "Pixelkiln character (*.pxchar)|*.pxchar";
 
-    void OnNew(object? sender, RoutedEventArgs? e)
+    void OnNew(object? sender, RoutedEventArgs? e) => NewCharacterFile();
+
+    /// <summary>A blank character (the start screen's "New character"); asks about unsaved work first.</summary>
+    public void NewCharacterFile()
     {
         if (!ConfirmDiscard()) return;
         LoadCharacter(NewCharacter(), null);
+    }
+
+    /// <summary>A new unsaved character on a sprite of the open project (the Sprite tab's "Make a character").</summary>
+    public void NewFromSprite(Guid spriteAssetId)
+    {
+        if (!ConfirmDiscard()) return;
+        if (App.Project?.Resolve(spriteAssetId) is not string path) { Ui.Error(new InvalidOperationException("The sprite is not in the open project.")); return; }
+        try
+        {
+            LoadCharacter(Character.ForSprite(ProjectFile.Load(path), spriteAssetId), null);
+            _dirty = true;
+            UpdateTitle();
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException) { Ui.Error(ex); }
+    }
+
+    /// <summary>A file was saved in another tab: if it is this character's sprite, show the new version.</summary>
+    public void OnAssetSaved(string path)
+    {
+        if (string.Equals(_spritePath, path, StringComparison.OrdinalIgnoreCase)) RefreshAll();
     }
 
     static Character NewCharacter()
@@ -569,6 +592,7 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
             Character.Save(_char, path);
             (_path, _dirty) = (path, false);
             UpdateTitle();
+            ProjectCommands.OfferProjectFor(Window.GetWindow(this), path);
             App.AddRecent(path);
             return true;
         }

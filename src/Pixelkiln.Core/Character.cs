@@ -81,6 +81,17 @@ public sealed class Character
         return added;
     }
 
+    /// <summary>
+    /// A new character on a sprite: one state per tag of the sprite (idle and walk when it has none),
+    /// the origin at the feet (bottom centre).
+    /// </summary>
+    public static Character ForSprite(Sprite sprite, Guid spriteAssetId)
+    {
+        var c = new Character { SpriteAssetId = spriteAssetId, OriginX = sprite.Width / 2, OriginY = sprite.Height };
+        foreach (var name in sprite.Tags.Count > 0 ? sprite.Tags.Select(t => t.Name) : StandardStates.Take(2)) c.Animations.TryAdd(name, name);
+        return c;
+    }
+
     public Character Clone()
     {
         var c = (Character)MemberwiseClone();

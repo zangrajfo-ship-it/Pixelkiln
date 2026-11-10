@@ -14,7 +14,7 @@
         <!-- a row in the "more ways to start" list -->
         <Style x:Key="Act" TargetType="Button">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
-            <Setter Property="Height" Value="40" />
+            <Setter Property="Height" Value="34" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -122,15 +122,17 @@
                         </StackPanel>
                     </Button>
 
-                    <Rectangle Height="1" Fill="{DynamicResource LineBrush}" Margin="0,28,0,16" />
+                    <Rectangle Height="1" Fill="{DynamicResource LineBrush}" Margin="0,20,0,10" />
                     <StackPanel Margin="-14,0" AutomationProperties.Name="More ways to start">
+                        <Button Style="{StaticResource Act}" Click="OnNewTilemap" AutomationProperties.Name="New tilemap"><TextBlock Text="New tilemap…" /></Button>
+                        <Button Style="{StaticResource Act}" Click="OnNewCharacter" AutomationProperties.Name="New character"><TextBlock Text="New character" /></Button>
                         <Button Style="{StaticResource Act}" Click="OnOpenFile">
                             <DockPanel><TextBlock DockPanel.Dock="Right" Text="Ctrl+O" FontFamily="{DynamicResource MonoFont}" FontSize="11" Foreground="{DynamicResource Text3Brush}" VerticalAlignment="Center" /><TextBlock Text="Open file…" /></DockPanel>
                         </Button>
                         <Button Style="{StaticResource Act}" Click="OnOpenProject"><TextBlock Text="Open project…" /></Button>
                         <Button Style="{StaticResource Act}" Click="OnNewProject"><TextBlock Text="New project…" /></Button>
                         <Button Style="{StaticResource Act}" Click="OnSample"><TextBlock Text="Open the sample game" /></Button>
-                        <Button Style="{StaticResource Act}" Click="OnLearn">
+                        <Button Style="{StaticResource Act}" Click="OnLearn" AutomationProperties.Name="Getting started">
                             <TextBlock Text="Getting started" />
                         </Button>
                     </StackPanel>

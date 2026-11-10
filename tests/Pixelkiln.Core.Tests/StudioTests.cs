@@ -22,6 +22,24 @@ public class CharacterTests
     }
 
     [Fact]
+    public void A_character_made_from_a_sprite_gets_its_tags_as_states()
+    {
+        var id = Guid.NewGuid();
+        var s = new Sprite(16, 24);
+        for (int i = 1; i < 4; i++) s.AddFrame(i);
+        s.Tags.Add(new FrameTag { Name = "idle", From = 0, To = 1 });
+        s.Tags.Add(new FrameTag { Name = "hop", From = 2, To = 3 });
+        var c = Character.ForSprite(s, id);
+        Assert.Equal(id, c.SpriteAssetId);
+        Assert.Equal(new Dictionary<string, string> { ["idle"] = "idle", ["hop"] = "hop" }, c.Animations);
+        Assert.Equal((2, 3), c.FramesOf("hop", s));
+        Assert.Equal((8, 24), (c.OriginX, c.OriginY));              // the feet: bottom centre
+
+        // a sprite without tags: the two states a new character always starts with
+        Assert.Equal(["idle", "walk"], Character.ForSprite(new Sprite(8, 8), id).Animations.Keys);
+    }
+
+    [Fact]
     public void Boxes_by_state_and_frame_and_round_trip()
     {
         var c = new Character { Kind = CharacterKind.Enemy, SpriteAssetId = Guid.NewGuid(), OriginX = 4, OriginY = 15, Facing = Facing.Left };

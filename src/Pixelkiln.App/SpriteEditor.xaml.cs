@@ -631,14 +631,38 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         try
         {
             ProjectFile.Save(_sprite, path);
+            ProjectCommands.OfferProjectFor(Window.GetWindow(this), path);
             App.AddRecent(path);
             _path = path;
             _aids.Rebind(path);
             _dirty = false;
             UpdateTitle();
+            App.NotifyAssetSaved(path);   // a map using it as tileset or a character on it reloads
             return true;
         }
         catch (Exception ex) { Ui.Error(ex); return false; }
+    }
+
+    /// <summary>
+    /// The sprite's file for another tab to link to: saves first when the sprite is new or has changes
+    /// (asking for a name if needed). Null when the user cancels.
+    /// </summary>
+    public string? SavedPath() => (_path is not null && !_dirty) || Save(_path) ? _path : null;
+
+    /// <summary>Set by MainWindow: the next steps with a saved sprite file.</summary>
+    public Action<string>? MakeCharacter { get; set; }
+    public Action<string>? UseAsTileset { get; set; }
+
+    void OnMakeCharacter(object sender, RoutedEventArgs e) { if (SavedPath() is string path) MakeCharacter?.Invoke(path); }
+    void OnUseAsTileset(object sender, RoutedEventArgs e) { if (SavedPath() is string path) UseAsTileset?.Invoke(path); }
+
+    /// <summary>Selects a rectangle of the canvas with the marquee tool (used to show one tile of a tileset).</summary>
+    public void SelectArea(int x, int y, int w, int h)
+    {
+        CommitFloat();
+        (_sel, _selMask) = (ClipToCanvas(new Int32Rect(x, y, w, h)), null);
+        SetTool(Tool.Select);
+        UpdateOverlay();
     }
 
     void OnExportPng(object sender, RoutedEventArgs e)

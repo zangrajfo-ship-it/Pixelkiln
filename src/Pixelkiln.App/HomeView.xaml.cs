@@ -17,7 +17,7 @@ public partial class HomeView : UserControl
 
     public Action<int, int>? CreateSprite;
     public Action<string>? OpenFile;
-    public Action? OpenFileDialog, OpenProject, NewProject, OpenSample, Learn, Closed;
+    public Action? OpenFileDialog, OpenProject, NewProject, OpenSample, Learn, NewTilemap, NewCharacter, Closed;
 
     bool _syncing;
 
@@ -104,6 +104,8 @@ public partial class HomeView : UserControl
     void OnOpenFile(object sender, RoutedEventArgs e) => Run(OpenFileDialog);
     void OnOpenProject(object sender, RoutedEventArgs e) => Run(OpenProject);
     void OnNewProject(object sender, RoutedEventArgs e) => Run(NewProject);
+    void OnNewTilemap(object sender, RoutedEventArgs e) => Run(NewTilemap);
+    void OnNewCharacter(object sender, RoutedEventArgs e) => Run(NewCharacter);
     void OnSample(object sender, RoutedEventArgs e) => Run(OpenSample);
     void OnLearn(object sender, RoutedEventArgs e) => Run(Learn);
     void OnClose(object sender, RoutedEventArgs e) => Hide();

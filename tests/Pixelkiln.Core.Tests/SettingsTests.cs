@@ -53,4 +53,19 @@ public class SettingsTests() : TempDirTest("settings")
         Assert.Equal([new WorkspaceProfile("Mine", "Sprite", "Pixel", true, "Pencil")], t.Workspaces);
         Assert.Equal(["A", "B"], t.RecentCommands);
     }
+
+    [Fact]
+    public void Declined_project_folders_and_the_asset_browser_choice_are_remembered()
+    {
+        var s = new Settings { ShowAssets = false };
+        s.DeclineProject(@"C:\art");
+        s.DeclineProject(@"c:\ART");                       // same folder, other case: one entry
+        for (int i = 0; i < 60; i++) s.DeclineProject($@"C:\f{i}");
+        var t = Settings.Deserialize(s.Serialize());
+        Assert.False(t.ShowAssets);
+        Assert.True(t.DeclinedProject(@"C:\F59"));
+        Assert.False(t.DeclinedProject(@"C:\art"));        // the oldest ones fall off the capped list
+        Assert.Equal(50, t.NoProjectFolders.Count);
+        Assert.True(Settings.Deserialize("{}").ShowAssets);   // older settings files: shown
+    }
 }

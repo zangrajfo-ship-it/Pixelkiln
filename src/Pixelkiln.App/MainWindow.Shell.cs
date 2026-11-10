@@ -34,7 +34,45 @@ public partial class MainWindow
         Home.NewProject = () => ProjectCommands.New(this);
         Home.OpenSample = () => OpenSampleAsset(SampleStart);
         Home.Learn = () => GettingStarted.Show(this, OpenSampleAsset);
+        Home.NewTilemap = () => { Reveal(MapEd); MapEd.NewMap(); };
+        Home.NewCharacter = () => { Reveal(CharEd); CharEd.NewCharacterFile(); };
         Home.Closed = () => (Current as UIElement)?.Focus();
+        LinkTabs();
+    }
+
+    /// <summary>
+    /// The path from one tab to the next: a sprite becomes a character or a tileset, a tile opens in the Sprite tab,
+    /// and saving a sprite refreshes the map and the character that use it.
+    /// </summary>
+    void LinkTabs()
+    {
+        SpriteEd.MakeCharacter = MakeCharacterFrom;
+        SpriteEd.UseAsTileset = path => { Reveal(MapEd); MapEd.UseTileset(path); };
+        MapEd.SpriteFile = () => SpriteEd.CurrentPath is null ? null : SpriteEd.SavedPath();
+        MapEd.EditTileInSprite = (path, tile) =>
+        {
+            Reveal(SpriteEd);
+            if (!SpriteShows(path)) SpriteEd.OpenPath(path);
+            if (SpriteShows(path)) SpriteEd.SelectArea(tile.X, tile.Y, tile.Width, tile.Height);
+        };
+        App.AssetSaved += path => { MapEd.OnAssetSaved(path); CharEd.OnAssetSaved(path); };
+    }
+
+    /// <summary>A character links to its sprite through the project, so the sprite's folder becomes one if it is not yet.</summary>
+    void MakeCharacterFrom(string spritePath)
+    {
+        ProjectCommands.OfferProjectFor(this, spritePath, evenIfDeclined: true);
+        if (App.Project is not { } p) return;   // the user said no: nothing to link through
+        try
+        {
+            var asset = p.FindByPath(spritePath) ?? p.Add(spritePath);
+            Reveal(CharEd);
+            CharEd.NewFromSprite(asset.Id);
+        }
+        catch (InvalidOperationException)
+        {
+            Ui.Error(new InvalidOperationException($"“{Path.GetFileName(spritePath)}” is outside the open project “{p.Name}”. Save the sprite in the project folder first."));
+        }
     }
 
     void ShowHome()
@@ -50,13 +88,8 @@ public partial class MainWindow
         string ext = Path.GetExtension(path).ToLowerInvariant();
         if (Editors.FirstOrDefault(ed => ed.FileExtensions.Contains(ext) && IsShown(ed)) is not { } editor) return false;
         // linked sprites and tilesets resolve through the project
-        if (App.Project is not { } open || !path.StartsWith(open.Root, StringComparison.OrdinalIgnoreCase))
-            try
-            {
-                for (var dir = new DirectoryInfo(Path.GetDirectoryName(Path.GetFullPath(path))!); dir is not null; dir = dir.Parent)
-                    if (dir.GetFiles("*" + Project.Extension).FirstOrDefault() is { } proj) { ProjectCommands.OpenPath(proj.FullName); break; }
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }   // a folder we may not list: open the file alone
+        if ((App.Project is not { } open || !path.StartsWith(open.Root, StringComparison.OrdinalIgnoreCase)) && ProjectCommands.FindProjectAbove(path) is { } project)
+            ProjectCommands.OpenPath(project);
         Reveal(editor);
         editor.OpenPath(path);
         return true;
@@ -122,7 +155,29 @@ public partial class MainWindow
     void OnRedo(object sender, RoutedEventArgs e) => InvokeMenu("_Redo");
     void OnLogo(object sender, RoutedEventArgs e) => ShowHome();
 
-    void OnExport(object sender, RoutedEventArgs e) => ShowExport();
+    /// <summary>The top-bar button: the project's export window, or without a project the current file's own exports.</summary>
+    void OnExport(object sender, RoutedEventArgs e)
+    {
+        if (App.Project is not null) { ShowExport(); return; }
+        var exports = Current?.Menus.FirstOrDefault()?.Items.OfType<MenuItem>()
+            .Where(m => m.Header is string h && h.Replace("_", "").StartsWith("Export", StringComparison.Ordinal)).ToList() ?? [];
+        if (exports.Count == 0) { ShowExport(); return; }
+        var menu = new ContextMenu { PlacementTarget = (UIElement)sender, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+        foreach (var item in exports)
+            menu.Items.Add(Ui.Item((string)item.Header, null, () => item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent))));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(new MenuItem { Header = "A project exports everything at once (Project menu)", IsEnabled = false });
+        menu.IsOpen = true;
+    }
+
+    void OnAssetsToggle(object sender, RoutedEventArgs e) => ToggleAssets(AssetsToggle.IsChecked == true);
+
+    /// <summary>The user's own choice: shown or hidden, remembered for projects.</summary>
+    void ToggleAssets(bool show)
+    {
+        SetAssetsVisible(show);
+        if (App.Project is not null) App.RememberAssetsShown(show);
+    }
 
     void ShowExport()
     {

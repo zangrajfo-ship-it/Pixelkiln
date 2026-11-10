@@ -46,6 +46,11 @@
                     </StackPanel>
                 </Border>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ToggleButton x:Name="AssetsToggle" Style="{StaticResource IconToggle}" Width="36" Height="36" ToolTip="Asset browser  Ctrl+Shift+B"
+                                  AutomationProperties.Name="Asset browser" Click="OnAssetsToggle">
+                        <local:PathIcon Kind="folder" Width="18" Height="18" StrokeWidth="1.8" />
+                    </ToggleButton>
+                    <Rectangle Style="{StaticResource Divider}" Margin="4,0" />
                     <Button Style="{StaticResource IconButton}" Width="36" Height="36" ToolTip="Undo  Ctrl+Z" AutomationProperties.Name="Undo" Click="OnUndo">
                         <local:PathIcon Kind="undo" Width="18" Height="18" StrokeWidth="1.8" />
                     </Button>

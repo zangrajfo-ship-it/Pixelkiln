@@ -48,6 +48,39 @@ static class ProjectCommands
 
     public static void Close() => App.SetProject(null);
 
+    /// <summary>The project file in the file's folder or the nearest folder above it, or null.</summary>
+    public static string? FindProjectAbove(string filePath)
+    {
+        try
+        {
+            for (var dir = new DirectoryInfo(Path.GetDirectoryName(Path.GetFullPath(filePath))!); dir is not null; dir = dir.Parent)
+                if (dir.GetFiles("*" + Project.Extension).FirstOrDefault() is { } proj) return proj.FullName;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }   // a folder we may not list
+        return null;
+    }
+
+    /// <summary>
+    /// After a file was saved while no project is open: opens the project the file already belongs to, or asks once
+    /// per folder whether the folder should become one. Characters and maps link to sprites through the project.
+    /// </summary>
+    public static void OfferProjectFor(Window? owner, string savedPath, bool evenIfDeclined = false)
+    {
+        if (App.Project is not null) return;
+        if (FindProjectAbove(savedPath) is { } existing) { OpenPath(existing); return; }
+        string folder = Path.GetDirectoryName(Path.GetFullPath(savedPath))!;
+        if (!evenIfDeclined && App.Settings.DeclinedProject(folder)) return;
+        string name = Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar));
+        if (name.Length == 0) return;   // a drive root is not a project folder
+        string question = $"Make “{name}” a project?\n\nCharacters and maps can then link to your sprites, and the files in this folder appear in the asset browser. " +
+                          $"It adds one small file, {name}{Project.Extension}; your files are not changed.";
+        var answer = owner is null ? MessageBox.Show(question, "Pixelkiln", MessageBoxButton.YesNo, MessageBoxImage.Question)
+            : MessageBox.Show(owner, question, "Pixelkiln", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes) { App.DeclineProject(folder); return; }
+        try { Opened(Project.CreateFromFolder(folder, name)); }
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException) { Ui.Error(ex); }
+    }
+
     /// <summary>Default home of the sample game (Documents\Pixelkiln samples\Sample game).</summary>
     public static string SampleFolder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Pixelkiln samples", SampleProject.Name);
 

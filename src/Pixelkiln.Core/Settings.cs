@@ -38,6 +38,22 @@ public sealed class Settings
     public List<WorkspaceProfile> Workspaces { get; set; } = [];
     /// <summary>Project reopened at start-up (null = none).</summary>
     public string? LastProject { get; set; }
+    /// <summary>Asset browser shown while a project is open (without a project it is hidden).</summary>
+    public bool ShowAssets { get; set; } = true;
+    /// <summary>Folders where the user answered "no" to "make this folder a project?", so the question is asked once.</summary>
+    public List<string> NoProjectFolders { get; set; } = [];
+
+    /// <summary>Remembers that the folder should not become a project (most recent first, capped).</summary>
+    public void DeclineProject(string folder)
+    {
+        NoProjectFolders.RemoveAll(f => string.Equals(f, folder, StringComparison.OrdinalIgnoreCase));
+        NoProjectFolders.Insert(0, folder);
+        if (NoProjectFolders.Count > MaxDeclined) NoProjectFolders.RemoveRange(MaxDeclined, NoProjectFolders.Count - MaxDeclined);
+    }
+
+    public bool DeclinedProject(string folder) => NoProjectFolders.Contains(folder, StringComparer.OrdinalIgnoreCase);
+
+    const int MaxDeclined = 50;
 
     /// <summary>%AppData%\Pixelkiln, or PIXELKILN_HOME when set (tests and portable use keep real settings untouched).</summary>
     public static string Folder => Environment.GetEnvironmentVariable("PIXELKILN_HOME") is { Length: > 0 } home
@@ -79,6 +95,8 @@ public sealed class Settings
         UndoLimit = Math.Clamp(UndoLimit, 10, 1000),
         AutosaveMinutes = Math.Clamp(AutosaveMinutes, 0, 60),
         LastProject = LastProject,
+        ShowAssets = ShowAssets,
+        NoProjectFolders = [.. (NoProjectFolders ?? []).Where(f => !string.IsNullOrWhiteSpace(f)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxDeclined)],
         RecentFiles = [.. (RecentFiles ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.OrdinalIgnoreCase).Take(MaxRecent)],
         RecentCommands = [.. (RecentCommands ?? []).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().Take(MaxRecent)],
         Workspaces = [.. (Workspaces ?? []).Where(w => !string.IsNullOrWhiteSpace(w.Name) && !string.IsNullOrWhiteSpace(w.Tab)).GroupBy(w => w.Name).Select(g => g.Last()).Take(20)],

@@ -95,6 +95,25 @@ public partial class App : Application
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }   // history is a safety net; never block saving
     }
 
+    /// <summary>Raised after an editor saved a file, so editors that use it (a map's tileset, a character's sprite) reload it.</summary>
+    public static event Action<string>? AssetSaved;
+    public static void NotifyAssetSaved(string path) => AssetSaved?.Invoke(path);
+
+    /// <summary>Remembers that a folder should not become a project (the question is asked once per folder).</summary>
+    public static void DeclineProject(string folder)
+    {
+        Settings.DeclineProject(folder);
+        SaveSettings();
+    }
+
+    /// <summary>Remembers whether the asset browser is shown while a project is open.</summary>
+    public static void RememberAssetsShown(bool shown)
+    {
+        if (Settings.ShowAssets == shown) return;
+        Settings.ShowAssets = shown;
+        SaveSettings();
+    }
+
     /// <summary>Raised after a version was restored, so an editor showing that file can reload it.</summary>
     public static event Action<string>? AssetRestored;
     public static void NotifyAssetRestored(string path) => AssetRestored?.Invoke(path);

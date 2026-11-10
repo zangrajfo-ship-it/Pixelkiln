@@ -87,7 +87,8 @@ public partial class MainWindow : Window
         _autosave.Tick += (_, _) => Autosave();
         Assets.OpenRequested += OpenAsset;
         Assets.FileMoved += (from, to) => { foreach (var ed in Editors) ed.OnFileMoved(from, to); };
-        App.ProjectChanged += BuildMenu;   // Close project / Check project enable with a project
+        App.ProjectChanged += OnProjectChanged;
+        SetAssetsVisible(false);   // no project yet
         App.AssetRestored += ReloadRestored;
         App.SettingsChanged += ApplySettings;
         ApplySettings();
@@ -158,7 +159,7 @@ public partial class MainWindow : Window
             recent.Items.Add(Ui.Item(Path.GetFileNameWithoutExtension(f).Replace("_", "__"), null, () => ProjectCommands.OpenPath(f)));
         if (recent.Items.Count == 0) recent.Items.Add(new MenuItem { Header = "(none)", IsEnabled = false });
         var browser = new MenuItem { Header = "Show _asset browser", InputGestureText = "Ctrl+Shift+B", IsCheckable = true, IsChecked = AssetsVisible };
-        browser.Click += (_, _) => SetAssetsVisible(browser.IsChecked);
+        browser.Click += (_, _) => ToggleAssets(browser.IsChecked);
         return Ui.Menu("_Project",
             Ui.Item("_New project…", null, () => ProjectCommands.New(this)),
             Ui.Item("_Open project…", null, () => ProjectCommands.Open(this)),
@@ -191,7 +192,16 @@ public partial class MainWindow : Window
     {
         AssetsColumn.Width = new GridLength(show ? 270 : 0);
         AssetsSplitter.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        AssetsToggle.IsChecked = show;
         BuildMenu();
+    }
+
+    /// <summary>The asset browser belongs to a project: it shows with one (unless the user hid it) and hides without.</summary>
+    void OnProjectChanged()
+    {
+        bool show = App.Project is not null && App.Settings.ShowAssets;
+        if (show != AssetsVisible) SetAssetsVisible(show);
+        else BuildMenu();   // Close project / Check project enable with a project
     }
 
     /// <summary>A project or folder given on the command line wins; otherwise the last project reopens.</summary>
@@ -375,7 +385,7 @@ public partial class MainWindow : Window
         if (!(e.OriginalSource is TextBoxBase) && HandleStyleKeys(e)) return;
         bool shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         if (e.Key == Key.P && ctrl && shift) { ShowCommandPalette(); e.Handled = true; return; }
-        if (e.Key == Key.B && ctrl && shift) { SetAssetsVisible(!AssetsVisible); e.Handled = true; return; }
+        if (e.Key == Key.B && ctrl && shift) { ToggleAssets(!AssetsVisible); e.Handled = true; return; }
         // if (e.Key == Key.D && ctrl && shift) { ShowDevicePreview(); e.Handled = true; return; }   // simplified app
         if (e.Key == Key.H && ctrl && !shift && App.Project is not null) { Assets.ShowHistory(); e.Handled = true; return; }
         if (e.Key == Key.T && ctrl && !shift && App.Project is not null) { ShowTemplateStudio(); e.Handled = true; return; }

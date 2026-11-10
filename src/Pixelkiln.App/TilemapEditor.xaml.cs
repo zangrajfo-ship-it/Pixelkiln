@@ -21,6 +21,10 @@ public partial class TilemapEditor : UserControl
 
     /// <summary>Set by MainWindow: the Sprite tab's current image.</summary>
     public Func<(uint[] Pixels, int Width, int Height)>? SpriteImage { get; set; }
+    /// <summary>Set by MainWindow: the Sprite tab's file when it has one (saved first if it has changes), else null.</summary>
+    public Func<string?>? SpriteFile { get; set; }
+    /// <summary>Set by MainWindow: shows a sprite file in the Sprite tab with this pixel rectangle selected.</summary>
+    public Action<string, Int32Rect>? EditTileInSprite { get; set; }
 
     public TilemapEditor()
     {
@@ -149,9 +153,72 @@ public partial class TilemapEditor : UserControl
 
     void OnTilesetFromSprite(object sender, RoutedEventArgs e)
     {
+        // a saved sprite is linked by its file, so later changes to it reach the map; an unsaved one is copied in
+        if (SpriteFile?.Invoke() is string file) { UseTileset(file); return; }
         if (SpriteImage is null) return;
         try { var (px, w, h) = SpriteImage(); SetTileset(px, w, h, null); }
         catch (Exception ex) { Ui.Error(ex); }
+    }
+
+    /// <summary>Uses a picture or sprite file as the tileset and remembers where it came from (the Sprite tab's "Use as tileset").</summary>
+    public void UseTileset(string file)
+    {
+        try { var (px, w, h) = AssetLoader.LoadImage(file); SetTileset(px, w, h, file); }
+        catch (Exception ex) { Ui.Error(ex); }
+    }
+
+    /// <summary>The file the tileset comes from: its project asset, else the file it was loaded from; null when it only lives in the map.</summary>
+    string? TilesetFile => (_map.TilesetAssetId is Guid id ? App.Project?.Resolve(id) : null) ?? _map.TilesetSource;
+
+    /// <summary>A file was saved in another tab: if it is this map's tileset, show the new tiles.</summary>
+    public void OnAssetSaved(string path)
+    {
+        if (!string.Equals(TilesetFile, path, StringComparison.OrdinalIgnoreCase)) return;
+        try
+        {
+            var (px, w, h) = AssetLoader.LoadImage(path);
+            if (w < _map.TileSize || h < _map.TileSize) return;   // keep the old tiles rather than break the map
+            _map.Tileset = new Tileset(px, w, h, _map.TileSize);
+            // a project map reads its tileset again when it opens; a loose map only has its own copy, so it needs saving
+            if (_map.TilesetAssetId is null) { _dirty = true; UpdateTitle(); }
+            RefreshTileset();
+            Render();
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException) { Status.Text = $"The tileset could not be read again: {ex.Message}"; }
+    }
+
+    /// <summary>
+    /// Opens the tileset's sprite in the Sprite tab with the selected tile marked. A tileset that only lives in the
+    /// map (or is a plain picture) is saved as a sprite first, so the map can follow the edits.
+    /// </summary>
+    void OnEditTile(object sender, RoutedEventArgs e)
+    {
+        if (_map.Tileset is not { } ts) { Ui.Error(new InvalidOperationException("Load a tileset first.")); return; }
+        string? file = TilesetFile;
+        if (file is null || !file.EndsWith(".pxf", StringComparison.OrdinalIgnoreCase) || !File.Exists(file))
+        {
+            if (MessageBox.Show(Window.GetWindow(this), "To edit its tiles, the tileset is saved as a sprite file that this map then uses. Save it now?",
+                    "Edit tile", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+            var dlg = new SaveFileDialog
+            {
+                Filter = "Pixelkiln sprite (*.pxf)|*.pxf", FileName = (file is null ? BaseName + "-tiles" : System.IO.Path.GetFileNameWithoutExtension(file)) + ".pxf",
+                InitialDirectory = App.Project?.Root ?? System.IO.Path.GetDirectoryName(_path) ?? "",
+            };
+            if (dlg.ShowDialog() != true) return;
+            try
+            {
+                var sprite = new Sprite(ts.Width, ts.Height);
+                ts.Pixels.CopyTo(sprite.Cel(0, 0), 0);
+                ProjectFile.Save(sprite, dlg.FileName);
+                ProjectCommands.OfferProjectFor(Window.GetWindow(this), dlg.FileName);
+                App.AddRecent(dlg.FileName);
+                SetTileset(ts.Pixels, ts.Width, ts.Height, dlg.FileName);
+                file = dlg.FileName;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { Ui.Error(ex); return; }
+        }
+        int size = ts.TileSize;
+        EditTileInSprite?.Invoke(file, new Int32Rect(_tsSel.X * size, _tsSel.Y * size, _tsSel.Width * size, _tsSel.Height * size));
     }
 
     void OnReloadTileset(object sender, RoutedEventArgs e)
@@ -245,17 +312,22 @@ public partial class TilemapEditor : UserControl
     const string MapFilter = "Pixelkiln map (*.pxm)|*.pxm";
     string BaseName => System.IO.Path.GetFileNameWithoutExtension(_path) ?? "map";
 
-    void OnNew(object? sender, RoutedEventArgs? e)
+    void OnNew(object? sender, RoutedEventArgs? e) => NewMap();
+
+    /// <summary>Asks for the size and makes an empty map (File › New map and the start screen); the tileset is kept.</summary>
+    public void NewMap()
     {
         if (!ConfirmDiscard()) return;
-        if (Ui.Ask(this, "New map", "Size in tiles and tile size (W x H, tile px):", $"{_map.Width}x{_map.Height}, {_map.TileSize}") is not string text) return;
+        if (Ui.AskFields(this, "New map",
+                ("_Width in tiles", _map.Width.ToString(), null),
+                ("_Height in tiles", _map.Height.ToString(), null),
+                ("_Tile size in pixels", _map.TileSize.ToString(), null)) is not { } f) return;
         try
         {
-            var n = text.Split(['x', 'X', '×', ',', ' '], StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToArray();
-            if (n.Length != 3) throw new FormatException("Enter e.g. 20x15, 16");
+            int[] n = [.. f.Select(int.Parse)];
             var m = new Tilemap(n[0], n[1], n[2]);
             if (_map.Tileset is { } ts && n[2] <= Math.Min(ts.Width, ts.Height))   // keep the tileset, re-sliced
-                (m.Tileset, m.TilesetSource) = (ts with { TileSize = n[2] }, _map.TilesetSource);
+                (m.Tileset, m.TilesetSource, m.TilesetAssetId) = (ts with { TileSize = n[2] }, _map.TilesetSource, _map.TilesetAssetId);
             LoadMap(m, null);
         }
         catch (Exception ex) when (ex is FormatException or OverflowException or ArgumentOutOfRangeException) { Ui.Error(ex); }
@@ -314,6 +386,10 @@ public partial class TilemapEditor : UserControl
         }
         try
         {
+            // first the project (it may be made now), so a tileset file inside it is saved as a link, not only a copy
+            ProjectCommands.OfferProjectFor(Window.GetWindow(this), path);
+            if (_map.TilesetAssetId is null && _map.TilesetSource is string source && App.Project?.FindByPath(source) is { } asset)
+                _map.TilesetAssetId = asset.Id;
             Tilemap.Save(_map, path);
             App.AddRecent(path);
             (_path, _dirty) = (path, false);
