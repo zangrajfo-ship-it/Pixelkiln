@@ -12,7 +12,7 @@ namespace Pixelkiln.App;
 /// <summary>
 /// Scene › Logic: a node graph (.pxlogic). Add nodes from the palette, drag them by the title, drag from an output port
 /// onto another node to link, click a link and press Del to remove it. Problems are listed below the graph; the game
-/// preview runs the graph of the scene that uses it (spec: .ai/context/logic.md).
+/// preview runs the graph of the scene that uses it (spec: docs/logic.md).
 /// </summary>
 sealed class LogicEditor : UserControl, IEditor
 {

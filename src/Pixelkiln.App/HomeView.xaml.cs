@@ -7,7 +7,7 @@ using Pixelkiln.Core;
 namespace Pixelkiln.App;
 
 /// <summary>
-/// Start screen (.ai/context/design.md, Home): a new sprite from a size preset on the left, recent files as
+/// Start screen (docs/design.md, Home): a new sprite from a size preset on the left, recent files as
 /// cards on the right. It only collects the choice; MainWindow does the work through the actions below.
 /// </summary>
 public partial class HomeView : UserControl

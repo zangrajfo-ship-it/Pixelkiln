@@ -32,7 +32,7 @@ public sealed class LogicNode
 /// <summary>Flow from a node's port (out, true, false) to another node.</summary>
 public sealed record LogicLink(string From, string Port, string To);
 
-/// <summary>Visual game logic (.pxlogic): event, condition and action nodes joined by flow links. Semantics: .ai/context/logic.md.</summary>
+/// <summary>Visual game logic (.pxlogic): event, condition and action nodes joined by flow links. Semantics: docs/logic.md.</summary>
 public sealed class LogicGraph
 {
     public const int Version = 1;
@@ -162,7 +162,7 @@ public sealed record PlayClipEffect(string Object, Guid Library, string Clip) : 
 public sealed record LoadSceneEffect(Guid Scene) : LogicEffect;
 
 /// <summary>
-/// Deterministic interpreter for a logic graph (spec: .ai/context/logic.md). Call <see cref="Step"/> once per frame with
+/// Deterministic interpreter for a logic graph (spec: docs/logic.md). Call <see cref="Step"/> once per frame with
 /// the time since the scene started; read <see cref="Effects"/> after each step.
 /// </summary>
 public sealed class LogicRuntime

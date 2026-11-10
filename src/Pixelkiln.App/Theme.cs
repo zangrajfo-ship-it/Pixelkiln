@@ -7,7 +7,7 @@ namespace Pixelkiln.App;
 
 /// <summary>
 /// Colours and fonts. Every theme publishes the design tokens (Bg0Brush … DangerBrush, UiFont, MonoFont) that the
-/// editors use; "Modern" (.ai/context/design.md) is Fluent dark with every Fluent colour mapped onto those tokens,
+/// editors use; "Modern" (docs/design.md) is Fluent dark with every Fluent colour mapped onto those tokens,
 /// Inter as the UI font and JetBrains Mono for numbers.
 /// </summary>
 static class Theme

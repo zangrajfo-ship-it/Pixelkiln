@@ -41,7 +41,7 @@
             </ControlTemplate.Triggers>
         </ControlTemplate>
 
-        <!-- ===== redesign building blocks (.ai/context/design.md) ===== -->
+        <!-- ===== redesign building blocks (docs/design.md) ===== -->
 
         <!-- icon button: transparent, text-2; hover lifts it; keyboard focus shows the accent ring -->
         <Style x:Key="IconButton" TargetType="ButtonBase">

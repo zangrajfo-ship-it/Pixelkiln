@@ -5,7 +5,7 @@ using static Pixelkiln.Core.GodotExport;
 namespace Pixelkiln.Core;
 
 /// <summary>
-/// GDScript from a logic graph (spec: .ai/context/logic.md): one function per node, Timer nodes for timers, the areas'
+/// GDScript from a logic graph (spec: docs/logic.md): one function per node, Timer nodes for timers, the areas'
 /// body_entered signal, a distance check for touches. The script is for the game; Pixelkiln never runs it.
 /// </summary>
 public static class LogicExport

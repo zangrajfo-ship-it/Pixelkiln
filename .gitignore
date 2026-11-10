@@ -481,3 +481,8 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 .claude/
+
+# local working notes (not published)
+CLAUDE.md
+AGENT.md
+.ai/

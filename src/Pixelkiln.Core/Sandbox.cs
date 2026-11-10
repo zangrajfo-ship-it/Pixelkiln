@@ -310,7 +310,7 @@ public sealed class Sandbox
         return o;
     }
 
-    /// <summary>One logic step, then its effects on the copy of the scene (spec: .ai/context/logic.md).</summary>
+    /// <summary>One logic step, then its effects on the copy of the scene (spec: docs/logic.md).</summary>
     void RunLogic(List<string> touched)
     {
         SoundsToPlay.Clear();
