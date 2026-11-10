@@ -118,7 +118,7 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
         CategoryBox.ItemsSource = (p?.Settings.CollisionCategories ?? new ProjectSettings().CollisionCategories)
             .OrderBy(kv => kv.Key).Select(kv => new ComboBoxItem { Content = $"{kv.Key}: {kv.Value}", Tag = kv.Key }).ToList();
         if (CategoryBox.SelectedIndex < 0) CategoryBox.SelectedIndex = 0;
-        PropsBox.Text = string.Join("\n", _char.Properties.Select(kv => $"{kv.Key} = {kv.Value}"));
+        PropsBox.Text = _char.PropertiesText();
         LoadSprite();
         RefreshStates();
         _refreshing = false;
@@ -219,13 +219,7 @@ public partial class CharacterEditor : UserControl, IEditor, IStyleSource
 
     void OnPropsCommit(object sender, RoutedEventArgs e)
     {
-        var props = new Dictionary<string, string>();
-        foreach (var line in PropsBox.Text.Split('\n'))
-        {
-            int eq = line.IndexOf('=');
-            if (eq <= 0) continue;
-            props[line[..eq].Trim()] = line[(eq + 1)..].Trim();
-        }
+        var props = Character.ParseProperties(PropsBox.Text);
         if (props.Count == _char.Properties.Count && props.All(kv => _char.Properties.GetValueOrDefault(kv.Key) == kv.Value)) return;
         Snapshot();
         _char.Properties = props;

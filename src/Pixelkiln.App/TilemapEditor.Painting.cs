@@ -17,10 +17,8 @@ public partial class TilemapEditor
     (int X, int Y) _lastGrid;
     Point? _panFrom;
 
-    // stamp = block of tile indices (-1 = hole) and their TileFlip flags, from the tileset or picked from the map
-    int[] _stamp = [0];
-    byte[] _stampFlips = [0];
-    int _sw = 1, _sh = 1;
+    // the brush: a block of tiles from the tileset or picked from the map (logic and tests are in Core)
+    TileStamp _brush = TileStamp.Single(0);
     Int32Rect _tsSel = new(0, 0, 1, 1);   // tileset selection, in tiles
     (int X, int Y)? _tsDragFrom;
 
@@ -41,7 +39,6 @@ public partial class TilemapEditor
     }
 
     static int FloorDiv(int a, int b) => (int)Math.Floor((double)a / b);
-    static int Mod(int a, int b) => (a % b + b) % b;
 
     (int X, int Y) CellAt(MouseEventArgs e)
     {
@@ -98,16 +95,7 @@ public partial class TilemapEditor
         else if (tool == FillBtn)
         {
             Snapshot();
-            int StampCell(int cx, int cy) => Mod(cy - y, _sh) * _sw + Mod(cx - x, _sw);
-            var area = Tools.Region(tiles, _map.Width, _map.Height, x, y);   // the cells the fill is about to change
-            if (right) Tools.Fill(tiles, _map.Width, _map.Height, x, y, Tilemap.Empty);
-            else Tools.FillPattern(tiles, _map.Width, _map.Height, x, y, (cx, cy) => _stamp[StampCell(cx, cy)]);
-            for (int i = 0; i < area.Length; i++)
-            {
-                if (!area[i]) continue;
-                _map.Layers[_layer].SetFlip(i, right ? 0 : _stampFlips[StampCell(i % _map.Width, i / _map.Width)]);
-                Touch(i % _map.Width, i / _map.Width);
-            }
+            if (_brush.Fill(_map.Layers[_layer], _map.Width, _map.Height, x, y, clear: right) is var (fx, fy, fw, fh)) Touch(fx, fy, fw, fh);
             RenderTouched();
             return;
         }
@@ -157,9 +145,9 @@ public partial class TilemapEditor
         var tiles = _map.Layers[_layer].Tiles;
         if (_strokeTool == PaintBtn)
         {
-            var g = (FloorDiv(x - _origin.X, _sw), FloorDiv(y - _origin.Y, _sh));
+            var g = (FloorDiv(x - _origin.X, _brush.Width), FloorDiv(y - _origin.Y, _brush.Height));
             foreach (var (gx, gy) in Tools.LinePoints(_lastGrid.X, _lastGrid.Y, g.Item1, g.Item2))
-                PaintStamp(_origin.X + gx * _sw, _origin.Y + gy * _sh);
+                PaintStamp(_origin.X + gx * _brush.Width, _origin.Y + gy * _brush.Height);
             _lastGrid = g;
         }
         else if (_strokeTool == EraseBtn)
@@ -192,16 +180,8 @@ public partial class TilemapEditor
 
     void PaintStamp(int cx, int cy)
     {
-        var layer = _map.Layers[_layer];
-        for (int j = 0; j < _sh; j++)
-            for (int i = 0; i < _sw; i++)
-            {
-                if (_stamp[j * _sw + i] < 0 || !Tools.InBounds(_map.Width, _map.Height, cx + i, cy + j)) continue;
-                int cell = (cy + j) * _map.Width + cx + i;
-                layer.Tiles[cell] = _stamp[j * _sw + i];
-                layer.SetFlip(cell, _stampFlips[j * _sw + i]);
-            }
-        Touch(cx, cy, _sw, _sh);
+        _brush.PaintAt(_map.Layers[_layer], _map.Width, _map.Height, cx, cy);
+        Touch(cx, cy, _brush.Width, _brush.Height);
     }
 
     // ---------- pick ----------
@@ -228,60 +208,36 @@ public partial class TilemapEditor
     {
         PickRect.Visibility = Visibility.Collapsed;
         var (x, y, w, h) = PickArea(end);
-        var stamp = new int[w * h];
-        var flips = new byte[w * h];
-        for (int j = 0; j < h; j++)
-            for (int i = 0; i < w; i++)
-            {
-                var (tile, flip) = _map.PickCell(x + i, y + j);
-                (stamp[j * w + i], flips[j * w + i]) = (tile, (byte)flip);
-            }
-        if (stamp.All(t => t == Tilemap.Empty)) return;
-        SetStamp(stamp, w, h, flips);
+        var picked = TileStamp.FromMap(_map, x, y, w, h);
+        if (picked.IsEmpty) return;
+        SetStamp(picked);
         SelectionRect.Visibility = Visibility.Collapsed;   // the stamp no longer matches a tileset area
         SetTool(PaintBtn);
     }
 
     // ---------- stamp + preview ----------
 
-    /// <summary>Sets the brush; <paramref name="flips"/> = how each tile is turned (none when left out).</summary>
-    void SetStamp(int[] stamp, int w, int h, byte[]? flips = null)
+    /// <summary>Sets the brush and draws its picture (the preview under the mouse and the tile in the tool rail).</summary>
+    void SetStamp(TileStamp brush)
     {
-        (_stamp, _stampFlips, _sw, _sh) = (stamp, flips ?? new byte[stamp.Length], w, h);
+        _brush = brush;
         if (_map.Tileset is not { } ts) { BrushPreview.Source = StampPreview.Source = null; return; }
-        int t = ts.TileSize, pw = w * t;
-        var px = new uint[pw * h * t];
-        for (int j = 0; j < h; j++)
-            for (int i = 0; i < w; i++)
+        int t = ts.TileSize, pw = brush.Width * t;
+        var px = new uint[pw * brush.Height * t];
+        for (int j = 0; j < brush.Height; j++)
+            for (int i = 0; i < brush.Width; i++)
             {
-                int idx = stamp[j * w + i];
+                int idx = brush.Tiles[j * brush.Width + i];
                 if (idx < 0 || idx >= ts.Count) continue;
-                PixelOps.Paste(px, pw, TileFlip.Orient(ts.Tile(idx), t, _stampFlips[j * w + i]), t, t, i * t, j * t);
+                PixelOps.Paste(px, pw, TileFlip.Orient(ts.Tile(idx), t, brush.Flips[j * brush.Width + i]), t, t, i * t, j * t);
             }
-        BrushPreview.Source = StampPreview.Source = ImageIO.ToBitmap(px, pw, h * t);
+        BrushPreview.Source = StampPreview.Source = ImageIO.ToBitmap(px, pw, brush.Height * t);
     }
 
-    /// <summary>
-    /// Mirrors or rotates the whole brush: the block is rearranged and every tile in it is turned the same way.
-    /// <paramref name="op"/> is TileFlip.H, TileFlip.V or TileFlip.RotateCw.
-    /// </summary>
+    /// <summary>Mirrors (TileFlip.H, TileFlip.V) or rotates (TileFlip.RotateCw) the whole brush.</summary>
     void TurnStamp(int op)
     {
-        bool rotate = op == TileFlip.RotateCw;
-        int w = rotate ? _sh : _sw, h = rotate ? _sw : _sh;
-        var stamp = new int[w * h];
-        var flips = new byte[w * h];
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-            {
-                // the old cell that lands on (x, y)
-                int from = rotate ? (_sh - 1 - x) * _sw + y
-                    : op == TileFlip.H ? y * _sw + (_sw - 1 - x)
-                    : (_sh - 1 - y) * _sw + x;
-                stamp[y * w + x] = _stamp[from];
-                flips[y * w + x] = (byte)TileFlip.Then(_stampFlips[from], op);
-            }
-        SetStamp(stamp, w, h, flips);
+        SetStamp(_brush.Turned(op));
         if (CurrentTool != FillBtn) SetTool(PaintBtn);
     }
 
@@ -295,11 +251,11 @@ public partial class TilemapEditor
         StampPreview.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show) return;
         if (_stroking)   // snap to the stroke's stamp grid
-            (x, y) = (_origin.X + FloorDiv(x - _origin.X, _sw) * _sw, _origin.Y + FloorDiv(y - _origin.Y, _sh) * _sh);
+            (x, y) = (_origin.X + FloorDiv(x - _origin.X, _brush.Width) * _brush.Width, _origin.Y + FloorDiv(y - _origin.Y, _brush.Height) * _brush.Height);
         Canvas.SetLeft(StampPreview, x * CellPx);
         Canvas.SetTop(StampPreview, y * CellPx);
-        StampPreview.Width = _sw * CellPx;
-        StampPreview.Height = _sh * CellPx;
+        StampPreview.Width = _brush.Width * CellPx;
+        StampPreview.Height = _brush.Height * CellPx;
     }
 
     // ---------- tileset ----------
@@ -482,13 +438,11 @@ public partial class TilemapEditor
         SelectionRect.Height = r.Height * cell;
         Canvas.SetLeft(SelectionRect, r.X * cell);
         Canvas.SetTop(SelectionRect, r.Y * cell);
-        var stamp = new int[r.Width * r.Height];
-        for (int j = 0; j < r.Height; j++)
-            for (int i = 0; i < r.Width; i++) stamp[j * r.Width + i] = (r.Y + j) * ts.Columns + r.X + i;
-        SetStamp(stamp, r.Width, r.Height);
+        SetStamp(TileStamp.FromTileset(r.X, r.Y, r.Width, r.Height, ts.Columns));
         UpdateTileProps();
+        int first = _brush.Tiles[0];
         System.Windows.Automation.AutomationProperties.SetItemStatus(TilesetHost,
-            r.Width * r.Height == 1 ? $"Tile {stamp[0] + 1} of {ts.Count}" : $"{r.Width} by {r.Height} tiles from tile {stamp[0] + 1}");
+            r.Width * r.Height == 1 ? $"Tile {first + 1} of {ts.Count}" : $"{r.Width} by {r.Height} tiles from tile {first + 1}");
     }
 
     // ---------- terrains ----------
@@ -537,7 +491,7 @@ public partial class TilemapEditor
     {
         if (CurrentTerrain is not { } rule || _map.Tileset is not { } ts) { Ui.Error(new InvalidOperationException("Choose a terrain first.")); return; }
         Snapshot();
-        rule.Variants = [.. _stamp.Where(t => t >= 0 && t < ts.Count && !Autotile.IsTerrain(ts, new TerrainRule { Base = rule.Base, Mode = rule.Mode }, t)).Distinct()];
+        rule.Variants = [.. _brush.Tiles.Where(t => t >= 0 && t < ts.Count && !Autotile.IsTerrain(ts, new TerrainRule { Base = rule.Base, Mode = rule.Mode }, t)).Distinct()];
         RefreshTerrains();
     }
 
@@ -620,7 +574,7 @@ public partial class TilemapEditor
         ulong seed = Rng.Seed(seedText);
         var solid = layout == "Cave" ? Procedural.Cave(seed, _map.Width, _map.Height, fill) : Procedural.Platforms(seed, _map.Width, _map.Height);
         Snapshot();
-        Procedural.Fill(_map, _map.Layers[_layer], solid, CurrentTerrain, _stamp.FirstOrDefault(t => t >= 0));
+        Procedural.Fill(_map, _map.Layers[_layer], solid, CurrentTerrain, _brush.Tiles.FirstOrDefault(t => t >= 0));
         Render();
         Status.Text = $"{layout} from seed “{seedText}” on layer “{_map.Layers[_layer].Name}”{(CurrentTerrain is null ? " with the selected tile" : " with the chosen terrain")}. Ctrl+Z undoes.";
     }

@@ -78,17 +78,13 @@ public partial class TilemapEditor : IEditor
     /// <summary>One zoom level in or out, around <paramref name="anchor"/> (the mouse) or the middle of the view.</summary>
     void ZoomStep(int dir, Point? anchor = null)
     {
-        int i = Array.IndexOf(ZoomLevels, _zoom) + dir;
-        if (i < 0 || i >= ZoomLevels.Length) return;
-        ZoomTo(ZoomLevels[i], anchor ?? Scroller.TranslatePoint(new Point(Scroller.ViewportWidth / 2, Scroller.ViewportHeight / 2), CanvasHost));
+        if (Zoom.Step(ZoomLevels, _zoom, dir) is not int next) return;
+        ZoomTo(next, anchor ?? Scroller.TranslatePoint(new Point(Scroller.ViewportWidth / 2, Scroller.ViewportHeight / 2), CanvasHost));
     }
 
-    void ZoomFit()
-    {
-        double w = Scroller.ViewportWidth - 80, h = Scroller.ViewportHeight - 80;
-        int px = _map.TileSize;
-        ZoomTo(ZoomLevels.LastOrDefault(l => _map.Width * px * l <= w && _map.Height * px * l <= h, 1), new Point(0, 0));
-    }
+    /// <summary>Biggest zoom at which the whole map is visible (80 px are left around it).</summary>
+    void ZoomFit() =>
+        ZoomTo(Zoom.Fit(ZoomLevels, _map.Width * _map.TileSize, _map.Height * _map.TileSize, Scroller.ViewportWidth - 80, Scroller.ViewportHeight - 80), new Point(0, 0));
 
     /// <summary>The context bar: icon, name and key of the current tool (from its Tag "Name|Key|icon"), then a hint.</summary>
     void UpdateToolHint()

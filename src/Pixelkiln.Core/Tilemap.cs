@@ -130,6 +130,23 @@ public sealed class Tilemap
 
     public int NextObjectId => Objects.Count == 0 ? 1 : Objects.Max(o => o.Id) + 1;
 
+    /// <summary>
+    /// The topmost object (the last one added) at a map pixel, or null. A point object is hit within
+    /// <paramref name="pointRadius"/> pixels of it, so it stays easy to click at any zoom.
+    /// </summary>
+    public MapObject? ObjectAt(int x, int y, double pointRadius)
+    {
+        for (int i = Objects.Count - 1; i >= 0; i--)
+        {
+            var o = Objects[i];
+            bool hit = o.IsPoint
+                ? Math.Abs(x - o.X) <= pointRadius && Math.Abs(y - o.Y) <= pointRadius
+                : x >= o.X && y >= o.Y && x < o.X + Math.Max(1, o.W) && y < o.Y + Math.Max(1, o.H);
+            if (hit) return o;
+        }
+        return null;
+    }
+
     /// <summary>The tileset, for operations that cannot work without one.</summary>
     public Tileset RequireTileset() => Tileset ?? throw new InvalidOperationException("Load a tileset first.");
 

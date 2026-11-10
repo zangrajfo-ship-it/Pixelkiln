@@ -1,5 +1,20 @@
 namespace Pixelkiln.Core;
 
+/// <summary>Whole-number zoom levels of the editors (pixel art stays crisp only at whole multiples).</summary>
+public static class Zoom
+{
+    /// <summary>The next level up (dir +1) or down (-1), or null at either end of the list.</summary>
+    public static int? Step(int[] levels, int current, int dir)
+    {
+        int i = Array.IndexOf(levels, current) + dir;
+        return i >= 0 && i < levels.Length ? levels[i] : null;
+    }
+
+    /// <summary>The biggest level at which the whole content fits in the view; the smallest level when none does.</summary>
+    public static int Fit(int[] levels, int contentWidth, int contentHeight, double viewWidth, double viewHeight) =>
+        levels.LastOrDefault(l => contentWidth * l <= viewWidth && contentHeight * l <= viewHeight, levels[0]);
+}
+
 /// <summary>Pixel operations on a w×h grid. Works for any T (pixels, tile indices).</summary>
 public static class Tools
 {

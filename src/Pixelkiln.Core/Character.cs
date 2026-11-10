@@ -81,6 +81,22 @@ public sealed class Character
         return added;
     }
 
+    /// <summary>Game properties from text, one "key = value" per line; lines without a key or "=" are skipped, a later key wins.</summary>
+    public static Dictionary<string, string> ParseProperties(string text)
+    {
+        var props = new Dictionary<string, string>();
+        foreach (var line in text.Split('\n'))
+        {
+            int eq = line.IndexOf('=');
+            if (eq <= 0 || line[..eq].Trim().Length == 0) continue;
+            props[line[..eq].Trim()] = line[(eq + 1)..].Trim();
+        }
+        return props;
+    }
+
+    /// <summary>The properties as text for editing (the opposite of <see cref="ParseProperties"/>).</summary>
+    public string PropertiesText() => string.Join("\n", Properties.Select(kv => $"{kv.Key} = {kv.Value}"));
+
     /// <summary>
     /// A new character on a sprite: one state per tag of the sprite (idle and walk when it has none),
     /// the origin at the feet (bottom centre).

@@ -16,11 +16,22 @@ Runs on Windows (.NET 10, WPF). No network, no accounts; everything stays in you
 | **Character** | A character on top of a sprite: states mapped to animation tags, origin, hurt/hit/solid/trigger boxes, properties for the game. |
 | **Tilemap** | Tile layers, flipped and rotated tiles, objects, auto-tile terrains (16 and 47 tiles), per-tile collisions, tileset and layout generators. Exports Tiled TMJ. |
 
-Around them: a start screen with size presets and recent files, projects with an asset browser, version history, a command palette (Ctrl+Shift+P), templates (Ctrl+T), autosave and recovery, keyboard access everywhere (F1 lists the shortcuts).
+Around them: a start screen with size presets, recent files and a new sprite, tilemap or character, projects with an asset browser, version history, a command palette (Ctrl+Shift+P), templates (Ctrl+T), autosave and recovery, keyboard access everywhere (F1 lists the shortcuts).
 
 | Start screen | Character | Tilemap |
 |---|---|---|
 | ![Start screen](docs/screenshots/home.png) | ![Character editor](docs/screenshots/character.png) | ![Tilemap editor](docs/screenshots/tilemap.png) |
+
+## From sprite to map
+
+The three tabs work on the same files, so the steps between them are one click:
+
+- **Sprite › Make a character** starts a character on the open sprite, with one state for each animation tag.
+- **Sprite › Use as tileset** hands the sprite to the Tilemap tab as its tileset.
+- **Tilemap › Edit tile in Sprite** opens the tileset in the Sprite tab with the tile selected.
+- When you save a sprite, the map and the character that use it show the change straight away.
+
+You can work without a project. The first time you save into a folder, the app asks whether to make that folder a project; say no and it does not ask again for that folder.
 
 ## Build and run
 
@@ -40,6 +51,8 @@ powershell -File tools/smoke.ps1
 
 `tools/smoke.ps1` starts the built app in a temporary settings folder and clicks through it with UI Automation (0 = OK, 1 = failure, 2 = the window could not get the foreground, so some steps did not run).
 
+Two environment variables help with testing: `PIXELKILN_HOME` moves the settings folder away from `%AppData%\Pixelkiln`, and `PIXELKILN_TIMING=1` writes the start-up steps and their times to `startup.log` in that folder.
+
 ## First steps
 
 **Help › Getting started** has three short lessons (sprite, character, tilemap). Each one opens the matching file of the **sample game** (Help › Open sample game), which is created in `Documents\Pixelkiln samples`.
@@ -48,11 +61,14 @@ powershell -File tools/smoke.ps1
 
 **Project › New project** or **Make a project from a folder** creates a `.pfproj` file next to your assets. Assets get stable ids, so renaming and moving files does not break references between them. Deleted assets go to `.trash`, saved versions to `.history`, exports to `export/`.
 
+The asset browser on the left appears when a project is open; the folder button in the top bar (Ctrl+Shift+B) shows or hides it.
+
 ## Export
 
 - **Godot 4** (4.3 or newer): `SpriteFrames`, `TileSet` with collisions, `TileMap`, character scenes. Copy the export folder into your Godot project (`res://assets/…`).
 - **Generic:** PNG (also at several scales), Aseprite JSON, Tiled TMJ, character JSON, `project.json`, optionally one atlas.
-- The export is deterministic, checks the project first and never leaves half-written files. The list of written files is in `export-report.txt`.
+- Without a project, the **Export** button lists the exports of the open file (PNG, GIF, sprite sheet, character JSON, Tiled).
+- The project export is deterministic, checks the project first and never leaves half-written files. The list of written files is in `export-report.txt`.
 
 ## More in the code
 

@@ -222,20 +222,19 @@ try {
         if ($back) { $back.GetCurrentPattern($SIP).Select(); Start-Sleep -Milliseconds 400 }
     }
     }
-    # project windows open and close; only Help > Getting started is left in the simplified app (Optimize assets and
-    # Style guide are switched off). Their report windows show an Edit box whose first line is printed; others print "opened".
-    foreach ($mw in @(, @('Help', 'Getting started'))) {
-        $w = $mw[1]
-        $item = Find-MenuItem $root $mw[0] "$w*"
-        if (-not $item) { Missing "$($mw[0]) > $w"; continue }
-        $item.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+    # Getting started opens from the start screen's button: buttons can be pressed through UI Automation in the
+    # background, menus only open in the foreground window
+    $logo = Find-All $root ([System.Windows.Automation.ControlType]::Button) | Where-Object { $_.Current.Name -eq 'Start screen' } | Select-Object -First 1
+    if ($logo) { $logo.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke(); Start-Sleep 1 }
+    $learn = Find-All $root ([System.Windows.Automation.ControlType]::Button) | Where-Object { $_.Current.Name -eq 'Getting started' -and -not $_.Current.IsOffscreen } | Select-Object -First 1
+    if (-not $learn) { $failures += 'start screen has no Getting started button' }
+    else {
+        $learn.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 3
-        $win = Find-AppWindow "$w*"
-        if (-not $win) { $failures += "$w window did not open" }
+        $win = Find-AppWindow 'Getting started*'
+        if (-not $win) { $failures += 'Getting started window did not open' }
         else {
-            $report = (Find-All $win ([System.Windows.Automation.ControlType]::Edit)) | Select-Object -Last 1
-            $first = if ($report) { ($report.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value -split "`n")[0] } else { 'opened' }
-            Write-Host ("{0}: {1}" -f $w, $first)
+            Write-Host 'Getting started: opened'
             Close-AppWindow $win
         }
     }
@@ -339,9 +338,9 @@ try {
             Close-AppWindow $hist
         }
     }
-    # export: Project > Export, run the default Godot profile on the fixture project
-    $exportItem = Find-MenuItem $root 'Project' 'Export*'
-    if (-not $exportItem) { Missing 'Project > Export' }
+    # export: the Export button of the top bar (works in the background), run the default Godot profile on the fixture project
+    $exportItem = Find-All $root ([System.Windows.Automation.ControlType]::Button) | Where-Object { $_.Current.Name -eq 'Export' } | Select-Object -First 1
+    if (-not $exportItem) { $failures += 'top bar has no Export button' }
     else {
         $exportItem.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
         Start-Sleep 2

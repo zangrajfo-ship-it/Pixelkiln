@@ -32,19 +32,8 @@ public partial class TilemapEditor
     /// <summary>Shift snaps to the tile grid.</summary>
     int Snap(int v) => Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? (int)Math.Round((double)v / _map.TileSize) * _map.TileSize : v;
 
-    MapObject? HitObject(int x, int y)
-    {
-        double r = 6.0 / _zoom + 1;
-        for (int i = _map.Objects.Count - 1; i >= 0; i--)
-        {
-            var o = _map.Objects[i];
-            bool hit = o.IsPoint
-                ? Math.Abs(x - o.X) <= r && Math.Abs(y - o.Y) <= r
-                : x >= o.X && y >= o.Y && x < o.X + Math.Max(1, o.W) && y < o.Y + Math.Max(1, o.H);
-            if (hit) return o;
-        }
-        return null;
-    }
+    /// <summary>The object under a map pixel; points are easy to hit at any zoom (about 6 screen pixels around them).</summary>
+    MapObject? HitObject(int x, int y) => _map.ObjectAt(x, y, 6.0 / _zoom + 1);
 
     void ObjectDown((int X, int Y) p, bool right)
     {

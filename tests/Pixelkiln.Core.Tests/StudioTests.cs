@@ -40,6 +40,17 @@ public class CharacterTests
     }
 
     [Fact]
+    public void Properties_are_typed_as_lines_of_key_and_value()
+    {
+        var p = Character.ParseProperties("speed = 90\r\n jump=250 \nnote = a = b\n\nno value here\n = 5\nspeed = 120");
+        Assert.Equal(new Dictionary<string, string> { ["speed"] = "120", ["jump"] = "250", ["note"] = "a = b" }, p);   // a later line wins
+        var c = new Character { Properties = p };
+        Assert.Equal("speed = 120\njump = 250\nnote = a = b", c.PropertiesText());
+        Assert.Equal(p, Character.ParseProperties(c.PropertiesText()));
+        Assert.Empty(Character.ParseProperties(""));
+    }
+
+    [Fact]
     public void Boxes_by_state_and_frame_and_round_trip()
     {
         var c = new Character { Kind = CharacterKind.Enemy, SpriteAssetId = Guid.NewGuid(), OriginX = 4, OriginY = 15, Facing = Facing.Left };
