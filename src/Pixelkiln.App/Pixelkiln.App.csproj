@@ -10,6 +10,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <!-- drawn by tools/make-icon.ps1; windows take the icon of the exe -->
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- Fluent ThemeMode is marked experimental -->
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
   </PropertyGroup>

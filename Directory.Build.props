@@ -1,0 +1,7 @@
+<Project>
+  <!-- one version for every project; the start screen shows it -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Product>Pixelkiln</Product>
+  </PropertyGroup>
+</Project>
