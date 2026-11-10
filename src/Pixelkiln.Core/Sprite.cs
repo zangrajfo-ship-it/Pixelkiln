@@ -20,7 +20,10 @@ public sealed class Layer : ILayer
 
 public sealed class Frame
 {
-    public int DurationMs { get; set; } = 100;
+    public const int MinDurationMs = 10, MaxDurationMs = 60000;
+
+    /// <summary>Kept inside the range whatever the source (a hand-edited file, an import): players use it as a timer interval.</summary>
+    public int DurationMs { get; set => field = Math.Clamp(value, MinDurationMs, MaxDurationMs); } = 100;
 }
 
 /// <summary>Named frame range for game animations (walk, idle …). From/To are inclusive frame indices.</summary>

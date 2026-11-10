@@ -1,0 +1,41 @@
+name: release
+
+# Pushing a tag like v0.1.0 builds the package and opens a DRAFT release with the zip attached.
+# Nothing is public until the draft is published by hand on GitHub.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: The tag must match the version in Directory.Build.props
+        shell: pwsh
+        run: |
+          [xml]$props = Get-Content Directory.Build.props
+          $version = "v$("$($props.Project.PropertyGroup.Version)".Trim())"
+          if ($version -ne $env:TAG) { throw "Tag $env:TAG does not match the version $version." }
+      - name: Build and test
+        run: |
+          dotnet build -c Release -warnaserror
+          dotnet test -c Release --no-build
+      - name: Package
+        shell: pwsh
+        run: ./tools/publish.ps1
+      - name: Draft the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $files = Get-ChildItem artifacts -File | ForEach-Object FullName
+          gh release create $env:TAG @files --draft --generate-notes --title "Pixelkiln $env:TAG"

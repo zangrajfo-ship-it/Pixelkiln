@@ -6,7 +6,14 @@ Teče na Windows (.NET 10, WPF). Brez omrežja, brez računov; vse ostane v tvoj
 
 Različica 0.1.0 je zgodnja izdaja. Izvoz za Godot še ni preizkušen v pravem Godotu, zato ob prvi rabi preveri uvoz.
 
-## Zagon
+## Prenos
+Vsaka izdaja na strani [Releases](https://github.com/zangrajfo-ship-it/Pixelkiln/releases) ima zip za 64-bitni Windows z vključenim .NET, zato ni treba ničesar nameščati: razširi ga in zaženi `Pixelkiln.App.exe`.
+
+- Program ni podpisan, zato Windows ob prvem zagonu lahko pokaže »Windows protected your PC«. Izberi **More info** in nato **Run anyway**. Z datoteko `.sha256` ob zipu lahko preveriš prenos.
+- Nastavitve, samodejno shranjene datoteke in `crash.log` so v `%AppData%\Pixelkiln`. Program odstraniš tako, da izbrišeš njegovo mapo (in še to, če želiš odstraniti tudi nastavitve).
+- Ob nepričakovani napaki program to pove in ostane odprt, da lahko delo še shraniš; podrobnosti zapiše v `crash.log`. Priloži ga, ko [prijaviš napako](https://github.com/zangrajfo-ship-it/Pixelkiln/issues).
+
+## Zagon iz kode
 Potrebuješ Windows in [.NET 10 SDK](https://dotnet.microsoft.com/download).
 
 ```bash
@@ -14,6 +21,8 @@ dotnet run --project src/Pixelkiln.App
 ```
 
 Za razvoj: `dotnet build`, `dotnet test`, `powershell -File tools/smoke.ps1` (preizkus vmesnika v ločeni začasni mapi nastavitev; 0 = v redu, 1 = napaka, 2 = okno ni dobilo ospredja, zato nekateri koraki niso tekli).
+
+`tools/publish.ps1` zgradi zip izdaje v mapo `artifacts/`. Oznaka, kot je `v0.1.0` (različica iz `Directory.Build.props`), na GitHubu požene isto skripto in odpre osnutek izdaje s pripetim zipom.
 
 Pri preizkušanju pomagata spremenljivki okolja: `PIXELKILN_HOME` prestavi mapo nastavitev iz `%AppData%\Pixelkiln`, `PIXELKILN_TIMING=1` pa zapiše korake zagona in njihove čase v `startup.log` v tej mapi.
 
@@ -58,7 +67,7 @@ V kodi so še urejevalniki, ki so v tej različici izklopljeni; prevajajo se in 
 Brskalnik sredstev na levi se pokaže, ko je odprt projekt; gumb z mapo v zgornji vrstici (Ctrl+Shift+B) ga pokaže ali skrije.
 
 ## Izvoz
-- **Godot 4** (4.3 ali novejši): `SpriteFrames`, `TileSet` s kolizijami, `TileMap`, scene likov. Izvozno mapo kopiraj v Godot projekt (`res://assets/…`).
+- **Godot 4** (4.3 ali novejši): `SpriteFrames`, `TileSet` s kolizijami, `TileMap`, scene likov. Izvozno mapo kopiraj v Godot projekt (`res://assets/…`). Koraki in seznam za preverjanje prvega uvoza so v [godot.md](godot.md).
 - **Generic:** PNG (tudi v več velikostih), Aseprite JSON, Tiled TMJ, JSON likov, `project.json`, po izbiri atlas.
 - Brez projekta gumb **Export** ponudi izvoze odprte datoteke (PNG, GIF, sprite sheet, JSON lika, Tiled).
 - Izvoz projekta je determinističen, pred zapisom preveri projekt in nikoli ne pusti napol zapisanih datotek. Seznam zapisanih datotek je v `export-report.txt`.

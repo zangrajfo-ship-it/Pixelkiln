@@ -116,10 +116,11 @@ public sealed class Project
             var settings = d.Settings ?? new();
             settings.Style ??= new();   // projects from before the style guide
             settings.Style.Palettes ??= [];
-            return new Project { Id = d.Id, Name = d.Name ?? "Game", Settings = settings, Assets = d.Assets ?? [] };
+            var loaded = new Project { Id = d.Id, Name = d.Name ?? "Game", Settings = settings, Assets = d.Assets ?? [] };
+            loaded.Validate();   // inside the parse step, so a broken list is reported like any other damage
+            return loaded;
         });
         p.FilePath = System.IO.Path.GetFullPath(path);
-        p.Validate();
         return p;
     }
 

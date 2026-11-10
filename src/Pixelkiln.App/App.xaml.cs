@@ -47,14 +47,43 @@ public partial class App : Application
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
+    bool _reportingError;
+
+    static string CrashLog => Path.Combine(Core.Settings.Folder, "crash.log");
+
+    /// <summary>Appends an unexpected error to crash.log next to the settings; never throws.</summary>
+    static void LogCrash(object error)
+    {
+        try
+        {
+            Directory.CreateDirectory(Core.Settings.Folder);
+            File.AppendAllText(CrashLog, $"{DateTime.Now:O}  Pixelkiln {typeof(App).Assembly.GetName().Version}{Environment.NewLine}{error}{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         Mark("start");
         // a crash leaves its reason next to the settings (local file only), so it can be found and fixed
-        AppDomain.CurrentDomain.UnhandledException += (_, ev) =>
+        AppDomain.CurrentDomain.UnhandledException += (_, ev) => LogCrash(ev.ExceptionObject);
+        DispatcherUnhandledException += (_, ev) =>
         {
-            try { File.WriteAllText(Path.Combine(Core.Settings.Folder, "crash.log"), $"{DateTime.Now:O}{Environment.NewLine}{ev.ExceptionObject}"); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            LogCrash(ev.Exception);
+            // before the main window is up there is nothing to save and nothing to show the message over: let it close
+            if (MainWindow is not { IsLoaded: true }) return;
+            // afterwards an unexpected error must not take the open work with it: say what happened and stay open
+            ev.Handled = true;
+            if (_reportingError) return;   // one message at a time; an error while drawing would repeat on every frame
+            _reportingError = true;
+            try
+            {
+                MessageBox.Show(MainWindow,
+                    $"Something went wrong, and the last action may not have finished.\n\n{ev.Exception.Message}\n\n" +
+                    $"Your work is still open. Save it under a new name (File › Save as), then restart Pixelkiln.\n\nDetails: {CrashLog}",
+                    "Pixelkiln", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally { _reportingError = false; }
         };
         StartupPath = e.Args.FirstOrDefault();
         LoadPlugins();

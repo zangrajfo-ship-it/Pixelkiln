@@ -411,9 +411,9 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
 
     void OnDurationCommit(object sender, RoutedEventArgs e)
     {
-        if (!int.TryParse(DurationBox.Text, out int ms) || ms < 10 || ms > 60000)
+        if (!int.TryParse(DurationBox.Text, out int ms) || ms < Core.Frame.MinDurationMs || ms > Core.Frame.MaxDurationMs)
         {
-            Ui.MarkInvalid(DurationBox, "Frame duration must be a whole number of milliseconds from 10 to 60000. Not applied.");
+            Ui.MarkInvalid(DurationBox, $"Frame duration must be a whole number of milliseconds from {Core.Frame.MinDurationMs} to {Core.Frame.MaxDurationMs}. Not applied.");
             return;
         }
         Ui.MarkInvalid(DurationBox, null);
