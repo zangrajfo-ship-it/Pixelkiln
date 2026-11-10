@@ -14,10 +14,11 @@ static class GettingStarted
     [
         new("1. Draw a sprite", "art/hero.pxf",
         [
-            "The Sprite tab in Pixel mode is for pixel art. Pick a colour in the palette on the left, draw with B (pencil), erase with E, fill with G.",
+            "The Sprite tab is for pixel art. Pick a colour in the palette on the right, draw with B (pencil), erase with E, fill with G.",
             "A sprite has frames (see the frame list; ← → step through them). Animations are tags: a name and a range of frames, e.g. run = frames 3–6.",
             "Turn on the onion skin to see the previous frame faintly while you draw the next one. Space plays the selected tag.",
             "The example hero has idle (with a blink), run and jump. Change a colour or a frame and watch the animation.",
+            "Next steps are at the bottom right: Make a character (one state for each tag) and Use as tileset (the Tilemap tab paints with it).",
         ]),
         new("2. Make a character", "characters/hero.pxchar",
         [
@@ -29,8 +30,9 @@ static class GettingStarted
         new("3. Paint a tilemap", "levels/meadow.pxm",
         [
             "A tilemap is a grid of tiles from a tileset picture (here art/tiles.pxf: grass, dirt, stone, brick, ladder, water, plank, spikes).",
-            "Pick a tile in the tileset panel and paint with B, erase with E, fill with G. Hold Shift to pick several tiles.",
-            "Tiles can collide: select tiles in the tileset, then Tileset > Make selected tiles solid (ground, walls) or one-way platforms (planks you jump through from below).",
+            "Pick a tile in the tileset panel (drag for several) and paint with B, erase with E, fill with G. X and Y flip the brush, R rotates it.",
+            "Tiles can collide: select a tile and tick Solid (ground, walls) or One-way platform (planks you jump through from below) under TILE PROPERTIES. K shows them on the map.",
+            "Edit tile in Sprite opens the tileset in the Sprite tab; when you save there, the map shows the new tiles.",
             "Auto-tile (A) places the right edge and corner tiles for you once a terrain is set up.",
         ]),
         /* simplified app: lessons for the switched-off parts
@@ -92,7 +94,7 @@ static class GettingStarted
             var steps = new List { MarkerStyle = TextMarkerStyle.Decimal };
             foreach (var s in l.Steps) steps.ListItems.Add(new ListItem(new Paragraph(new Run(s)) { Margin = new Thickness(0, 0, 0, 8) }));
             doc.Blocks.Add(steps);
-            doc.Blocks.Add(new Paragraph(new Run($"Example: {l.Example} in the sample game.")) { Foreground = System.Windows.Media.Brushes.Gray });
+            doc.Blocks.Add(new Paragraph(new Run($"Example: {l.Example} in the sample game.")) { Foreground = (System.Windows.Media.Brush)win.FindResource("Text3Brush") });
             text.Document = doc;
             next.IsEnabled = list.SelectedIndex < Lessons.Length - 1;
         };

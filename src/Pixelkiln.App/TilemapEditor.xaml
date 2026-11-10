@@ -205,7 +205,7 @@
                                     </Trigger>
                                     <Trigger Property="IsChecked" Value="True">
                                         <Setter TargetName="Bd" Property="Background" Value="#38E8505B" />
-                                        <Setter TargetName="Bd" Property="TextElement.Foreground" Value="#FFB3B9" />
+                                        <Setter TargetName="Bd" Property="TextElement.Foreground" Value="{DynamicResource DangerBrush}" />
                                     </Trigger>
                                     <Trigger Property="IsKeyboardFocused" Value="True">
                                         <Setter TargetName="Bd" Property="BorderThickness" Value="2" />

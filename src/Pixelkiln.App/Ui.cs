@@ -222,14 +222,31 @@ static class Ui
     public static void FillLayers(ListBox list, IReadOnlyList<ILayer> layers, int active, Action visibilityChanged, Action<ILayer, string> rename)
     {
         list.Items.Clear();
+        list.ItemContainerStyle ??= (Style)list.FindResource("LayerRow");
         for (int i = layers.Count - 1; i >= 0; i--)
         {
             var layer = layers[i];
             int row = layers.Count - 1 - i;
-            var vis = new CheckBox { IsChecked = layer.Visible, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Visible" };
+            // an eye instead of a check box: open = the layer is drawn
+            var eye = new PathIcon { Kind = layer.Visible ? "eye" : "eyeoff", Width = 16, Height = 16 };
+            var vis = new ToggleButton
+            {
+                IsChecked = layer.Visible, Content = eye, Width = 28, Height = 28, Margin = new Thickness(2, 0, 0, 0),
+                Style = (Style)list.FindResource("IconButton"), ToolTip = "Show or hide the layer",
+            };
             AutomationProperties.SetName(vis, $"Visible: {layer.Name}");
-            vis.Click += (_, _) => { layer.Visible = vis.IsChecked == true; visibilityChanged(); };
-            var name = new TextBox { Text = layer.Name, BorderThickness = new Thickness(0), Background = Brushes.Transparent, Margin = new Thickness(4, 0, 0, 0) };
+            var name = new TextBox
+            {
+                Text = layer.Name, BorderThickness = new Thickness(0), Background = Brushes.Transparent, Margin = new Thickness(2, 0, 4, 0),
+                Padding = new Thickness(4, 2, 4, 2), MinHeight = 0, VerticalAlignment = VerticalAlignment.Center, Opacity = layer.Visible ? 1 : 0.55,
+            };
+            vis.Click += (_, _) =>
+            {
+                layer.Visible = vis.IsChecked == true;
+                eye.Kind = layer.Visible ? "eye" : "eyeoff";
+                name.Opacity = layer.Visible ? 1 : 0.55;
+                visibilityChanged();
+            };
             AutomationProperties.SetName(name, "Layer name");
             name.GotKeyboardFocus += (_, _) => list.SelectedIndex = row;
             name.LostKeyboardFocus += (_, _) =>

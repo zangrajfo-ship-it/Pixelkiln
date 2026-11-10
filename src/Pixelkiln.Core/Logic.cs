@@ -170,6 +170,7 @@ public sealed class LogicRuntime
     public const int MaxStepsPerFrame = 1000;
     readonly LogicGraph _g;
     readonly Dictionary<string, List<LogicLink>> _out;
+    readonly Dictionary<string, LogicNode> _nodes = [];
     readonly List<(double Due, long Order, LogicNode Wait)> _waits = [];
     readonly Dictionary<string, double> _nextTimer = [];
     long _order;
@@ -188,6 +189,7 @@ public sealed class LogicRuntime
         if (g.Check().FirstOrDefault(m => !m.StartsWith("Warning:")) is { } error) throw new InvalidDataException(error);
         _g = g.Clone();
         _out = _g.Links.GroupBy(l => l.From).ToDictionary(x => x.Key, x => x.ToList());
+        foreach (var n in _g.Nodes) _nodes.TryAdd(n.Id, n);   // by id, so following a link does not search the whole list
         foreach (var t in _g.Nodes.Where(n => n.Kind == LogicKind.Timer)) _nextTimer[t.Id] = t.Number("ms");
     }
 
@@ -247,7 +249,7 @@ public sealed class LogicRuntime
         foreach (var l in _out.GetValueOrDefault(from.Id) ?? [])
         {
             if (_stopped) return;
-            if (l.Port == port && _g.Node(l.To) is { } n) Exec(n, t);
+            if (l.Port == port && _nodes.TryGetValue(l.To, out var n)) Exec(n, t);
         }
     }
 

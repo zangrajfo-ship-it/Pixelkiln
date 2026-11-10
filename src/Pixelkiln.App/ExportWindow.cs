@@ -64,7 +64,7 @@ static class ExportWindow
         Row("Extra _sizes (2, 4 …)", scalesBox);
 
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0), Children = { check, export, open, close } };
-        var warn = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.Orange, Margin = new Thickness(0, 6, 0, 0),
+        var warn = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = (System.Windows.Media.Brush)owner.FindResource("DangerBrush"), Margin = new Thickness(0, 6, 0, 0),
             Text = unsaved.Count == 0 ? "" : "Unsaved changes are not exported (files are read from disk): " + string.Join(", ", unsaved.Select(System.IO.Path.GetFileName)),
             Visibility = unsaved.Count == 0 ? Visibility.Collapsed : Visibility.Visible };
         var top = new StackPanel

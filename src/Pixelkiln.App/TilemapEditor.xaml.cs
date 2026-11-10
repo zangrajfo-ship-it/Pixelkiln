@@ -104,7 +104,9 @@ public partial class TilemapEditor : UserControl
     {
         CanvasHost.Width = _map.Width * CellPx;
         CanvasHost.Height = _map.Height * CellPx;
-        GridOverlay.Fill = GridToggle.IsChecked == true && CellPx >= 4 ? Ui.GridBrush(CellPx, Color.FromArgb(0x60, 0xFF, 0xFF, 0xFF)) : null;   // light lines on the dark map
+        // grid in the theme's muted text colour: light lines on a dark map background, dark ones on a light one
+        var line = ((SolidColorBrush)FindResource("Text3Brush")).Color;
+        GridOverlay.Fill = GridToggle.IsChecked == true && CellPx >= 4 ? Ui.GridBrush(CellPx, Color.FromArgb(0x60, line.R, line.G, line.B)) : null;
         Status.Text = $"{_map.Width}×{_map.Height} tiles of {_map.TileSize} px";
         MapInfo.Text = $"Tile {_map.TileSize} px · {_map.Width} × {_map.Height}";
         ZoomText.Text = $"{_zoom * 100} %";

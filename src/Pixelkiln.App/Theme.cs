@@ -163,5 +163,29 @@ static class Theme
         w.SetResourceReference(Control.ForegroundProperty, "TextBrush");   // labels and plain text inherit the text token
         if (_font is null) w.ClearValue(TextElement.FontFamilyProperty);
         else w.FontFamily = _font;
+        if (w != Application.Current.MainWindow) StyleDialog(w);
+    }
+
+    /// <summary>
+    /// The dialogs are built in code with plain buttons. Here, in one place, they get the panel background and the
+    /// app's button styles: the default button is the primary one, the others are outlined.
+    /// </summary>
+    static void StyleDialog(Window w)
+    {
+        w.SetResourceReference(Control.BackgroundProperty, "Bg1Brush");
+        var primary = (Style)w.FindResource("PrimaryButton");
+        var outline = (Style)w.FindResource("OutlineButton");
+        foreach (var b in Buttons(w))
+            if (b.ReadLocalValue(FrameworkElement.StyleProperty) == DependencyProperty.UnsetValue)   // keep buttons that chose a style
+                b.Style = b.IsDefault ? primary : outline;
+
+        static IEnumerable<Button> Buttons(DependencyObject root)
+        {
+            foreach (var child in LogicalTreeHelper.GetChildren(root).OfType<DependencyObject>())
+            {
+                if (child.GetType() == typeof(Button)) yield return (Button)child;   // not toggles or repeat buttons
+                foreach (var b in Buttons(child)) yield return b;
+            }
+        }
     }
 }

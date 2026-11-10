@@ -36,7 +36,7 @@
                     <Setter TargetName="Ring" Property="BorderThickness" Value="3" />
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="Ring" Property="BorderBrush" Value="White" />
+                    <Setter TargetName="Ring" Property="BorderBrush" Value="{DynamicResource TextBrush}" />
                 </Trigger>
             </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -219,7 +219,7 @@
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SelectedBrush}" />
-                                <Setter Property="Foreground" Value="White" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
@@ -235,6 +235,32 @@
             <Setter Property="FontSize" Value="13" />
             <Setter Property="Height" Value="30" />
             <Setter Property="Padding" Value="12,0" />
+        </Style>
+
+        <!-- a row of a layer list: 30 px, the active layer on a faint accent row (Ui.FillLayers uses it) -->
+        <Style x:Key="LayerRow" TargetType="ListBoxItem">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Height="30" Margin="0,1" CornerRadius="7" Background="Transparent" BorderThickness="0" BorderBrush="{DynamicResource AccentBrush}">
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentRowBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- floating rounded panel over the canvas -->
