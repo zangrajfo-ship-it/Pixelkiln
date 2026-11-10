@@ -86,6 +86,7 @@ public partial class MainWindow : Window
         Ui.NameSymbolButtons(this);
         _autosave.Tick += (_, _) => Autosave();
         Assets.OpenRequested += OpenAsset;
+        Assets.CanEdit = CanEdit;
         Assets.FileMoved += (from, to) => { foreach (var ed in Editors) ed.OnFileMoved(from, to); };
         App.ProjectChanged += OnProjectChanged;
         SetAssetsVisible(false);   // no project yet
@@ -138,15 +139,15 @@ public partial class MainWindow : Window
             // Ui.Item("_Device preview…", "Ctrl+Shift+D", ShowDevicePreview),   // simplified app
             Ui.Item("P_lugins…", null, () => PluginsWindow.Show(this)),
             // WorkspaceMenu(),   // simplified app: the profiles open tabs that are switched off
-            Ui.Item("Copy st_yle", "Ctrl+Alt+C", CopyStyle),
-            Ui.Item("Paste s_tyle", "Ctrl+Alt+V", PasteStyle),
+            Ui.Item("Copy st_yle", "Ctrl+Alt+C", CopyStyle, ActiveEditor is IStyleSource),   // the Tilemap tab has no style
+            Ui.Item("Paste s_tyle", "Ctrl+Alt+V", PasteStyle, ActiveEditor is IStyleSource),
             Ui.Item("_Preferences…", "Ctrl+,", () => PreferencesWindow.Show(this))));
         MainMenu.Items.Add(Ui.Menu("_Help",
             Ui.Item("_Getting started…", null, () => GettingStarted.Show(this, OpenSampleAsset)),
             Ui.Item("Open _sample game…", null, () => OpenSampleAsset(SampleStart)),
             Ui.Item("_Keyboard shortcuts", "F1", () => HelpWindow.Show(this)),
             Ui.Item("_About Pixelkiln", null, () => MessageBox.Show(this,
-                "Pixelkiln — sprites, tilemaps, music and sound effects for your games.", "About Pixelkiln"))));
+                $"Pixelkiln {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}\n\nSprites, animated characters and tilemaps for your games.", "About Pixelkiln"))));
     }
 
     // ---------- project ----------
@@ -259,7 +260,7 @@ public partial class MainWindow : Window
 
     void ShowTemplateStudio()
     {
-        if (App.Project is { } p) TemplateStudio.Show(this, p, Assets.SelectedAll, OpenAsset);
+        if (App.Project is { } p) TemplateStudio.Show(this, p, Assets.SelectedAll, OpenAsset, CanEdit);
     }
 
     /// <summary>Opens an asset in the tab that edits its type.</summary>
@@ -268,44 +269,39 @@ public partial class MainWindow : Window
         if (App.Project is not { } p) return;
         string path = p.FullPath(a);
         if (!File.Exists(path)) { Ui.Error(new FileNotFoundException($"“{a.Path}” is missing. Use Project → Check project to fix the project.")); return; }
-        IEditor? target = a.Type switch
-        {
-            AssetType.Sprite or AssetType.Image => SpriteEd,
-            AssetType.Tilemap => MapEd,
-            AssetType.Song => MusicEd,
-            AssetType.Sound => SfxEd,
-            AssetType.Character => CharEd,
-            AssetType.Scene => SceneEd,
-            AssetType.Mix => AudioEd,
-            AssetType.Paint => PaintEd,
-            AssetType.Vector => VectorEd,
-            AssetType.Texture => TextureEd,
-            AssetType.Ui => UiEd,
-            AssetType.Anim => MotionEd,
-            AssetType.Logic => LogicEd,
-            _ => null,
-        };
-        if (a.Type == AssetType.Audio)   // a WAV is material: it goes onto a track
-        {
-            Reveal(AudioEd);
-            AudioEd.AddClip(a.Id);
-            return;
-        }
-        if (a.Type == AssetType.Palette)
-        {
-            Reveal(SpriteEd);
-            SpriteEd.ApplyPaletteFile(path);
-            return;
-        }
-        if (target is null) { Ui.Error(new NotSupportedException($"{a.Type} assets open in their own studio.")); return; }
+        if (EditorFor(a.Type) is not { } target) { Ui.Error(new NotSupportedException($"{a.Type} assets open in their own studio.")); return; }
         if (!IsShown(target))
         {
             MessageBox.Show(this, $"“{a.Path}” is a {a.Type} asset. This version only edits sprites, characters and tilemaps.", "Pixelkiln");
             return;
         }
         Reveal(target);
-        target.OpenPath(path);
+        if (a.Type == AssetType.Audio) AudioEd.AddClip(a.Id);   // a WAV is material: it goes onto a track
+        else if (a.Type == AssetType.Palette) SpriteEd.ApplyPaletteFile(path);
+        else target.OpenPath(path);
     }
+
+    /// <summary>The editor that opens (or, for sounds and palettes, uses) an asset of this type.</summary>
+    IEditor? EditorFor(AssetType type) => type switch
+    {
+        AssetType.Sprite or AssetType.Image or AssetType.Palette => SpriteEd,
+        AssetType.Tilemap => MapEd,
+        AssetType.Song => MusicEd,
+        AssetType.Sound => SfxEd,
+        AssetType.Character => CharEd,
+        AssetType.Scene => SceneEd,
+        AssetType.Mix or AssetType.Audio => AudioEd,
+        AssetType.Paint => PaintEd,
+        AssetType.Vector => VectorEd,
+        AssetType.Texture => TextureEd,
+        AssetType.Ui => UiEd,
+        AssetType.Anim => MotionEd,
+        AssetType.Logic => LogicEd,
+        _ => null,
+    };
+
+    /// <summary>The asset type can be opened in this version (its editor is in a shown tab).</summary>
+    bool CanEdit(AssetType type) => EditorFor(type) is { } ed && IsShown(ed);
 
     /// <summary>Opens (or creates) the sample game and shows one of its files.</summary>
     void OpenSampleAsset(string relPath)
@@ -351,7 +347,8 @@ public partial class MainWindow : Window
     /// <summary>Autosave files left behind mean the last session did not close normally.</summary>
     void OfferRecovery()
     {
-        var found = Enumerable.Range(0, Editors.Length).Where(i => File.Exists(AutosaveFile(i))).ToList();
+        // only editors of this version: a file left by a switched-off editor has no tab to restore into
+        var found = Enumerable.Range(0, Editors.Length).Where(i => IsShown(Editors[i]) && File.Exists(AutosaveFile(i))).ToList();
         if (found.Count == 0) return;
         string names = string.Join(", ", found.Select(i => TabOf(Editors[i]).Header));
         var r = MessageBox.Show(this, $"Pixelkiln did not close normally last time.\n\nRestore the unsaved work? ({names})",

@@ -34,6 +34,33 @@ public static class TemplateEngine
         return [.. m.Steps.Where(s => need.Contains(s.Id))];
     }
 
+    /// <summary>
+    /// The kinds of assets a template makes (as a starting point or a full kit), so an app that edits only some
+    /// kinds can leave out templates whose results it could not open.
+    /// </summary>
+    public static HashSet<AssetType> Creates(TemplateManifest m, bool fullKit)
+    {
+        var types = new HashSet<AssetType>();
+        foreach (var s in Plan(m, fullKit))
+        {
+            AssetType? type = s.Type switch
+            {
+                "sprite" or "art" or "items" => AssetType.Sprite,
+                "character" => AssetType.Character,
+                "tileset" => AssetType.Image,
+                "tilemap" => AssetType.Tilemap,
+                "level" => AssetType.Scene,
+                "song" => AssetType.Song,
+                "ui" => AssetType.Ui,
+                "texture" => AssetType.Texture,
+                "file" when s.File is not null && AssetKinds.ByExtension.TryGetValue(Path.GetExtension(s.File), out var copied) => copied,
+                _ => null,   // a copied file that is no asset (a text note): nothing to open
+            };
+            if (type is { } t) types.Add(t);
+        }
+        return types;
+    }
+
     public static TemplateResult Create(TemplateInfo t, IReadOnlyDictionary<string, string>? given, Project p, string folder, bool fullKit)
     {
         var m = t.Manifest;

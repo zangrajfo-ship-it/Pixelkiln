@@ -15,7 +15,7 @@ public partial class MainWindow
     List<Command> AllCommands()
     {
         var commands = new List<Command>();
-        foreach (TabItem tab in Tabs.Items)
+        foreach (var tab in Tabs.Items.Cast<TabItem>().Where(x => Shown.Contains((string)x.Header)))   // switched-off tabs have no commands
         {
             var t = tab;
             // the first mode keeps the plain tab prefix ("Sprite › Edit › …"), so existing macros keep working
@@ -36,7 +36,7 @@ public partial class MainWindow
         foreach (var mi in MainMenu.Items.OfType<MenuItem>().Where(m => !own.Contains(m)))
             commands.AddRange(CommandRegistry.FromMenu(mi, ((string)mi.Header).Replace("_", "")));
         if (App.Project is { } p)
-            foreach (var a in p.Assets)
+            foreach (var a in p.Assets.Where(x => CanEdit(x.Type)))
             {
                 var asset = a;
                 commands.Add(new Command($"Open asset: {a.Path}", "Asset", null, () => File.Exists(p.FullPath(asset)), () => OpenAsset(asset)));

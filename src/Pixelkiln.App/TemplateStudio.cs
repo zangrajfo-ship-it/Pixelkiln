@@ -15,7 +15,8 @@ static class TemplateStudio
 {
     static readonly Dictionary<string, ImageSource?> Previews = [];
 
-    public static void Show(Window owner, Project p, IReadOnlyList<AssetEntry> selection, Action<AssetEntry> open)
+    /// <param name="canEdit">Asset types this version can open; templates that make other types are left out.</param>
+    public static void Show(Window owner, Project p, IReadOnlyList<AssetEntry> selection, Action<AssetEntry> open, Func<AssetType, bool> canEdit)
     {
         var search = new TextBox { Margin = new Thickness(0, 0, 0, 4) };
         AutomationProperties.SetName(search, "Search templates");
@@ -78,7 +79,10 @@ static class TemplateStudio
         void Load()
         {
             var (loaded, rejected) = TemplateLibrary.All(p);
-            all = loaded;
+            all = [.. loaded.Where(t => TemplateEngine.Creates(t.Manifest, fullKit: false).All(canEdit))];
+            string? chosen = kind.SelectedItem as string;
+            kind.ItemsSource = new[] { "All kinds" }.Concat(all.Select(t => t.Manifest.Kind).Distinct().Order().Select(k => k.ToString())).ToList();
+            kind.SelectedItem = chosen is not null && kind.Items.Contains(chosen) ? chosen : "All kinds";
             status.Text = rejected.Count == 0 ? "" : "Not loaded: " + string.Join("; ", rejected.Select(r => $"{System.IO.Path.GetFileName(r.Folder)} ({r.Reason})"));
             Fill();
         }
@@ -119,7 +123,8 @@ static class TemplateStudio
             info.Text = $"{m.Kind} · {t.Source} · version {m.Version}{(m.Tags is { Count: > 0 } tags ? " · " + string.Join(", ", tags) : "")}\n{m.Description}";
             delete.IsEnabled = t.Source != TemplateSource.BuiltIn;
             folder.Text = m.Kind switch { TemplateKind.Character => "characters", TemplateKind.Level => "levels", TemplateKind.Music => "music", _ => "assets" };
-            kit.IsEnabled = TemplateEngine.Plan(m, true).Count > TemplateEngine.Plan(m, false).Count;
+            // a full kit only when it adds something, and nothing this version could not open
+            kit.IsEnabled = TemplateEngine.Plan(m, true).Count > TemplateEngine.Plan(m, false).Count && TemplateEngine.Creates(m, fullKit: true).All(canEdit);
             if (!kit.IsEnabled) start.IsChecked = true;
 
             form.Children.Clear();

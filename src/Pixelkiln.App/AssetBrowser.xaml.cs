@@ -28,7 +28,7 @@ public partial class AssetBrowser : UserControl
     public AssetBrowser()
     {
         InitializeComponent();
-        TypeFilter.ItemsSource = new[] { "All types" }.Concat(Enum.GetNames<AssetType>()).ToList();
+        TypeFilter.ItemsSource = new List<string> { "All types" };   // the project's own types are added when it opens
         TypeFilter.SelectedIndex = 0;
         PreviewBack.Background = Ui.CheckerBrush();
         _anim.Tick += (_, _) => NextAnimFrame();
@@ -45,6 +45,7 @@ public partial class AssetBrowser : UserControl
         BrowserPanel.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
         if (P is not { } p) return;
         Header.Text = $"{p.Name}  ({p.Assets.Count})";
+        FillTypes(p);
         Guid? keep = Selected?.Id;
         AssetType? type = TypeFilter.SelectedIndex > 0 ? Enum.Parse<AssetType>((string)TypeFilter.SelectedItem) : null;
         var items = p.Search(SearchBox.Text, type, FavoritesOnly.IsChecked == true).Select(a => new AssetItem(a, p.FullPath(a))).ToList();
@@ -53,7 +54,27 @@ public partial class AssetBrowser : UserControl
         if (List.SelectedItem is null) ShowDetails(null);
     }
 
-    void OnFilterChanged(object sender, RoutedEventArgs e) => Refresh();
+    /// <summary>Set by MainWindow: asset types this version can open (the import dialog offers only those).</summary>
+    public Func<AssetType, bool> CanEdit { get; set; } = _ => true;
+
+    bool _fillingTypes;
+
+    /// <summary>The type filter lists only the types the project has.</summary>
+    void FillTypes(Project p)
+    {
+        var names = new[] { "All types" }.Concat(p.Assets.Select(a => a.Type).Distinct().Order().Select(t => t.ToString())).ToList();
+        if (TypeFilter.ItemsSource is List<string> now && now.SequenceEqual(names)) return;
+        string? chosen = TypeFilter.SelectedItem as string;
+        _fillingTypes = true;   // changing the list raises SelectionChanged, which would refresh again
+        TypeFilter.ItemsSource = names;
+        TypeFilter.SelectedItem = chosen is not null && names.Contains(chosen) ? chosen : "All types";
+        _fillingTypes = false;
+    }
+
+    void OnFilterChanged(object sender, RoutedEventArgs e)
+    {
+        if (!_fillingTypes) Refresh();
+    }
 
     void OnSelected(object sender, SelectionChangedEventArgs e) => ShowDetails(List.SelectedItem as AssetItem);
 
@@ -274,7 +295,7 @@ public partial class AssetBrowser : UserControl
         var dlg = new OpenFileDialog
         {
             Multiselect = true,
-            Filter = "Pixelkiln assets|" + string.Join(";", Project.TypesByExtension.Keys.Select(x => "*" + x)) + "|All files|*.*",
+            Filter = "Pixelkiln assets|" + string.Join(";", AssetKinds.All.Where(k => CanEdit(k.Type)).SelectMany(k => k.Extensions).Select(x => "*" + x)) + "|All files|*.*",
         };
         if (dlg.ShowDialog() != true) return;
         string folder = Selected?.Folder ?? "";

@@ -266,8 +266,12 @@ try {
             $box = (Find-All $pal ([System.Windows.Automation.ControlType]::Edit))[0]
             foreach ($q in 'Retro pack Macro', 'Flip horizontally', 'Generate tileset from seed') {
                 $box.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($q)
-                Start-Sleep -Milliseconds 400
-                $names = (Find-All $pal ([System.Windows.Automation.ControlType]::ListItem)) | ForEach-Object { $_.Current.Name }
+                # the list refills after the text changes: wait for it instead of a fixed pause (a busy PC is slower)
+                $names = $null
+                for ($wait = 0; $wait -lt 10 -and -not $names; $wait++) {
+                    Start-Sleep -Milliseconds 300
+                    $names = (Find-All $pal ([System.Windows.Automation.ControlType]::ListItem)) | ForEach-Object { $_.Current.Name }
+                }
                 Write-Host ("palette '{0}': {1}" -f $q, (($names | Select-Object -First 2) -join ' | '))
                 if (-not $names) { $failures += "command palette found nothing for '$q'" }
             }

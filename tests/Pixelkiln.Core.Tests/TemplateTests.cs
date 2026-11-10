@@ -31,9 +31,26 @@ public sealed class TemplateTests() : TempDirTest("tpl")
                 Assert.Empty(p.DamagedAssets());
                 Assert.Empty(p.BrokenReferences());
                 foreach (var a in r.Created) AssetLoader.Probe(a.Type, p.FullPath(a));
+                Assert.Equal(r.Created.Select(a => a.Type).ToHashSet(), TemplateEngine.Creates(t.Manifest, kit));   // the forecast matches
                 if (r.Primary.Type == AssetType.Scene)
                     Assert.DoesNotContain(SceneCheck.Run(Scene.Load(p.FullPath(r.Primary)), p), i => i.Severity == "error");
             }
+    }
+
+    [Fact]
+    public void Templates_say_which_kinds_of_assets_they_make()
+    {
+        Assert.Equal([AssetType.Sprite, AssetType.Character], TemplateEngine.Creates(Builtin("platformer-hero").Manifest, fullKit: false));
+        Assert.Contains(AssetType.Scene, TemplateEngine.Creates(Builtin("level-cave").Manifest, fullKit: false));   // a level is always a scene
+        Assert.Contains(AssetType.Song, TemplateEngine.Creates(Builtin("level-cave").Manifest, fullKit: true));
+        Assert.DoesNotContain(AssetType.Song, TemplateEngine.Creates(Builtin("level-cave").Manifest, fullKit: false));
+
+        // an app that only edits sprites, characters and tilemaps keeps these
+        AssetType[] editable = [AssetType.Sprite, AssetType.Image, AssetType.Character, AssetType.Tilemap];
+        var kept = TemplateLibrary.BuiltIn().Where(t => TemplateEngine.Creates(t.Manifest, false).All(editable.Contains)).Select(t => t.Manifest.Id).ToList();
+        Assert.Equal(18, kept.Count);
+        Assert.Contains("sample-tiles", kept);
+        Assert.DoesNotContain(kept, id => id.StartsWith("level-") || id.StartsWith("music-") || id.StartsWith("ui-") || id.StartsWith("material-"));
     }
 
     [Fact]
