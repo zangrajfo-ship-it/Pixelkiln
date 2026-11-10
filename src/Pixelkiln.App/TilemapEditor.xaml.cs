@@ -67,13 +67,41 @@ public partial class TilemapEditor : UserControl
         UpdateTitle();
     }
 
-    // ponytail: full redraw per edit; redraw only changed cells if big maps lag
+    uint[] _picture = [];        // the map as drawn, kept so a stroke can redraw only its cells
+    Int32Rect? _touched;         // cells changed since the last draw (see Touch)
+
+    /// <summary>Draws the whole map (after loading, undo, layer or tileset changes).</summary>
     void Render()
     {
         int w = _map.Width * _map.TileSize, h = _map.Height * _map.TileSize;
         if (_bmp is null || _bmp.PixelWidth != w || _bmp.PixelHeight != h)
             MapImage.Source = _bmp = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
-        _bmp.WritePixels(new Int32Rect(0, 0, w, h), _map.Render(), w * 4, 0);
+        if (_picture.Length != w * h) _picture = new uint[w * h];
+        _touched = null;
+        _map.RenderCells(_picture, 0, 0, _map.Width, _map.Height);
+        _bmp.WritePixels(new Int32Rect(0, 0, w, h), _picture, w * 4, 0);
+        RenderCollision();
+    }
+
+    /// <summary>Notes that a tool changed these cells; <see cref="RenderTouched"/> then redraws only them.</summary>
+    void Touch(int x, int y, int w = 1, int h = 1)
+    {
+        int x0 = Math.Max(0, x), y0 = Math.Max(0, y), x1 = Math.Min(_map.Width, x + w), y1 = Math.Min(_map.Height, y + h);
+        if (x1 <= x0 || y1 <= y0) return;
+        if (_touched is { } t)
+            (x0, y0, x1, y1) = (Math.Min(x0, t.X), Math.Min(y0, t.Y), Math.Max(x1, t.X + t.Width), Math.Max(y1, t.Y + t.Height));
+        _touched = new Int32Rect(x0, y0, x1 - x0, y1 - y0);
+    }
+
+    /// <summary>Redraws the cells a stroke touched instead of the whole map (big maps stay quick to paint).</summary>
+    void RenderTouched()
+    {
+        if (_touched is not { } t || _bmp is null) return;
+        _touched = null;
+        int size = _map.TileSize;
+        _map.RenderCells(_picture, t.X, t.Y, t.Width, t.Height);
+        var area = new Int32Rect(t.X * size, t.Y * size, t.Width * size, t.Height * size);
+        _bmp.WritePixels(area, _picture, _bmp.PixelWidth * 4, area.X, area.Y);   // that part of the picture, to the same place
         RenderCollision();
     }
 

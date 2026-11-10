@@ -120,8 +120,7 @@ public partial class SpriteEditor
 
         if (tool == Tool.Picker)
         {
-            uint c = Compositor.Flatten(_sprite, _frame)[y * _sprite.Width + x];
-            UseColor(c, secondary: !left);
+            UseColor(PixelUnder(x, y), secondary: !left);
             return;
         }
 
@@ -155,7 +154,7 @@ public partial class SpriteEditor
     {
         var (x, y) = PixelAt(e);
         string under = Tools.InBounds(_sprite.Width, _sprite.Height, x, y)
-            ? $"   x {x}, y {y}   {Ui.ColorName(Compositor.Flatten(_sprite, _frame)[y * _sprite.Width + x])}" : "";
+            ? $"   x {x}, y {y}   {Ui.ColorName(PixelUnder(x, y))}" : "";
         Status.Text = $"{_sprite.Width}×{_sprite.Height} px{under}" + (_sel is { } s ? $"   selection {s.Width}×{s.Height}" : "");
 
         if (_panFrom is Point from)
@@ -193,13 +192,16 @@ public partial class SpriteEditor
             _sel = null;   // a plain click deselects
             UpdateOverlay();
         }
+        bool drew = _stroking && _strokeTool != Tool.Select;
         _stroking = _movingFloat = _marquee = false;
         _shapeBase = null;
         _panFrom = null;
         CanvasHost.ReleaseMouseCapture();
+        if (drew) UpdateFrameThumb();
     }
 
-    void OnCanvasLeave(object sender, MouseEventArgs e) => ApplyZoom();
+    // the mouse left the canvas: the status bar goes back to the sprite size (nothing else changed)
+    void OnCanvasLeave(object sender, MouseEventArgs e) => Status.Text = $"{_sprite.Width}×{_sprite.Height} px";
 
     // ---------- painting with brush + mirror ----------
 

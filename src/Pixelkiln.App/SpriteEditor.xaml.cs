@@ -103,7 +103,7 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
             UpdateTiledBg();
         }
 
-        var current = Compositor.Flatten(_sprite, _frame);
+        var current = _flat = Compositor.Flatten(_sprite, _frame);
         var shown = current;
         if (OnionToggle.IsChecked == true && !_playTimer.IsEnabled && _sprite.Frames.Count > 1)
         {
@@ -116,9 +116,20 @@ public partial class SpriteEditor : UserControl, IStyleSource, IToolSelectable
         _bmp.WritePixels(new Int32Rect(0, 0, w, h), shown, w * 4, 0);
         _preview?.ShowFrame(current, w, h);
         UpdateOverlay();
+        if (!_stroking) UpdateFrameThumb();   // during a stroke it would make a bitmap per mouse move; OnCanvasUp does it once
+    }
 
-        if (FramesList.Items.Count > _frame && FramesList.Items[_frame] is FrameworkElement { Tag: Image thumb })
-            thumb.Source = ImageIO.ToBitmap(current, w, h);
+    // the current frame with all visible layers, as last drawn: the status bar and the eyedropper read pixels from it
+    uint[] _flat = [];
+
+    uint PixelUnder(int x, int y) =>
+        (_flat.Length == _sprite.Width * _sprite.Height ? _flat : Compositor.Flatten(_sprite, _frame))[y * _sprite.Width + x];
+
+    /// <summary>The small picture in the tooltip of the current frame's pill.</summary>
+    void UpdateFrameThumb()
+    {
+        if (FramesList.Items.Count > _frame && FramesList.Items[_frame] is FrameworkElement { Tag: Image thumb } && _flat.Length == _sprite.Width * _sprite.Height)
+            thumb.Source = ImageIO.ToBitmap(_flat, _sprite.Width, _sprite.Height);
     }
 
     void UpdateTitle() => Ui.ShowTitle(this, _path, _dirty, "untitled");

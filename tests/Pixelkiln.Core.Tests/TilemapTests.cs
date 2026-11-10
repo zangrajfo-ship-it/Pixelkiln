@@ -120,6 +120,47 @@ public class TilemapTests
     }
 
     [Fact]
+    public void Redrawing_only_some_cells_gives_the_same_picture()
+    {
+        var m = new Tilemap(4, 3, 2) { Tileset = Set() };
+        Tools.Fill(m.Layers[0].Tiles, 4, 3, 0, 0, 0);       // red everywhere
+        var top = m.AddLayer(1, "top");
+        top.Tiles[5] = 1;                                    // blue with a transparent pixel, turned
+        top.SetFlip(5, TileFlip.RotateCw);
+        var full = m.Render();
+
+        // cell by cell into a buffer full of other values: every pixel is written
+        var px = Enumerable.Repeat(0xDEADBEEFu, full.Length).ToArray();
+        for (int y = 0; y < 3; y++)
+            for (int x = 0; x < 4; x++) m.RenderCells(px, x, y, 1, 1);
+        Assert.Equal(full, px);
+
+        // after a change, redrawing just that cell (the rectangle may reach outside the map) updates the old picture
+        top.Tiles[11] = 1;
+        m.Layers[0].Tiles[11] = Tilemap.Empty;
+        m.RenderCells(px, 3, 2, 5, 5);
+        Assert.Equal(m.Render(), px);
+        m.Layers[1].Visible = false;
+        m.RenderCells(px, -1, -1, 99, 99);
+        Assert.Equal(m.Render(), px);
+
+        // without a tileset the cells are cleared
+        m.Tileset = null;
+        m.RenderCells(px, 0, 0, 4, 3);
+        Assert.All(px, p => Assert.Equal(0u, p));
+    }
+
+    [Fact]
+    public void A_map_too_big_to_draw_is_refused()
+    {
+        Assert.Equal(500, new Tilemap(500, 500, 16, empty: true).Width);                       // 64 million pixels: the limit
+        var ex = Assert.Throws<ArgumentOutOfRangeException>(() => new Tilemap(1024, 1024, 64, empty: true));
+        Assert.Contains("too big to draw", ex.Message);
+        Assert.Throws<ArgumentOutOfRangeException>(() => new Tilemap(501, 500, 16, empty: true));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new Tilemap(500, 500, 16, empty: true).Resized(600, 500, 0, 0));
+    }
+
+    [Fact]
     public void Auto_tile_clears_the_flags()
     {
         var m = new Tilemap(3, 3, 1) { Tileset = new Tileset(new uint[4 * 4], 4, 4, 1) };

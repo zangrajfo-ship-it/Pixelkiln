@@ -30,8 +30,26 @@ public partial class App : Application
     /// <summary>Project file or folder passed on the command line.</summary>
     public static string? StartupPath { get; private set; }
 
+    static readonly System.Diagnostics.Stopwatch Clock = System.Diagnostics.Stopwatch.StartNew();
+
+    /// <summary>
+    /// With PIXELKILN_TIMING=1 the start-up steps and their times (ms since the app's code began to run) go to
+    /// startup.log next to the settings; otherwise this does nothing.
+    /// </summary>
+    public static void Mark(string step)
+    {
+        if (Environment.GetEnvironmentVariable("PIXELKILN_TIMING") != "1") return;
+        try
+        {
+            Directory.CreateDirectory(Core.Settings.Folder);
+            File.AppendAllText(Path.Combine(Core.Settings.Folder, "startup.log"), $"{Clock.ElapsedMilliseconds,6} ms  {step}{Environment.NewLine}");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
+        Mark("start");
         // a crash leaves its reason next to the settings (local file only), so it can be found and fixed
         AppDomain.CurrentDomain.UnhandledException += (_, ev) =>
         {
@@ -41,6 +59,7 @@ public partial class App : Application
         StartupPath = e.Args.FirstOrDefault();
         LoadPlugins();
         ApplyTheme();   // after App.xaml resources are loaded, before the main window opens
+        Mark("plugins and theme ready");
         base.OnStartup(e);
     }
 

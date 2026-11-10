@@ -74,7 +74,9 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        App.Mark("window: code-built editors made");   // the field initializers (Paint, Vector …) ran before this line
         InitializeComponent();
+        App.Mark("window: XAML loaded (7 tab editors)");
         HostModes();
         BuildShell();
         MapEd.SpriteImage = () => SpriteEd.CurrentImage;
@@ -98,10 +100,12 @@ public partial class MainWindow : Window
         BuildMenu();
         Loaded += (_, _) =>
         {
+            App.Mark("window loaded");
             OfferRecovery();
             ReopenLastProject();
             MirrorStatus();
         };
+        ContentRendered += (_, _) => App.Mark("first frame drawn");
         Closed += (_, _) =>
         {
             ClearAutosave();   // closed normally: every editor already asked about unsaved work

@@ -93,6 +93,7 @@ public partial class TilemapEditor
             Snapshot();
             _strokeOn = !right;
             Autotile.Apply(_map, _map.Layers[_layer], terrain, x, y, _strokeOn);
+            Touch(x - 1, y - 1, 3, 3);   // the cell and the neighbours it re-picks
         }
         else if (tool == FillBtn)
         {
@@ -102,8 +103,12 @@ public partial class TilemapEditor
             if (right) Tools.Fill(tiles, _map.Width, _map.Height, x, y, Tilemap.Empty);
             else Tools.FillPattern(tiles, _map.Width, _map.Height, x, y, (cx, cy) => _stamp[StampCell(cx, cy)]);
             for (int i = 0; i < area.Length; i++)
-                if (area[i]) _map.Layers[_layer].SetFlip(i, right ? 0 : _stampFlips[StampCell(i % _map.Width, i / _map.Width)]);
-            Render();
+            {
+                if (!area[i]) continue;
+                _map.Layers[_layer].SetFlip(i, right ? 0 : _stampFlips[StampCell(i % _map.Width, i / _map.Width)]);
+                Touch(i % _map.Width, i / _map.Width);
+            }
+            RenderTouched();
             return;
         }
         else if (tool == EraseBtn || right)
@@ -111,6 +116,7 @@ public partial class TilemapEditor
             Snapshot();
             tool = EraseBtn;
             Tools.Set(tiles, _map.Width, _map.Height, x, y, Tilemap.Empty);
+            Touch(x, y);
         }
         else   // paint
         {
@@ -120,7 +126,7 @@ public partial class TilemapEditor
             PaintStamp(x, y);
         }
         BeginStroke(tool, x, y);
-        Render();
+        RenderTouched();
     }
 
     void BeginStroke(RadioButton tool, int x, int y)
@@ -159,14 +165,18 @@ public partial class TilemapEditor
         else if (_strokeTool == EraseBtn)
         {
             Tools.Line(tiles, _map.Width, _map.Height, _lastX, _lastY, x, y, Tilemap.Empty);
+            Touch(Math.Min(_lastX, x), Math.Min(_lastY, y), Math.Abs(x - _lastX) + 1, Math.Abs(y - _lastY) + 1);
         }
         else if (_strokeTool == AutoBtn && CurrentTerrain is { } terrain)
         {
             foreach (var (lx, ly) in Tools.LinePoints(_lastX, _lastY, x, y))
+            {
                 Autotile.Apply(_map, _map.Layers[_layer], terrain, lx, ly, _strokeOn);
+                Touch(lx - 1, ly - 1, 3, 3);
+            }
         }
         (_lastX, _lastY) = (x, y);
-        Render();
+        RenderTouched();
     }
 
     void OnCanvasUp(object sender, MouseButtonEventArgs e)
@@ -191,6 +201,7 @@ public partial class TilemapEditor
                 layer.Tiles[cell] = _stamp[j * _sw + i];
                 layer.SetFlip(cell, _stampFlips[j * _sw + i]);
             }
+        Touch(cx, cy, _sw, _sh);
     }
 
     // ---------- pick ----------

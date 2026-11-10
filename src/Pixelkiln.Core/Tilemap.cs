@@ -110,6 +110,8 @@ public sealed record TileCollision(int X, int Y, int W, int H, bool OneWay = fal
 public sealed class Tilemap
 {
     public const int Empty = -1;
+    /// <summary>Largest map picture in pixels, e.g. 500×500 tiles of 16 px.</summary>
+    public const long MaxPixels = 64_000_000;
 
     public int Width { get; }
     public int Height { get; }
@@ -135,6 +137,9 @@ public sealed class Tilemap
     {
         if (width < 1 || height < 1 || width > 1024 || height > 1024) throw new ArgumentOutOfRangeException(nameof(width), "Map size must be 1..1024 tiles.");
         if (tileSize < 1 || tileSize > 256) throw new ArgumentOutOfRangeException(nameof(tileSize), "Tile size must be 1..256.");
+        // the map is drawn as one picture; beyond this it would not fit in memory (and the pixel count overflows an int)
+        if ((long)width * tileSize * height * tileSize > MaxPixels)
+            throw new ArgumentOutOfRangeException(nameof(width), $"A {width}×{height} map of {tileSize} px tiles is too big to draw (over {MaxPixels / 1_000_000} million pixels). Use fewer or smaller tiles.");
         (Width, Height, TileSize) = (width, height, tileSize);
         if (!empty) AddLayer(0, "Layer 1");
     }
@@ -173,25 +178,38 @@ public sealed class Tilemap
     /// <summary>Renders visible layers to pixels (Width*TileSize × Height*TileSize).</summary>
     public uint[] Render()
     {
-        int pw = Width * TileSize, ph = Height * TileSize;
-        var dst = new uint[pw * ph];
-        if (Tileset is not { } ts || ts.TileSize != TileSize) return dst;
-        var tiles = new Dictionary<int, uint[]>();   // key: tile * 8 + flip
-        var layerPx = new uint[pw * ph];
-        foreach (var l in Layers)
-        {
-            if (!l.Visible) continue;
-            Array.Clear(layerPx);
-            for (int i = 0; i < l.Tiles.Length; i++)
-            {
-                int t = l.Tiles[i], flip = l.FlipAt(i);
-                if (t < 0 || t >= ts.Count) continue;
-                if (!tiles.TryGetValue(t * 8 + flip, out var tp)) tiles[t * 8 + flip] = tp = TileFlip.Orient(ts.Tile(t), TileSize, flip);
-                PixelOps.Paste(layerPx, pw, tp, TileSize, TileSize, i % Width * TileSize, i / Width * TileSize);
-            }
-            Compositor.Blend(dst, layerPx);
-        }
+        var dst = new uint[Width * TileSize * Height * TileSize];
+        RenderCells(dst, 0, 0, Width, Height);
         return dst;
+    }
+
+    /// <summary>
+    /// Renders only a rectangle of cells into a picture of the whole map (as made by <see cref="Render"/>), so an
+    /// editor can redraw just what a stroke changed. Cells do not affect each other, so the result is exact.
+    /// </summary>
+    public void RenderCells(uint[] into, int x, int y, int w, int h)
+    {
+        int size = TileSize, pw = Width * size;
+        int x1 = Math.Min(Width, x + w), y1 = Math.Min(Height, y + h);
+        (x, y) = (Math.Max(0, x), Math.Max(0, y));
+        var ts = Tileset is { } set && set.TileSize == size ? set : null;
+        var tiles = new Dictionary<int, uint[]>();   // key: tile * 8 + flip
+        for (int cy = y; cy < y1; cy++)
+            for (int cx = x; cx < x1; cx++)
+            {
+                int cell = cy * Width + cx, at = cy * size * pw + cx * size;
+                for (int py = 0; py < size; py++) Array.Clear(into, at + py * pw, size);
+                if (ts is null) continue;
+                foreach (var l in Layers)   // bottom to top
+                {
+                    int t = l.Tiles[cell], flip = l.FlipAt(cell);
+                    if (!l.Visible || t < 0 || t >= ts.Count) continue;
+                    if (!tiles.TryGetValue(t * 8 + flip, out var tp)) tiles[t * 8 + flip] = tp = TileFlip.Orient(ts.Tile(t), size, flip);
+                    for (int py = 0; py < size; py++)
+                        for (int px = 0; px < size; px++)
+                            into[at + py * pw + px] = Compositor.Over(into[at + py * pw + px], tp[py * size + px]);
+                }
+            }
     }
 
     public Tilemap Clone()

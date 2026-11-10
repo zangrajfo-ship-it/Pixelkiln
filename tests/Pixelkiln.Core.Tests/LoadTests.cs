@@ -74,6 +74,18 @@ public sealed class LoadTests() : TempDirTest("load")
         Assert.InRange(Ms(() => sb.Render(boxes: true)), 0, 100);
     }
 
+    [Fact]
+    public void Redrawing_one_cell_of_a_big_map_does_not_redraw_the_map()
+    {
+        var m = new Tilemap(250, 250, 16) { Tileset = new Tileset(Enumerable.Repeat(0xFF336699u, 32 * 16).ToArray(), 32, 16, 16) };
+        Array.Fill(m.Layers[0].Tiles, 0);
+        var picture = m.Render();   // 4000×4000 px
+        long whole = Ms(() => m.RenderCells(picture, 0, 0, 250, 250));
+        long cell = Ms(() => { for (int i = 0; i < 100; i++) m.RenderCells(picture, i, 7, 1, 1); });   // a stroke of 100 cells
+        Assert.InRange(cell, 0, 50);
+        Assert.True(cell * 20 <= Math.Max(whole, 20), $"100 cells took {cell} ms, the whole map {whole} ms");
+    }
+
     // ---------- formats of phases 17–20 ----------
 
     [Fact]
