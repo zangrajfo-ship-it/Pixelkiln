@@ -22,7 +22,8 @@ $zip = "$dir.zip"
 if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
 if (Test-Path $zip) { Remove-Item -Force $zip }
 
-# self-contained: .NET travels with the app; ReadyToRun: compiled ahead, so the first start is faster
+# self-contained: .NET travels with the app. ReadyToRun compiles ahead of time; on the development machine the
+# start-up was the same with and without it (1.6 to 2.0 s to the first frame), it is kept for slower machines
 dotnet publish (Join-Path $root 'src\Pixelkiln.App') -c Release -r win-x64 --self-contained true `
     -p:PublishReadyToRun=true -p:DebugType=none -p:DebugSymbols=false --nologo -o $dir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed ($LASTEXITCODE)." }
