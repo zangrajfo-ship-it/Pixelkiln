@@ -78,5 +78,8 @@ Samo podatki (palete, prednastavitve generatorjev, izvozni profili, makri ukazov
 ## Formati
 Opis vseh datotek in različic je v [formats.md](formats.md). Stari formati se vedno odprejo (zlati primerki v `tests/Pixelkiln.Core.Tests/Fixtures`).
 
+## Za razvijalce
+Kako je program sestavljen in kako ga spremeniš (nov ukaz, orodje, polje v datoteki, barve, knjižnice, nova izdaja), je v [development.md](development.md). Spremembe po različicah so v [CHANGELOG.md](../CHANGELOG.md).
+
 ## Licenca
 [MIT](../LICENSE). Priloženi pisavi Inter in JetBrains Mono imata licenco SIL Open Font License 1.1 (`src/Pixelkiln.App/Fonts`). Edina zunanja odvisnost je NAudio.WinMM (MIT) za predvajanje zvoka.

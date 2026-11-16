@@ -16,7 +16,9 @@ sealed class AudioOut : ISampleProvider, IDisposable
 
     public WaveFormat WaveFormat { get; } = WaveFormat.CreateIeeeFloatWaveFormat(Synth.SampleRate, 1);
 
-    readonly WaveOutEvent _out = new() { DesiredLatency = 120 };
+    // two buffers of 60 ms: about 120 ms from a key press to its sound
+    readonly WaveOut _out = new() { BufferMilliseconds = 60, NumberOfBuffers = 2 };
+    float[] _mix = [];       // the song stream and the mixing work on an array; NAudio asks for a span
     readonly object _lock = new();
     readonly List<(float[] Data, int Pos)> _oneShots = [];
     SongStream? _song;
@@ -61,7 +63,16 @@ sealed class AudioOut : ISampleProvider, IDisposable
     /// <summary>Sample position of the playing clip; null when nothing plays (finished or stopped).</summary>
     public int? ClipPosition { get { lock (_lock) return _clip is null ? null : _clipPos; } }
 
-    public int Read(float[] buffer, int offset, int count)
+    public int Read(Span<float> output)
+    {
+        int count = output.Length;
+        if (_mix.Length < count) _mix = new float[count];
+        Read(_mix, 0, count);
+        _mix.AsSpan(0, count).CopyTo(output);
+        return count;
+    }
+
+    int Read(float[] buffer, int offset, int count)
     {
         Array.Clear(buffer, offset, count);
         lock (_lock)

@@ -89,11 +89,14 @@ The repository also contains editors that are switched off in this version: scen
 The documents in `docs/` are written in Slovenian:
 
 - [docs/README.sl.md](docs/README.sl.md): this page in Slovenian, with the switched-off parts described
+- [docs/development.md](docs/development.md): how the app is built and how to change it (new command, tool, file field, theme colours, libraries, a new release)
 - [docs/godot.md](docs/godot.md): export to Godot 4 step by step, with a checklist for the first import
 - [docs/formats.md](docs/formats.md): every file format and its versions; older files always open (golden files in `tests/Pixelkiln.Core.Tests/Fixtures`)
 - [docs/plugins.md](docs/plugins.md), [docs/templates.md](docs/templates.md): data-only plugins and templates (no code is loaded)
 - [docs/design.md](docs/design.md): colours, fonts and layout of the Modern theme
 - [docs/adr](docs/adr): architecture decisions
+
+Changes between versions are in [CHANGELOG.md](CHANGELOG.md).
 
 ## Licence
 
